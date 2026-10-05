@@ -34,6 +34,8 @@ pnpm build:web
 
 `pnpm build:web` zapisuje stronę w `apps/web/dist`. Ten katalog może być katalogiem wyjściowym Cloudflare Pages. Worker ma konfigurację wdrożenia w `apps/worker/wrangler.jsonc`. Projekt mobile pozostaje projektem Expo.
 
+W Cloudflare Pages ustaw komendę build `pnpm build:web` i katalog wyjściowy `apps/web/dist`; polecenie deploy zostaw puste. Aby wdrożyć Cloudflare Worker z katalogu głównego repozytorium, użyj `pnpm deploy:worker`.
+
 ## Wspólny pakiet
 
 Web i mobile mają zależność `@pk-planner/core: workspace:*`. Importuj typy i funkcje z `@pk-planner/core`; kod źródłowy jest współdzielony bez osobnego buildu pakietu. Dodawaj eksporty w `packages/core/src/index.ts`.

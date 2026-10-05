@@ -12,6 +12,9 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "moduleDetection": "force",
     "noEmit": true,
     "jsx": "react-jsx",

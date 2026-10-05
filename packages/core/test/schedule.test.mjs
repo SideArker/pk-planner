@@ -4,7 +4,7 @@ import {
   parseSchedulePayload, importedNotices, mappedCohortParts, matchesCohort,
   matchesWeekend, roomCampus, suggestedTimeSlots, visibleBlocks, cohortDisplayText, weekendKeys,
   extractUniqueCohorts, buildSubjectCatalog, resolveUserBlocks, generateIcs, getGoogleCalendarUrl,
-  getCohortHierarchy, getTeachingWeekInfo, isBlockInWeekParity,
+  getCohortHierarchy, getTeachingWeekInfo, isBlockInWeekParity, prefillScheduleSelections,
 } from '../src/index.ts'
 
 const block = {
@@ -145,5 +145,40 @@ test('calculates correct teaching week parity A and B starting from 28.09.2026',
   assert.equal(isBlockInWeekParity(weeklyBlock, 'B'), true)
 })
 
+test('generates GK/GL groups for semester 3 and correctly prefills subject selections by group', () => {
+  const sem3State = {
+    blocks: [
+      { id: 'bd_w', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3', activity: 'W', planType: 'stacjonarne' },
+      { id: 'bd_c1', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3 / gr. 1', activity: 'C', planType: 'stacjonarne' },
+      { id: 'bd_c2', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3 / gr. 2', activity: 'C', planType: 'stacjonarne' },
+      { id: 'bd_c3', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3 / gr. 3', activity: 'C', planType: 'stacjonarne' },
+      { id: 'bd_l1', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3 / gr. 1', activity: 'L', planType: 'stacjonarne' },
+      { id: 'bd_l2', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3 / gr. 2', activity: 'L', planType: 'stacjonarne' },
+      { id: 'bd_l3', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3 / gr. 3', activity: 'L', planType: 'stacjonarne' },
+      { id: 'bd_l4', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3 / gr. 4', activity: 'L', planType: 'stacjonarne' },
+      { id: 'bd_l5', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3 / gr. 5', activity: 'L', planType: 'stacjonarne' },
+      { id: 'bd_l6', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3 / gr. 6', activity: 'L', planType: 'stacjonarne' },
+    ],
+    rooms: [],
+  }
 
+  const { fields } = getCohortHierarchy(sem3State)
+  const sem3Nodes = fields.Informatyka['I stopień'][2]
+  assert.equal(sem3Nodes.length, 3)
+  assert.equal(sem3Nodes[0].label, 'GK/GL 1')
+  assert.equal(sem3Nodes[1].label, 'GK/GL 2')
+  assert.equal(sem3Nodes[2].label, 'GK/GL 3')
 
+  const catalog = buildSubjectCatalog(sem3State, sem3Nodes[1].cohortBase)
+
+  // Test prefill for GK/GL 2: exercises should be gr. 2, labs should be GL 3 (2*2-1)
+  const prefilled2 = prefillScheduleSelections(catalog, 2)
+  assert.equal(prefilled2.selectedGroups['Bazy danych:w'], 'bd_w')
+  assert.equal(prefilled2.selectedGroups['Bazy danych:c'], 'bd_c2')
+  assert.equal(prefilled2.selectedGroups['Bazy danych:l'], 'bd_l3')
+
+  // Test prefill for GK/GL 3: exercises should be gr. 3, labs should be GL 5 (2*3-1)
+  const prefilled3 = prefillScheduleSelections(catalog, 3)
+  assert.equal(prefilled3.selectedGroups['Bazy danych:c'], 'bd_c3')
+  assert.equal(prefilled3.selectedGroups['Bazy danych:l'], 'bd_l5')
+})

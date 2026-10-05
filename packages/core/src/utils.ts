@@ -138,6 +138,15 @@ export function isFirstDegreeCohort(value: string): boolean {
   return /(?:^|\s)i stopien (?:nie)?stac\.? sem\./.test(plain(cohortParts(value).base))
 }
 
+export function exerciseGroupForLab(cohort: string, labGroup: number): number {
+  const base = cohortParts(cohort).base.replace(/\s*\/\s*(?:GK|GL)\s*\d+$/i, '')
+  // In semester 1 the two laboratory halves of GĆ n are GL n and GL n+3.
+  if (/^I stopień stac sem\. 1$/i.test(base) && labGroup >= 1 && labGroup <= 6) {
+    return ((labGroup - 1) % 3) + 1
+  }
+  return Math.ceil(labGroup / 2)
+}
+
 export function cohortDisplayLabel(value: string, block?: ScheduleBlock): string {
   const part = curriculumParts(value)
   let groupLabel: string | null = null
@@ -151,7 +160,9 @@ export function cohortDisplayLabel(value: string, block?: ScheduleBlock): string
       groupLabel = `grupa obieralna ${part.group}`
     } else if (['c', 'cw', 'cwiczenia', 'ćw'].includes(activity)
       || (block.planType === 'niestacjonarne' && block.subject === 'Wprowadzenie do studiowania' && block.teacher === 'Grzonka Daniel')) {
-      groupLabel = `C${part.group} (GL${2 * part.group - 1}+GL${2 * part.group})`
+      const firstLab = /^I stopień stac sem\. 1$/i.test(part.base) ? part.group : 2 * part.group - 1
+      const secondLab = /^I stopień stac sem\. 1$/i.test(part.base) ? part.group + 3 : 2 * part.group
+      groupLabel = `C${part.group} (GL${firstLab}+GL${secondLab})`
     } else if (['l', 'p', 'w'].includes(activity)) groupLabel = `GL${part.group}`
     else if (activity === 'wf') groupLabel = `grupa WF ${part.group}`
   }

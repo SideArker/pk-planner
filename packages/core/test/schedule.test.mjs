@@ -51,7 +51,7 @@ test('matches dated and recurring nonstationary weekends', () => {
 })
 
 test('formats first-degree groups and joint classes', () => {
-  assert.equal(cohortDisplayText(block), 'I stopień stac sem. 1 / C1 (GL1+GL2)')
+  assert.equal(cohortDisplayText(block), 'I stopień stac sem. 1 / C1 (GL1+GL4)')
   assert.match(cohortDisplayText({ ...block, additionalCohorts: ['I stopień stac sem. 3 / gr. 1'] }), /wspólnie z:/)
 })
 
@@ -239,4 +239,3 @@ test('detectScheduleCollisions correctly identifies overlapping classes and resp
   assert.equal(collisions.get('c4a').some(c => c.conflictingBlockId === 'c4b'), false)
   assert.equal(collisions.get('c4a').some(c => c.conflictingBlockId === 'c4w'), true)
 })
-

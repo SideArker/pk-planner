@@ -7,7 +7,7 @@ import type {
   SubjectCatalogItem,
   UserScheduleConfig,
 } from './types.ts'
-import { blockCohorts, cohortParts, minutesToTime, roomCampus, teacherDisplay } from './utils.ts'
+import { blockCohorts, cohortParts, exerciseGroupForLab, minutesToTime, roomCampus, teacherDisplay } from './utils.ts'
 
 export const NOT_APPLICABLE_VALUE = '__not_applicable'
 export const NOT_APPLICABLE_LABEL = '<NIE DOTYCZY>'
@@ -158,7 +158,7 @@ export function getCohortHierarchy(state: ScheduleState): {
       // Only offer laboratory/computer groups present in the schedule.
       // Exercise numbers can also describe language and elective groups.
       for (const g of [...labGroups].sort((a, b) => a - b)) {
-        const exGr = Math.ceil(g / 2)
+        const exGr = exerciseGroupForLab(baseItem.value, g)
         const node: CohortHierarchyNode = {
           value: `${baseItem.value} / GL ${g}`,
           cohortBase: baseItem.value,
@@ -231,7 +231,7 @@ export function getCohortHierarchy(state: ScheduleState): {
  */
 export function blockMatchesBaseCohort(block: ScheduleBlock, cohortBase: string): boolean {
   const cleanTarget = cohortBase
-    .replace(/\s*\/\s*(?:GK\/GL|GL|Grupa\s*GL|gr\.).*$/i, '')
+    .replace(/\s*\/\s*(?:GK\/GL|GK|GL|Grupa\s*(?:GK|GL)|gr\.).*$/i, '')
     .replace(/[—–]/g, '-')
     .toLowerCase()
     .trim()
@@ -269,7 +269,7 @@ export function detectIsPairedCohort(catalog: SubjectCatalogItem[]): boolean {
  * Selects best matching activity option based on chosen group number.
  * When groupNumber is provided (the student's chosen laboratory group):
  * - For lab/project: selects matching lab group (e.g. GL 4).
- * - For exercises (C): automatically maps to C = Math.ceil(groupNumber / 2) (e.g. C2).
+ * - For exercises (C): maps the chosen GL/GK group to its exercise group.
  */
 export function pickBestOptionForGroup(
   options: SubjectActivityOption[],
@@ -291,8 +291,9 @@ export function pickBestOptionForGroup(
     }
   })
 
-  // For paired cohorts: selecting lab group L automatically chooses exercise C = Math.ceil(L / 2)
-  const targetGr = isExercise && isPaired ? Math.ceil(groupNumber / 2) : groupNumber
+  const targetGr = isExercise && isPaired
+    ? exerciseGroupForLab(options[0].cohort, groupNumber)
+    : groupNumber
 
   // 1. Direct numeric match
   const directMatch = optionGroups.find(o => o.gr === targetGr)
@@ -469,7 +470,7 @@ export function resolveUserBlocks(
       }
     } else {
       // Fallback: check if cohort specifies lab group, e.g. "/ GL 4" or "/ gr. 4"
-      const cohortLabMatch = config.cohort.match(/\/\s*(?:GL|gr\.)\s*(\d+)/i)
+      const cohortLabMatch = config.cohort.match(/\/\s*(?:GL|GK|gr\.)\s*(\d+)/i)
       if (cohortLabMatch) {
         const labNum = Number(cohortLabMatch[1])
         const { group } = cohortParts(block.cohort)
@@ -479,7 +480,7 @@ export function resolveUserBlocks(
           if (isLab && group !== labNum) {
             continue
           }
-          if (isEx && group !== Math.ceil(labNum / 2)) {
+          if (isEx && group !== exerciseGroupForLab(config.cohort, labNum)) {
             continue
           }
         }

@@ -29,6 +29,7 @@ export interface ScheduleBlock {
   studentGrouping?: { kind?: string; group?: number; [key: string]: unknown }
   nsMixedLanguageGroups?: { languageGroup?: unknown; roots?: Record<string, unknown> }
   nsEnrollment?: { kind?: string; label?: string; count?: number; [key: string]: unknown }
+  isCustom?: boolean
   [key: string]: unknown
 }
 
@@ -100,6 +101,7 @@ export interface UserScheduleConfig {
   selectedSubjects: Record<string, boolean> // subjectName -> boolean
   selectedGroups: Record<string, string> // e.g. "subjectName:activity" -> optionId or group string
   overrides?: Record<string, BlockOverride> // blockId -> custom override
+  customBlocks?: ScheduleBlock[] // user added custom blocks
   theme?: 'light' | 'dark' | 'system'
 }
 

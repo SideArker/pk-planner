@@ -35,19 +35,24 @@ export default {
     }
 
     if (pathname === "/api/schedule") {
-      if (!env.UPSTREAM_URL) {
-        return json({ error: "UPSTREAM_URL is not configured" }, 501);
-      }
+      const upstreamUrl =
+        env.UPSTREAM_URL ||
+        "https://example.com/api/schedule-snapshot.php";
 
       try {
-        // Cache: dodaj tutaj politykę cache dla publicznego JSON-a.
-        const upstream = await fetch(env.UPSTREAM_URL);
+        const upstream = await fetch(upstreamUrl, {
+          headers: {
+            "User-Agent": "PK-Planner-Worker/1.0",
+          },
+        });
+
         return new Response(upstream.body, {
           status: upstream.status,
           headers: {
             "Content-Type":
               upstream.headers.get("Content-Type") ??
               "application/json; charset=utf-8",
+            "Cache-Control": "public, max-age=60, s-maxage=300",
             ...corsHeaders,
           },
         });

@@ -20,7 +20,7 @@ import { useTheme } from "./hooks/useTheme";
 import { useUserSchedule } from "./hooks/useUserSchedule";
 
 export default function App() {
-  const { theme, toggleTheme, setTheme } = useTheme();
+  const { theme, resolvedTheme, toggleTheme, setTheme } = useTheme();
   const { state, isLoading, error, lastUpdated, refresh } = useScheduleData();
   const {
     config,
@@ -121,6 +121,7 @@ export default function App() {
         lastUpdated={lastUpdated}
         cohort={config.cohort}
         theme={theme}
+        resolvedTheme={resolvedTheme}
         onToggleTheme={toggleTheme}
       />
 

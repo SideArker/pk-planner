@@ -1,6 +1,6 @@
 import type { Day, PlanType, ScheduleBlock, ScheduleState, ViewMode } from './types'
 import { blockCohorts, cohortParts, cohortScopeValue, curriculumParts, mappedCohortParts, plain,
-  reservationTeachers, roomCampus, roomLabel, teacherDisplay } from './utils'
+  reservationTeachers, roomCampus, roomLabel, teacherDisplay } from './utils.ts'
 
 export const ALL = '__all'
 

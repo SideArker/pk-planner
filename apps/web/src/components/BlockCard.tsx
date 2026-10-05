@@ -5,6 +5,7 @@ import {
   teacherDisplay,
 } from '@pk-planner/core'
 import { Clock, MapPin, MoreVertical, User } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 
 interface BlockCardProps {
   block: ScheduleBlock
@@ -81,11 +82,12 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
     >
       <div className="flex items-start justify-between gap-1.5 mb-1.5">
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span
-            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border ${style.badge}`}
+          <Badge
+            variant="outline"
+            className={`text-[11px] font-semibold px-1.5 py-0.5 ${style.badge}`}
           >
             {block.activity?.toUpperCase() || 'ZAJĘCIA'}
-          </span>
+          </Badge>
           {parityLabel && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
               {parityLabel}

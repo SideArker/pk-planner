@@ -22,6 +22,8 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface BlockDetailModalProps {
   block: ScheduleBlock | null
@@ -215,23 +217,17 @@ export function BlockDetailModal({
 
               {/* Calendar export actions */}
               <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
-                <a
-                  href={gCalUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2.5 text-xs sm:text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-xs"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  <span>Dodaj do Google Calendar</span>
-                </a>
+                <Button asChild className="flex-1">
+                  <a href={gCalUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="h-4 w-4" />
+                    <span>Dodaj do Google Calendar</span>
+                  </a>
+                </Button>
 
-                <button
-                  onClick={handleDownloadIcs}
-                  className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 dark:border-zinc-800 px-4 py-2.5 text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                >
+                <Button variant="outline" onClick={handleDownloadIcs}>
                   <Download className="h-4 w-4" />
                   <span>Pobierz .ics</span>
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -301,21 +297,19 @@ export function BlockDetailModal({
                   <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">
                     Prowadzący
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={customTeacher}
                     onChange={e => setCustomTeacher(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-800"
                   />
                 </div>
 
                 <div>
                   <label className="block font-medium text-zinc-700 dark:text-zinc-300 mb-1">Sala</label>
-                  <input
+                  <Input
                     type="text"
                     value={customRoom}
                     onChange={e => setCustomRoom(e.target.value)}
-                    className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-800"
                   />
                 </div>
 
@@ -328,27 +322,29 @@ export function BlockDetailModal({
                     value={customNotes}
                     onChange={e => setCustomNotes(e.target.value)}
                     placeholder="Np. link do Discorda / materiałów..."
-                    className="w-full rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-800"
+                    className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-transparent p-2 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-800"
                   />
                 </div>
               </div>
 
               <div className="pt-2 flex items-center justify-between gap-3">
-                <button
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={handleHideBlock}
-                  className="flex items-center gap-1.5 rounded-lg border border-red-200 dark:border-red-900 text-red-600 dark:text-red-400 px-3 py-2 text-xs hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
                 >
                   <EyeOff className="h-3.5 w-3.5" />
                   <span>Ukryj te zajęcia</span>
-                </button>
+                </Button>
 
-                <button
+                <Button
+                  size="sm"
                   onClick={handleSaveCustom}
-                  className="flex items-center gap-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2 text-xs font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-xs ml-auto"
+                  className="ml-auto"
                 >
                   <Save className="h-3.5 w-3.5" />
                   <span>Zapisz zmiany</span>
-                </button>
+                </Button>
               </div>
             </div>
           )}

@@ -1,4 +1,5 @@
 import { Calendar, Moon, RefreshCw, Search, Settings, Sun } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import type { Theme } from '../hooks/useTheme'
 
 interface HeaderProps {
@@ -76,31 +77,34 @@ export function Header({
 
         {/* Right actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <button
+          <Button
+            variant="outline"
+            size="icon"
             onClick={onRefresh}
             disabled={isLoading}
             title="Odśwież plan zajęć"
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition-colors disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
+            size="icon"
             onClick={onToggleTheme}
             title={theme === 'dark' ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-200 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 transition-colors"
           >
             {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4" />}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="outline"
             onClick={onOpenSettings}
             title="Ustawienia"
-            className="flex items-center gap-1.5 h-9 rounded-lg border border-zinc-200 px-3 text-xs sm:text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-900 transition-colors"
+            className="flex items-center gap-1.5 px-3"
           >
             <Settings className="h-4 w-4" />
             <span className="hidden sm:inline">Ustawienia</span>
-          </button>
+          </Button>
         </div>
       </div>
     </header>

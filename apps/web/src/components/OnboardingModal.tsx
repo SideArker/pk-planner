@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import {
   buildSubjectCatalog,
+  exerciseGroupForLab,
   getCohortHierarchy,
+  labGroupsForExercise,
   prefillScheduleSelections,
   DAY_INFO,
   minutesToTime,
@@ -64,7 +66,8 @@ function formatOptionLabel(
     if (isLab) {
       displayGroup = `Grupa GL ${grNum}`
     } else if (isEx) {
-      displayGroup = `Grupa C${grNum} (GL ${2 * grNum - 1}+${2 * grNum})`
+      const [firstLab, secondLab] = labGroupsForExercise(opt.cohort, grNum)
+      displayGroup = `Grupa C${grNum} (GL ${firstLab}+${secondLab})`
     }
   }
 
@@ -202,7 +205,7 @@ export function OnboardingModal({
           const labNum = match ? Number(match[1]) : null
 
           if (labNum !== null) {
-            const targetExNum = Math.ceil(labNum / 2)
+            const targetExNum = exerciseGroupForLab(selectedLabOpt.cohort, labNum)
             const exAct = subjectItem?.activities.find(a =>
               ['c', 'cw', 'cwiczenia', 'ćw'].includes(a.activity.toLowerCase().trim()),
             )

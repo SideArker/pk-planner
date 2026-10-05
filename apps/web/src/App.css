@@ -1,15 +1,1 @@
-.app {
-  width: min(100% - 2rem, 48rem);
-  margin: 0 auto;
-  padding: 6rem 0;
-}
-
-.app h1 {
-  margin: 0 0 1rem;
-  font-size: clamp(2.5rem, 7vw, 4rem);
-}
-
-.app p {
-  margin: 0;
-  color: #475569;
-}
+/* Tailwind v4 styles configured in index.css */

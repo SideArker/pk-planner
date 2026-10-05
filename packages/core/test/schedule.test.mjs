@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  parseSchedulePayload, importedNotices, mappedCohortParts, matchesCohort,
+  parseSchedulePayload, importedNotices, mappedCohortParts, matchesCohort, cohortStudentGroups,
   matchesWeekend, roomCampus, suggestedTimeSlots, visibleBlocks, cohortDisplayText, weekendKeys,
   extractUniqueCohorts, buildSubjectCatalog, resolveUserBlocks, generateIcs, getGoogleCalendarUrl,
   getCohortHierarchy, getTeachingWeekInfo, isBlockInWeekParity, prefillScheduleSelections,
@@ -25,8 +25,9 @@ test('parses snapshot envelope without losing extra data', () => {
 
 test('maps CAL specialties and paired exercise groups', () => {
   assert.deepEqual(mappedCohortParts('II stopień niestac sem. 1 CAL / gr. 6').specialty, 'SIR')
-  assert.equal(matchesCohort(block, 'I stopień stac sem. 1 / gr. 2'), true)
-  assert.equal(matchesCohort(block, 'I stopień stac sem. 1 / gr. 3'), false)
+  assert.equal(matchesCohort(block, 'I stopień stac sem. 1 / gr. 4'), true)
+  assert.equal(matchesCohort(block, 'I stopień stac sem. 1 / gr. 2'), false)
+  assert.deepEqual(cohortStudentGroups(block), [1, 4])
   const cal = { ...block, planType: 'niestacjonarne', cohort: 'II stopień niestac sem. 1 CAL / gr. 3' }
   assert.equal(matchesCohort(cal, 'II stopień niestac sem. 1 CY / gr. 1'), true)
   assert.equal(matchesCohort(cal, 'II stopień niestac sem. 1 DS / gr. 1'), false)

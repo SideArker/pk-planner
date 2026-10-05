@@ -80,6 +80,47 @@ export function cohortScopeValue(value: string, includeGroup = true): string {
   return includeGroup && part.group !== null ? `${base} / gr. ${part.group}` : base
 }
 
+export function isFirstDegreeCohort(value: string): boolean {
+  return /(?:^|\s)i stopien (?:nie)?stac\.? sem\./.test(plain(cohortParts(value).base))
+}
+
+export function cohortDisplayLabel(value: string, block?: ScheduleBlock): string {
+  const part = curriculumParts(value)
+  let groupLabel: string | null = null
+  if (block?.nsEnrollment?.kind === 'roster' && block.nsEnrollment.label !== 'W') {
+    groupLabel = `${block.nsEnrollment.label} (${block.nsEnrollment.count} osób)`
+  } else if (block && isFirstDegreeCohort(value) && part.group !== null) {
+    const activity = plain(block.activity)
+    if (block.studentGrouping?.kind === 'mixed_language' || plain(block.subject).startsWith('jezyk obcy')) {
+      groupLabel = `Grupa językowa ${block.studentGrouping?.group || part.group}`
+    } else if (/sem\.?\s*\d+W\d*/i.test(part.base)) {
+      groupLabel = `grupa obieralna ${part.group}`
+    } else if (['c', 'cw', 'cwiczenia', 'ćw'].includes(activity)
+      || (block.planType === 'niestacjonarne' && block.subject === 'Wprowadzenie do studiowania' && block.teacher === 'Grzonka Daniel')) {
+      groupLabel = `C${part.group} (GL${2 * part.group - 1}+GL${2 * part.group})`
+    } else if (['l', 'p', 'w'].includes(activity)) groupLabel = `GL${part.group}`
+    else if (activity === 'wf') groupLabel = `grupa WF ${part.group}`
+  }
+  if (groupLabel) {
+    const base = part.elective ? `${part.curriculum}${part.specialty ? ` ${part.specialty}` : ''} · wybór ${part.elective}` : part.base
+    return `${base} / ${groupLabel}`
+  }
+  if (!part.elective) return value
+  return `${part.curriculum}${part.specialty ? ` ${part.specialty}` : ''} · wybór ${part.elective}${part.group !== null ? ` / gr. ${part.group}` : ''}`
+}
+
+export function cohortDisplayText(block: ScheduleBlock): string {
+  if (block.nsMixedLanguageGroups?.languageGroup) {
+    return `Grupa językowa ${block.groupNo || cohortParts(block.cohort).group} · ${curriculumParts(block.cohort).curriculum} (mieszana — wszystkie specjalności/grupy rocznika)`
+  }
+  if (block.studentGrouping?.kind === 'mixed_language') {
+    const values = blockCohorts(block).map(cohort => cohortScopeValue(cohort, false))
+    return `Grupa językowa ${block.studentGrouping.group} · ${values.join(' + ')} (grupa mieszana)`
+  }
+  const values = blockCohorts(block).map(value => cohortDisplayLabel(value, block))
+  return values.length > 1 ? `${values[0]} · wspólnie z: ${values.slice(1).join(', ')}` : (values[0] || '')
+}
+
 export function blockCohorts(block: ScheduleBlock): string[] {
   return [block.cohort, ...(block.additionalCohorts || [])]
     .filter((value): value is string => Boolean(value))

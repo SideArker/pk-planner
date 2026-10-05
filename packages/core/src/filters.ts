@@ -1,5 +1,5 @@
 import type { Day, PlanType, ScheduleBlock, ScheduleState, ViewMode } from './types'
-import { blockCohorts, cohortParts, cohortScopeValue, curriculumParts, mappedCohortParts, plain,
+import { blockCohorts, cohortDisplayText, cohortParts, cohortScopeValue, curriculumParts, mappedCohortParts, plain,
   reservationTeachers, roomCampus, roomLabel, teacherDisplay } from './utils.ts'
 
 export const ALL = '__all'
@@ -67,7 +67,7 @@ export function matchesEntity(block: ScheduleBlock, viewMode: ViewMode, entity: 
 export function matchesSearch(block: ScheduleBlock, search: string): boolean {
   const needle = search.trim().toLocaleLowerCase('pl')
   if (!needle) return true
-  return [block.subject, teacherDisplay(block), ...reservationTeachers(block), ...blockCohorts(block),
+  return [block.subject, teacherDisplay(block), ...reservationTeachers(block), ...blockCohorts(block), cohortDisplayText(block),
     roomLabel(block.room), block.notes].filter(Boolean).join(' ').toLocaleLowerCase('pl').includes(needle)
 }
 
@@ -90,6 +90,20 @@ export function visibleBlocks(state: ScheduleState, selection: ScheduleSelection
 
 export function weekendKeys(state: ScheduleState): string[] {
   const keys = new Set<string>()
+  if (Array.isArray(state.wishes)) {
+    for (const wish of state.wishes) {
+      if (wish && typeof wish === 'object' && 'payload' in wish) {
+        const payload = wish.payload
+        if (payload && typeof payload === 'object' && 'parttime' in payload) {
+          const parttime = payload.parttime
+          if (parttime && typeof parttime === 'object' && 'weekends' in parttime
+            && parttime.weekends && typeof parttime.weekends === 'object') {
+            Object.keys(parttime.weekends).forEach(key => keys.add(key))
+          }
+        }
+      }
+    }
+  }
   for (const block of state.blocks) {
     for (const key of [...(block.occurrenceWeekends || []), ...(block.allowedWeekends || [])]) keys.add(key)
   }

@@ -69,10 +69,10 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
   const parityLabel =
     block.frequency === 'co_2_tygodnie' || block.teachingWeekParity != null
       ? block.teachingWeekParity === 1
-        ? 'nieparz.'
+        ? 'Tydzień A'
         : block.teachingWeekParity === 0
-          ? 'parz.'
-          : 'co 2 tyg.'
+          ? 'Tydzień B'
+          : 'Co 2 tyg.'
       : null
 
   return (

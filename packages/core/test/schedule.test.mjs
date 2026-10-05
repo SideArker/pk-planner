@@ -4,7 +4,7 @@ import {
   parseSchedulePayload, importedNotices, mappedCohortParts, matchesCohort,
   matchesWeekend, roomCampus, suggestedTimeSlots, visibleBlocks, cohortDisplayText, weekendKeys,
   extractUniqueCohorts, buildSubjectCatalog, resolveUserBlocks, generateIcs, getGoogleCalendarUrl,
-  getCohortHierarchy,
+  getCohortHierarchy, getTeachingWeekInfo, isBlockInWeekParity,
 } from '../src/index.ts'
 
 const block = {
@@ -113,5 +113,37 @@ test('generates ics and google calendar urls', () => {
   assert.match(gCal, /calendar\.google\.com\/calendar\/render/)
   assert.match(gCal, /Algorytmy/)
 })
+
+test('calculates correct teaching week parity A and B starting from 28.09.2026', () => {
+  // 28.09.2026 -> Tydzien 1 (A)
+  const week1 = getTeachingWeekInfo(new Date(2026, 8, 28))
+  assert.equal(week1.weekNumber, 1)
+  assert.equal(week1.parity, 1)
+  assert.equal(week1.parityLabel, 'A')
+
+  // 06.10.2026 -> Tydzien 2 (B)
+  const week2 = getTeachingWeekInfo(new Date(2026, 9, 6))
+  assert.equal(week2.weekNumber, 2)
+  assert.equal(week2.parity, 0)
+  assert.equal(week2.parityLabel, 'B')
+
+  // 12.10.2026 -> Tydzien 3 (A)
+  const week3 = getTeachingWeekInfo(new Date(2026, 9, 12))
+  assert.equal(week3.weekNumber, 3)
+  assert.equal(week3.parity, 1)
+  assert.equal(week3.parityLabel, 'A')
+
+  const oddBlock = { ...block, teachingWeekParity: 1 }
+  const evenBlock = { ...block, teachingWeekParity: 0 }
+  const weeklyBlock = { ...block, teachingWeekParity: null }
+
+  assert.equal(isBlockInWeekParity(oddBlock, 'A'), true)
+  assert.equal(isBlockInWeekParity(oddBlock, 'B'), false)
+  assert.equal(isBlockInWeekParity(evenBlock, 'A'), false)
+  assert.equal(isBlockInWeekParity(evenBlock, 'B'), true)
+  assert.equal(isBlockInWeekParity(weeklyBlock, 'A'), true)
+  assert.equal(isBlockInWeekParity(weeklyBlock, 'B'), true)
+})
+
 
 

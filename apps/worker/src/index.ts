@@ -28,13 +28,41 @@ export default {
       return json({ error: "Method not allowed" }, 405);
     }
 
-    const { pathname } = new URL(request.url);
+    const url = new URL(request.url);
+    const hostname = url.hostname.toLowerCase();
+    const isApiHost = hostname.startsWith("api.");
+    const pathname = url.pathname;
 
-    if (pathname === "/health") {
+    const isHealthEndpoint =
+      pathname === "/health" ||
+      pathname === "/api/health" ||
+      (isApiHost && pathname === "/health");
+
+    const isScheduleEndpoint =
+      pathname === "/api/schedule" ||
+      (isApiHost && (pathname === "/schedule" || pathname === "/schedule/"));
+
+    const isApiRoot =
+      pathname === "/api" ||
+      pathname === "/api/" ||
+      (isApiHost && (pathname === "/" || pathname === ""));
+
+    if (isApiRoot) {
+      return json({
+        ok: true,
+        name: "pk-planner-api",
+        endpoints: {
+          schedule: isApiHost ? "/schedule" : "/api/schedule",
+          health: isApiHost ? "/health" : "/api/health",
+        },
+      });
+    }
+
+    if (isHealthEndpoint) {
       return json({ ok: true });
     }
 
-    if (pathname === "/api/schedule") {
+    if (isScheduleEndpoint) {
       const upstreamUrl =
         env.UPSTREAM_URL ||
         "https://example.com/api/schedule-snapshot.php";

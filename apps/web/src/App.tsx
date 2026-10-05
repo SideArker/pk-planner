@@ -185,7 +185,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-200/80 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-950/50 py-4 text-center text-xs text-zinc-400 dark:text-zinc-500">
-        <p>PK Planer · SideArker</p>
+        <p>PK Planner · SideArker</p>
       </footer>
 
       {/* Onboarding / Cohort Selection Modal */}

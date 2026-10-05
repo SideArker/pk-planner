@@ -42,20 +42,22 @@ Web i mobile mają zależność `@pk-planner/core: workspace:*`. Importuj typy i
 
 ## Worker
 
-`GET /health` zwraca stan Workera. `GET /api/schedule` pobiera JSON z `UPSTREAM_URL` i zwraca go klientowi.
+`GET /health` zwraca stan Workera. `GET /api/schedule` pobiera JSON z `UPSTREAM_URL` i zwraca go klientowi. `GET /api/version` zwraca wersję aplikacji mobilnej z `apps/mobile/app.json`, np. `{ "version": "1.0.0" }`; klient mobilny może porównać ją ze swoją zainstalowaną wersją. Odpowiedź ma `Cache-Control: no-store`.
 
 ### Routing API i obsługa subdomeny (`api.*`)
 
 Worker obsługuje zapytania API w dwóch wariantach:
 1. **Ścieżka na głównej domenie**:
-   - `GET /api/schedule` — zwraca plan zajęć,
-   - `GET /api/health` lub `GET /health` — stan workera,
-   - `GET /api` — katalog endpointów API.
+   - `GET /api/schedule` - zwraca plan zajęć,
+   - `GET /api/health` lub `GET /health` - stan workera,
+   - `GET /api/version` - aktualna wersja aplikacji,
+   - `GET /api` - katalog endpointów API.
 2. **Subdomena z prefiksem `api.`** (np. `api.twojadomena.pl` po podpięciu Custom Domain w Cloudflare):
-   - `GET /schedule` oraz `GET /api/schedule` — zwraca plan zajęć,
-   - `GET /health` oraz `GET /api/health` — stan workera,
-   - `GET /` oraz `GET /api` — katalog endpointów API.
+   - `GET /schedule` oraz `GET /api/schedule` - zwraca plan zajęć,
+   - `GET /version` - aktualna wersja aplikacji,
+   - `GET /health` oraz `GET /api/health` - stan workera,
+   - `GET /` oraz `GET /api` - katalog endpointów API.
 
-> **Uwaga o domenie `workers.dev`**: Darmowa domena `*.workers.dev` (np. `pk-planner.rsowa126.workers.dev`) nie obsługuje wielopoziomowych subdomen (np. `api.pk-planner...`) z powodu braku certyfikatów SSL wildcard na tym poziomie w Cloudflare. Aby korzystać z subdomeny `api.<domena>`, dodaj Custom Domain w Cloudflare Dashboard (**Workers & Pages** → **pk-planner** → **Settings** → **Domains & Routes** → **Add Custom Domain**).
+> **Uwaga o domenie `workers.dev`**: Darmowa domena `*.workers.dev` (np. `pk-planner.rsowa126.workers.dev`) nie obsługuje wielopoziomowych subdomen (np. `api.pk-planner...`) z powodu braku certyfikatów SSL wildcard na tym poziomie w Cloudflare. Aby korzystać z subdomeny `api.<domena>`, dodaj Custom Domain w Cloudflare Dashboard (**Workers & Pages** -> **pk-planner** -> **Settings** -> **Domains & Routes** -> **Add Custom Domain**).
 
 Lokalnie wpisz adres JSON do głównego `.env`; `pnpm dev:worker` ładuje ten plik. Wdrożony Worker wymaga ustawienia `UPSTREAM_URL` w `apps/worker/wrangler.jsonc` albo w ustawieniach Cloudflare. Bez adresu endpoint zwraca `501`. W `apps/worker/src/index.ts` są osobne miejsca na cache, CORS i kolejne endpointy.

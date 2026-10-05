@@ -62,3 +62,16 @@ test('API subdomain prefix (api.*) routing works', async () => {
   assert.equal(unknownRes.status, 404)
   assert.deepEqual(await unknownRes.json(), { error: 'Not found' })
 })
+
+test('Version endpoint returns mobile app version', async () => {
+  const res1 = await worker.fetch(new Request('https://pk-planner.workers.dev/api/version'), mockEnv)
+  assert.equal(res1.status, 200)
+  assert.equal(res1.headers.get('Cache-Control'), 'no-store')
+  const body1 = await res1.json()
+  assert.equal(typeof body1.version, 'string')
+
+  const res2 = await worker.fetch(new Request('https://api.twojadomena.pl/version'), mockEnv)
+  assert.equal(res2.status, 200)
+  const body2 = await res2.json()
+  assert.equal(body2.version, body1.version)
+})

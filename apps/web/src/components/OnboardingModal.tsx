@@ -1,13 +1,26 @@
 import { useMemo, useState } from 'react'
 import {
   buildSubjectCatalog,
-  extractUniqueCohorts,
+  getCohortHierarchy,
+  NOT_APPLICABLE_LABEL,
+  NOT_APPLICABLE_VALUE,
+  type Degree,
+  type FieldOfStudy,
   type PlanType,
   type ScheduleState,
 } from '@pk-planner/core'
-import { ArrowLeft, ArrowRight, Check, CheckCircle2, GraduationCap, Layers, Search } from 'lucide-react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  Brain,
+  CheckCircle2,
+  Code2,
+  EyeOff,
+  GraduationCap,
+  Layers,
+} from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 
 interface OnboardingModalProps {
   state: ScheduleState | null
@@ -38,7 +51,11 @@ export function OnboardingModal({
   isClosable = false,
 }: OnboardingModalProps) {
   const [step, setStep] = useState<1 | 2>(initialCohort ? 2 : 1)
-  const [cohortSearch, setCohortSearch] = useState('')
+
+  // Hierarchy state
+  const [selectedField, setSelectedField] = useState<FieldOfStudy>('Informatyka')
+  const [selectedDegree, setSelectedDegree] = useState<Degree>('I stopień')
+  const [selectedYear, setSelectedYear] = useState<number>(1)
   const [selectedCohort, setSelectedCohort] = useState(initialCohort)
   const [selectedPlanType, setSelectedPlanType] = useState<PlanType>(initialPlanType)
 
@@ -49,18 +66,25 @@ export function OnboardingModal({
     initialSelectedGroups,
   )
 
-  // Extract cohorts from state
-  const availableCohorts = useMemo(() => {
-    if (!state) return []
-    return extractUniqueCohorts(state)
+  // Hierarchy data
+  const hierarchy = useMemo(() => {
+    if (!state) return { fields: { Informatyka: { 'I stopień': {}, 'II stopień': {} }, Cyberpsychologia: { 'I stopień': {}, 'II stopień': {} } }, allNodes: [] }
+    return getCohortHierarchy(state)
   }, [state])
 
-  // Filter cohorts by search
-  const filteredCohorts = useMemo(() => {
-    if (!cohortSearch.trim()) return availableCohorts
-    const q = cohortSearch.toLowerCase().trim()
-    return availableCohorts.filter(c => c.label.toLowerCase().includes(q))
-  }, [availableCohorts, cohortSearch])
+  // Available years for current field & degree
+  const availableYears = useMemo(() => {
+    const yearsMap = hierarchy.fields[selectedField]?.[selectedDegree] || {}
+    return Object.keys(yearsMap)
+      .map(Number)
+      .sort((a, b) => a - b)
+  }, [hierarchy, selectedField, selectedDegree])
+
+  // Cohort nodes for current field, degree & year
+  const currentCohorts = useMemo(() => {
+    const yearsMap = hierarchy.fields[selectedField]?.[selectedDegree] || {}
+    return yearsMap[selectedYear] || []
+  }, [hierarchy, selectedField, selectedDegree, selectedYear])
 
   // Build subject catalog for selected cohort
   const subjectCatalog = useMemo(() => {
@@ -70,7 +94,7 @@ export function OnboardingModal({
 
   if (!isOpen) return null
 
-  const handleCohortSelect = (cohortValue: string, planType: PlanType) => {
+  const handleSelectCohortNode = (cohortValue: string, planType: PlanType) => {
     setSelectedCohort(cohortValue)
     setSelectedPlanType(planType)
 
@@ -133,8 +157,8 @@ export function OnboardingModal({
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 {step === 1
-                  ? 'Krok 1 z 2 · Wybierz grupę główną z planu uczelni'
-                  : `Krok 2 z 2 · ${selectedCohort}`}
+                  ? 'Krok 1 z 2 - Wybierz kierunek, stopień i rok studiów'
+                  : `Krok 2 z 2 - ${selectedCohort.replace(/[—–]/g, '-')}`}
               </p>
             </div>
           </div>
@@ -142,7 +166,7 @@ export function OnboardingModal({
           {isClosable && onClose && (
             <button
               onClick={onClose}
-              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-lg text-sm"
+              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-lg text-sm cursor-pointer"
             >
               Zamknij
             </button>
@@ -152,61 +176,213 @@ export function OnboardingModal({
         {/* Modal Body */}
         <div className="max-h-[68vh] overflow-y-auto p-6">
           {step === 1 ? (
-            <div className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400 z-10" />
-                <Input
-                  type="text"
-                  placeholder="Filtruj np. I stopień stac sem. 1..."
-                  value={cohortSearch}
-                  onChange={e => setCohortSearch(e.target.value)}
-                  className="pl-10 h-10"
-                />
-              </div>
-
-              {availableCohorts.length === 0 ? (
-                <div className="py-12 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                  Ładowanie roczników z planu uczelni...
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[50vh] overflow-y-auto pr-1">
-                  {filteredCohorts.map(cohort => {
-                    const isSelected = selectedCohort === cohort.value
-                    return (
-                      <button
-                        key={cohort.value}
-                        onClick={() => handleCohortSelect(cohort.value, cohort.planType)}
-                        className={`flex items-start justify-between p-3.5 rounded-xl border text-left transition-all ${
-                          isSelected
-                            ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
-                            : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100'
+            <div className="space-y-6">
+              {/* 1. Wybór kierunku (Informatyka vs Cyberpsychologia) */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  1. Kierunek studiów
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedField('Informatyka')
+                      setSelectedDegree('I stopień')
+                      setSelectedYear(1)
+                    }}
+                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectedField === 'Informatyka'
+                        ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                        : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100'
+                    }`}
+                  >
+                    <div className="p-2 rounded-lg bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900 shrink-0">
+                      <Code2 className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Informatyka</div>
+                      <p
+                        className={`text-xs mt-0.5 ${
+                          selectedField === 'Informatyka'
+                            ? 'text-zinc-300 dark:text-zinc-600'
+                            : 'text-zinc-500 dark:text-zinc-400'
                         }`}
                       >
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium leading-snug">{cohort.label}</p>
-                          <span
-                            className={`inline-block text-[10px] px-1.5 py-0.5 rounded font-mono ${
-                              isSelected
-                                ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800'
-                                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400'
-                            }`}
-                          >
-                            {cohort.planType}
-                          </span>
+                        I oraz II stopień studiów (wszystkie roczniki)
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedField('Cyberpsychologia')
+                      setSelectedDegree('I stopień')
+                      setSelectedYear(1)
+                    }}
+                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all cursor-pointer ${
+                      selectedField === 'Cyberpsychologia'
+                        ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                        : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100'
+                    }`}
+                  >
+                    <div className="p-2 rounded-lg bg-zinc-800 text-white dark:bg-zinc-200 dark:text-zinc-900 shrink-0">
+                      <Brain className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-sm">Cyberpsychologia</div>
+                      <p
+                        className={`text-xs mt-0.5 ${
+                          selectedField === 'Cyberpsychologia'
+                            ? 'text-zinc-300 dark:text-zinc-600'
+                            : 'text-zinc-500 dark:text-zinc-400'
+                        }`}
+                      >
+                        I stopień (aktualnie 1. rocznik)
+                      </p>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Wybór stopnia studiów (jeśli Informatyka) */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  2. Stopień studiów
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDegree('I stopień')
+                      setSelectedYear(1)
+                    }}
+                    className={`py-3 px-4 rounded-xl border text-center transition-all cursor-pointer font-medium text-xs sm:text-sm ${
+                      selectedDegree === 'I stopień'
+                        ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                        : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200'
+                    }`}
+                  >
+                    <span>I stopień (Inżynierskie)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={selectedField === 'Cyberpsychologia'}
+                    onClick={() => {
+                      setSelectedDegree('II stopień')
+                      setSelectedYear(1)
+                    }}
+                    className={`py-3 px-4 rounded-xl border text-center transition-all font-medium text-xs sm:text-sm ${
+                      selectedField === 'Cyberpsychologia'
+                        ? 'opacity-40 cursor-not-allowed border-zinc-200 dark:border-zinc-800 text-zinc-400'
+                        : selectedDegree === 'II stopień'
+                          ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-sm cursor-pointer'
+                          : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200 cursor-pointer'
+                    }`}
+                  >
+                    <span>II stopień (Magisterskie)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Wybór roku studiów (obliczany z semestrów: 1/2 -> Rok 1, 3/4 -> Rok 2 itd.) */}
+              <div className="space-y-2.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  3. Rok studiów
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {availableYears.map(yearNum => {
+                    const isYearActive = selectedYear === yearNum
+                    const semLabel =
+                      yearNum === 1
+                        ? 'Semestr 1 / 2'
+                        : yearNum === 2
+                          ? 'Semestr 3 / 4'
+                          : yearNum === 3
+                            ? 'Semestr 5 / 6'
+                            : 'Semestr 7'
+
+                    return (
+                      <button
+                        key={yearNum}
+                        type="button"
+                        onClick={() => setSelectedYear(yearNum)}
+                        className={`p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                          isYearActive
+                            ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                            : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white dark:bg-zinc-950 text-zinc-800 dark:text-zinc-200'
+                        }`}
+                      >
+                        <div className="font-semibold text-sm">Rok {yearNum}</div>
+                        <div
+                          className={`text-[11px] mt-0.5 ${
+                            isYearActive ? 'text-zinc-300 dark:text-zinc-600' : 'text-zinc-400'
+                          }`}
+                        >
+                          {semLabel}
                         </div>
-                        {isSelected && <Check className="h-4 w-4 shrink-0 mt-0.5" />}
                       </button>
                     )
                   })}
                 </div>
-              )}
+              </div>
+
+              {/* 4. Dostępne grupy / specjalności w tym roczniku */}
+              <div className="space-y-2.5 pt-1">
+                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                  4. Wybierz grupę główną / specjalność
+                </label>
+
+                {currentCohorts.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-zinc-400 border border-dashed rounded-xl">
+                    Brak zaplanowanych grup dla tego wyboru.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {currentCohorts.map(c => {
+                      const isSelected = selectedCohort === c.value
+
+                      return (
+                        <button
+                          key={c.value}
+                          type="button"
+                          onClick={() => handleSelectCohortNode(c.value, c.planType)}
+                          className={`flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                            isSelected
+                              ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
+                              : 'border-zinc-200 dark:border-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-600 bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100'
+                          }`}
+                        >
+                          <div>
+                            <div className="font-medium text-xs sm:text-sm">{c.label}</div>
+                            <span
+                              className={`inline-block text-[10px] mt-1 px-1.5 py-0.5 rounded font-mono ${
+                                isSelected
+                                  ? 'bg-zinc-800 text-zinc-200 dark:bg-zinc-200 dark:text-zinc-800'
+                                  : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                              }`}
+                            >
+                              Semestr {c.semester} · {c.planType}
+                            </span>
+                          </div>
+                          <ArrowRight className="h-4 w-4 shrink-0 text-zinc-400" />
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           ) : (
+            /* Krok 2: Dostosowanie przedmiotów */
             <div className="space-y-5">
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                Wybierz które przedmioty masz w planie i do których grup ćwiczeniowych / laboratoryjnych należysz.
-                Możesz to zmienić w każdej chwili.
-              </p>
+              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-950 text-xs text-zinc-600 dark:text-zinc-400">
+                <p>
+                  Dla każdej formy zajęć (wykład, ćwiczenia, laby) wybierz swoją grupę lub wybierz opcję{' '}
+                  <strong className="text-zinc-900 dark:text-zinc-100">&lt;NIE DOTYCZY&gt;</strong> jeśli nie uczestniczysz w tych zajęciach (np. zwolnienie z WF, inny tok).
+                </p>
+              </div>
 
               {subjectCatalog.length === 0 ? (
                 <div className="py-10 text-center text-sm text-zinc-500">
@@ -220,71 +396,120 @@ export function OnboardingModal({
                     return (
                       <div
                         key={item.subject}
-                        className={`rounded-xl border p-4 transition-all ${
+                        className={`rounded-2xl border p-4 transition-all ${
                           isEnabled
-                            ? 'border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/50'
-                            : 'border-zinc-200/50 dark:border-zinc-800/50 opacity-50 bg-transparent'
+                            ? 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs'
+                            : 'border-zinc-200/60 dark:border-zinc-800/60 opacity-60 bg-zinc-50/40 dark:bg-zinc-950/40'
                         }`}
                       >
-                        {/* Subject title & toggle */}
-                        <div className="flex items-center justify-between gap-3 mb-3">
-                          <label className="flex items-center gap-3 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={isEnabled}
-                              onChange={() => toggleSubject(item.subject)}
-                              className="h-4 w-4 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900 dark:border-zinc-700 dark:bg-zinc-900"
-                            />
-                            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        {/* Subject header & custom toggle switch */}
+                        <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-zinc-100 dark:border-zinc-800/60">
+                          <button
+                            type="button"
+                            onClick={() => toggleSubject(item.subject)}
+                            className="flex items-center gap-3 text-left cursor-pointer group"
+                          >
+                            {/* Stylizowany przełącznik zamiast HTML checkboxa */}
+                            <div
+                              className={`h-5 w-9 rounded-full transition-colors relative flex items-center p-0.5 cursor-pointer ${
+                                isEnabled
+                                  ? 'bg-zinc-900 dark:bg-zinc-100'
+                                  : 'bg-zinc-300 dark:bg-zinc-700'
+                              }`}
+                            >
+                              <div
+                                className={`h-4 w-4 rounded-full bg-white dark:bg-zinc-900 transition-transform ${
+                                  isEnabled ? 'translate-x-4' : 'translate-x-0'
+                                }`}
+                              />
+                            </div>
+
+                            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
                               {item.subject}
                             </span>
-                          </label>
-                          <span className="text-xs text-zinc-400">
-                            {item.activities.length}{' '}
-                            {item.activities.length === 1 ? 'forma' : 'formy'} zajęć
-                          </span>
+                          </button>
+
+                          <div className="flex items-center gap-2">
+                            {!isEnabled && (
+                              <Badge variant="outline" className="text-[11px] text-zinc-400">
+                                &lt;NIE DOTYCZY&gt;
+                              </Badge>
+                            )}
+                            <span className="text-xs text-zinc-400">
+                              {item.activities.length}{' '}
+                              {item.activities.length === 1 ? 'forma' : 'formy'}
+                            </span>
+                          </div>
                         </div>
 
-                        {/* Activities & group options */}
+                        {/* Activities rows */}
                         {isEnabled && item.activities.length > 0 && (
-                          <div className="space-y-2.5 pt-1 pl-7">
+                          <div className="space-y-2.5 pl-2 sm:pl-4">
                             {item.activities.map(act => {
                               const selectionKey = `${item.subject}:${act.activity}`
                               const selectedOptionId = selectedGroups[selectionKey]
+                              const isActivityNotApplicable =
+                                selectedOptionId === NOT_APPLICABLE_VALUE ||
+                                selectedOptionId === NOT_APPLICABLE_LABEL
 
                               return (
                                 <div
                                   key={act.activity}
-                                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-lg bg-white dark:bg-zinc-900 p-2.5 border border-zinc-200/80 dark:border-zinc-800 text-xs"
+                                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl p-3 border transition-all text-xs ${
+                                    isActivityNotApplicable
+                                      ? 'bg-zinc-100/70 dark:bg-zinc-950/60 border-dashed border-zinc-300 dark:border-zinc-800 opacity-70'
+                                      : 'bg-zinc-50/70 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800'
+                                  }`}
                                 >
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium text-zinc-800 dark:text-zinc-200 min-w-[85px]">
+                                  <div className="flex items-center gap-2 min-w-[110px]">
+                                    <span className="font-semibold text-zinc-800 dark:text-zinc-200">
                                       {act.activityLabel}:
                                     </span>
+                                    {isActivityNotApplicable && (
+                                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                                        Pomijane
+                                      </span>
+                                    )}
                                   </div>
 
-                                  <div className="flex-1 max-w-sm">
-                                    {act.options.length === 1 ? (
-                                      <div className="text-zinc-600 dark:text-zinc-400 text-xs">
-                                        {act.options[0].group} · {act.options[0].teacher}
-                                        {act.options[0].room ? ` · s. ${act.options[0].room}` : ''}
-                                      </div>
-                                    ) : (
-                                      <select
-                                        value={selectedOptionId || act.options[0]?.id || ''}
-                                        onChange={e =>
-                                          setGroupForActivity(item.subject, act.activity, e.target.value)
-                                        }
-                                        className="w-full rounded-md border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 px-2.5 py-1 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-800"
-                                      >
-                                        {act.options.map(opt => (
-                                          <option key={opt.id} value={opt.id}>
-                                            {opt.group} — {opt.teacher} (
-                                            {opt.day || ''} {opt.room ? `s. ${opt.room}` : ''})
-                                          </option>
-                                        ))}
-                                      </select>
-                                    )}
+                                  <div className="flex-1 flex items-center gap-2 max-w-md w-full">
+                                    <select
+                                      value={selectedOptionId || act.options[0]?.id || ''}
+                                      onChange={e =>
+                                        setGroupForActivity(item.subject, act.activity, e.target.value)
+                                      }
+                                      className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-800 cursor-pointer"
+                                    >
+                                      {act.options.map(opt => (
+                                        <option key={opt.id} value={opt.id}>
+                                          {opt.group} - {opt.teacher} ({opt.day || ''}{' '}
+                                          {opt.room ? `s. ${opt.room}` : ''})
+                                        </option>
+                                      ))}
+                                      {/* Opcja NIE DOTYCZY pod każdymi zajęciami */}
+                                      <option value={NOT_APPLICABLE_VALUE}>
+                                        {NOT_APPLICABLE_LABEL} (Nie uczestniczę)
+                                      </option>
+                                    </select>
+
+                                    <Button
+                                      type="button"
+                                      variant={isActivityNotApplicable ? 'secondary' : 'outline'}
+                                      size="sm"
+                                      onClick={() => {
+                                        const nextValue = isActivityNotApplicable
+                                          ? act.options[0]?.id || ''
+                                          : NOT_APPLICABLE_VALUE
+                                        setGroupForActivity(item.subject, act.activity, nextValue)
+                                      }}
+                                      title="Oznacz tę formę zajęć jako nie dotyczy"
+                                      className="shrink-0 text-[11px] h-7 px-2 cursor-pointer"
+                                    >
+                                      <EyeOff className="h-3 w-3 mr-1" />
+                                      <span>
+                                        {isActivityNotApplicable ? 'Przywróć' : 'Nie dotyczy'}
+                                      </span>
+                                    </Button>
                                   </div>
                                 </div>
                               )
@@ -304,10 +529,11 @@ export function OnboardingModal({
         <div className="border-t border-zinc-100 dark:border-zinc-800 px-6 py-4 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-950/50">
           {step === 2 ? (
             <Button
+              type="button"
               variant="outline"
               size="sm"
               onClick={() => setStep(1)}
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1.5 cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Zmień rocznik</span>
@@ -318,17 +544,19 @@ export function OnboardingModal({
 
           {step === 1 ? (
             <Button
+              type="button"
               onClick={() => setStep(2)}
               disabled={!selectedCohort}
-              className="ml-auto"
+              className="ml-auto cursor-pointer"
             >
               <span>Dalej</span>
               <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
             <Button
+              type="button"
               onClick={handleFinish}
-              className="ml-auto"
+              className="ml-auto cursor-pointer"
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>Zatwierdź i pokaż plan</span>

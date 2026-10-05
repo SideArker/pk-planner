@@ -171,7 +171,7 @@ export function BlockDetailModal({
                     <span>Termin</span>
                   </div>
                   <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                    {block.day} · {startTime}–{endTime}
+                    {block.day} · {startTime} - {endTime}
                   </p>
                   <p className="text-[11px] text-zinc-400">Czas trwania: {block.duration || 90} min</p>
                 </div>
@@ -261,8 +261,7 @@ export function BlockDetailModal({
                           {opt.group} {isCurrent && '✓ (Obecna)'}
                         </div>
                         <div className="text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          {opt.teacher} · {opt.day} {minutesToTime(opt.start)}–
-                          {minutesToTime((opt.start ?? 0) + opt.duration)}
+                          {opt.teacher} · {opt.day} {minutesToTime(opt.start)} - {minutesToTime((opt.start ?? 0) + opt.duration)}
                           {opt.room ? ` · s. ${opt.room}` : ''}
                         </div>
                       </div>

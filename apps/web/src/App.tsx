@@ -6,6 +6,7 @@ import {
   resolveUserBlocks,
 } from '@pk-planner/core'
 import { AlertCircle, Calendar, RefreshCw } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { BlockDetailModal } from './components/BlockDetailModal'
 import { Header } from './components/Header'
 import { OnboardingModal } from './components/OnboardingModal'
@@ -85,13 +86,15 @@ export default function App() {
               <AlertCircle className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
               <span>{error}</span>
             </div>
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => refresh()}
-              className="flex items-center gap-1.5 rounded-lg bg-red-100 dark:bg-red-900/60 px-3 py-1 font-medium hover:bg-red-200 dark:hover:bg-red-900 transition-colors"
+              className="text-red-700 dark:text-red-300 border-red-300 dark:border-red-800"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               <span>Spróbuj ponownie</span>
-            </button>
+            </Button>
           </div>
         )}
 
@@ -115,12 +118,12 @@ export default function App() {
             <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mt-1.5 mb-6">
               Wybierz swój kierunek, semestr i grupy, aby wyświetlić przejrzysty, spersonalizowany plan zajęć.
             </p>
-            <button
+            <Button
+              size="lg"
               onClick={() => setIsOnboardingOpen(true)}
-              className="flex items-center gap-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-6 py-2.5 text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm"
             >
               <span>Wybierz swój rocznik</span>
-            </button>
+            </Button>
           </div>
         ) : currentView === 'schedule' ? (
           /* Schedule Timetable */

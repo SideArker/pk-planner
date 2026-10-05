@@ -6,6 +6,8 @@ import {
   type ScheduleState,
 } from '@pk-planner/core'
 import { ArrowLeft, ArrowRight, Check, CheckCircle2, GraduationCap, Layers, Search } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 interface OnboardingModalProps {
   state: ScheduleState | null
@@ -152,13 +154,13 @@ export function OnboardingModal({
           {step === 1 ? (
             <div className="space-y-4">
               <div className="relative">
-                <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400" />
-                <input
+                <Search className="absolute left-3.5 top-3 h-4 w-4 text-zinc-400 z-10" />
+                <Input
                   type="text"
                   placeholder="Filtruj np. I stopień stac sem. 1..."
                   value={cohortSearch}
                   onChange={e => setCohortSearch(e.target.value)}
-                  className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 px-10 py-2.5 text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100"
+                  className="pl-10 h-10"
                 />
               </div>
 
@@ -301,34 +303,36 @@ export function OnboardingModal({
         {/* Modal Footer */}
         <div className="border-t border-zinc-100 dark:border-zinc-800 px-6 py-4 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-950/50">
           {step === 2 ? (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setStep(1)}
-              className="flex items-center gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2 text-xs sm:text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+              className="flex items-center gap-1.5"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>Zmień rocznik</span>
-            </button>
+            </Button>
           ) : (
             <div />
           )}
 
           {step === 1 ? (
-            <button
+            <Button
               onClick={() => setStep(2)}
               disabled={!selectedCohort}
-              className="flex items-center gap-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 px-4 py-2 text-xs sm:text-sm font-medium text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 transition-colors shadow-xs ml-auto"
+              className="ml-auto"
             >
               <span>Dalej</span>
               <ArrowRight className="h-4 w-4" />
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
               onClick={handleFinish}
-              className="flex items-center gap-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 px-5 py-2 text-xs sm:text-sm font-medium text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-xs ml-auto"
+              className="ml-auto"
             >
               <CheckCircle2 className="h-4 w-4" />
               <span>Zatwierdź i pokaż plan</span>
-            </button>
+            </Button>
           )}
         </div>
       </div>

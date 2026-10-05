@@ -23,8 +23,7 @@ export default function App() {
   const {
     config,
     isConfigured,
-    setCohort,
-    updateSelections,
+    saveAllConfig,
     setSubjectGroup,
     setBlockOverride,
     resetConfig,
@@ -48,8 +47,7 @@ export default function App() {
     selectedSubjects: Record<string, boolean>,
     selectedGroups: Record<string, string>,
   ) => {
-    setCohort(cohort, planType)
-    updateSelections(selectedSubjects, selectedGroups)
+    saveAllConfig(cohort, planType, selectedSubjects, selectedGroups)
     setIsOnboardingOpen(false)
   }
 

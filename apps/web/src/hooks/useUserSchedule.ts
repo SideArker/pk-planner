@@ -24,52 +24,74 @@ export function useUserSchedule() {
     return defaultConfig
   })
 
-  const saveConfig = useCallback((updated: UserScheduleConfig) => {
-    setConfigState(updated)
-    localStorage.setItem(USER_CONFIG_KEY, JSON.stringify(updated))
+  const saveConfig = useCallback((updater: UserScheduleConfig | ((prev: UserScheduleConfig) => UserScheduleConfig)) => {
+    setConfigState(prev => {
+      const updated = typeof updater === 'function' ? updater(prev) : updater
+      try {
+        localStorage.setItem(USER_CONFIG_KEY, JSON.stringify(updated))
+      } catch {
+        // ignore
+      }
+      return updated
+    })
   }, [])
 
+  const saveAllConfig = useCallback((
+    cohort: string,
+    planType: PlanType,
+    selectedSubjects: Record<string, boolean>,
+    selectedGroups: Record<string, string>,
+  ) => {
+    saveConfig(prev => ({
+      cohort,
+      planType,
+      selectedSubjects,
+      selectedGroups,
+      overrides: prev.overrides || {},
+    }))
+  }, [saveConfig])
+
   const setCohort = useCallback((cohort: string, planType: PlanType = 'stacjonarne') => {
-    saveConfig({
+    saveConfig(prev => ({
+      ...prev,
       cohort,
       planType,
       selectedSubjects: {},
       selectedGroups: {},
-      overrides: {},
-    })
+    }))
   }, [saveConfig])
 
   const updateSelections = useCallback((
     selectedSubjects: Record<string, boolean>,
     selectedGroups: Record<string, string>,
   ) => {
-    saveConfig({
-      ...config,
+    saveConfig(prev => ({
+      ...prev,
       selectedSubjects,
       selectedGroups,
-    })
-  }, [config, saveConfig])
+    }))
+  }, [saveConfig])
 
   const setSubjectGroup = useCallback((subject: string, activity: string, chosenGroupOrId: string) => {
     const key = `${subject}:${activity.toLowerCase()}`
-    saveConfig({
-      ...config,
+    saveConfig(prev => ({
+      ...prev,
       selectedGroups: {
-        ...config.selectedGroups,
+        ...prev.selectedGroups,
         [key]: chosenGroupOrId,
       },
-    })
-  }, [config, saveConfig])
+    }))
+  }, [saveConfig])
 
   const setBlockOverride = useCallback((blockId: string, override: BlockOverride) => {
-    saveConfig({
-      ...config,
+    saveConfig(prev => ({
+      ...prev,
       overrides: {
-        ...(config.overrides || {}),
+        ...(prev.overrides || {}),
         [blockId]: override,
       },
-    })
-  }, [config, saveConfig])
+    }))
+  }, [saveConfig])
 
   const resetConfig = useCallback(() => {
     saveConfig(defaultConfig)
@@ -80,6 +102,7 @@ export function useUserSchedule() {
   return {
     config,
     isConfigured,
+    saveAllConfig,
     setCohort,
     updateSelections,
     setSubjectGroup,
@@ -88,3 +111,4 @@ export function useUserSchedule() {
     saveConfig,
   }
 }
+

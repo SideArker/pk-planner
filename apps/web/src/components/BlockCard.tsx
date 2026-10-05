@@ -217,10 +217,11 @@ export function BlockCard({
         <div className="flex items-center gap-1 shrink-0 font-medium text-zinc-700 dark:text-zinc-300">
           <MapPin className="h-3 w-3 text-zinc-400" />
           <span>
-            {room
-              ? `s. ${room}`
-              : block.modality === "online"
-                ? "Online"
+            {String(block.room || "").trim().toUpperCase() === "ONLINE" ||
+            block.modality === "online"
+              ? "Zdalnie"
+              : room
+                ? `s. ${room}`
                 : "Bez sali"}
           </span>
         </div>

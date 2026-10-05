@@ -3,6 +3,7 @@ import {
   type BlockOverride,
   type ScheduleBlock,
   type ScheduleState,
+  DAY_INFO,
   findAlternativeGroups,
   generateIcs,
   getGoogleCalendarUrl,
@@ -194,7 +195,11 @@ export function BlockDetailModal({
                     <span>Lokalizacja</span>
                   </div>
                   <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                    {block.room ? `Sala ${roomLabel(block.room)}` : 'Zdalnie / brak'}
+                    {String(block.room || '').trim().toUpperCase() === 'ONLINE' || block.modality === 'online'
+                      ? 'Zdalnie'
+                      : block.room
+                        ? `Sala ${roomLabel(block.room)}`
+                        : 'Zdalnie / brak'}
                   </p>
                   <p className="text-[11px] text-zinc-400">Kampus: {block.campus || 'PK'}</p>
                 </div>
@@ -272,6 +277,42 @@ export function BlockDetailModal({
                 {alternativeGroups.map(opt => {
                   const isCurrent = opt.id === block.id
 
+                  const isOnline =
+                    opt.room?.trim().toUpperCase() === 'ONLINE' ||
+                    opt.campus?.trim().toLowerCase() === 'zdalnie'
+                  const roomText = isOnline
+                    ? 'zdalnie'
+                    : opt.room
+                      ? `s. ${roomLabel(opt.room)}`
+                      : ''
+                  const parityText =
+                    opt.parity != null
+                      ? opt.parity === 0
+                        ? 'Tydz. A'
+                        : opt.parity === 1
+                          ? 'Tydz. B'
+                          : ''
+                      : ''
+                  const dayName = opt.day && DAY_INFO[opt.day] ? DAY_INFO[opt.day][1] : opt.day || ''
+                  const timeRange =
+                    opt.start != null
+                      ? `${minutesToTime(opt.start)} - ${minutesToTime((opt.start ?? 0) + opt.duration)}`
+                      : ''
+
+                  const details = [
+                    opt.teacher !== 'Nieprzypisany' ? opt.teacher : '',
+                    dayName && timeRange ? `${dayName} ${timeRange}` : '',
+                    parityText,
+                    roomText,
+                  ].filter(Boolean).join(' · ')
+
+                  const groupDisplay =
+                    opt.group === 'Wszyscy' ||
+                    opt.group === opt.cohort ||
+                    /^(?:I{1,2}\s+stopień|Cyberpsychologia)/i.test(opt.group)
+                      ? 'Wszyscy'
+                      : opt.group
+
                   return (
                     <button
                       key={opt.id}
@@ -287,11 +328,10 @@ export function BlockDetailModal({
                     >
                       <div>
                         <div className="font-semibold text-zinc-900 dark:text-zinc-100">
-                          {opt.group} {isCurrent && '✓ (Obecna)'}
+                          {groupDisplay} {isCurrent && '✓ (Obecna)'}
                         </div>
                         <div className="text-zinc-500 dark:text-zinc-400 mt-0.5">
-                          {opt.teacher} · {opt.day} {minutesToTime(opt.start)} - {minutesToTime((opt.start ?? 0) + opt.duration)}
-                          {opt.room ? ` · s. ${opt.room}` : ''}
+                          {details}
                         </div>
                       </div>
                       <span className="text-[11px] text-zinc-400">Przełącz</span>

@@ -3,6 +3,7 @@ import {
   type BlockOverride,
   type PlanType,
   type ScheduleBlock,
+  cohortParts,
   resolveUserBlocks,
 } from '@pk-planner/core'
 import { AlertCircle, Calendar, RefreshCw } from 'lucide-react'
@@ -27,6 +28,7 @@ export default function App() {
     setSubjectGroup,
     setBlockOverride,
     resetConfig,
+    updateSelections,
   } = useUserSchedule()
 
   const [currentView, setCurrentView] = useState<'schedule' | 'search'>('schedule')
@@ -52,6 +54,39 @@ export default function App() {
   }
 
   const handleSwitchGroup = (subject: string, activity: string, chosenOptionId: string) => {
+    const actKey = activity.toLowerCase().trim()
+    const isLabOrProj = ['l', 'lab', 'p', 'proj'].includes(actKey)
+
+    if (isLabOrProj && state) {
+      const chosenBlock = state.blocks.find(b => b.id === chosenOptionId)
+      if (chosenBlock) {
+        const { group: labNum } = cohortParts(chosenBlock.cohort)
+        if (labNum !== null) {
+          const targetExNum = Math.ceil(labNum / 2)
+          // Find matching exercise block for this subject
+          const exBlock = state.blocks.find(b => {
+            if ((b.subject || '').trim() !== subject.trim()) return false
+            const bAct = (b.activity || '').toLowerCase().trim()
+            if (!['c', 'cw', 'cwiczenia', 'ćw'].includes(bAct)) return false
+            const { group: bGr } = cohortParts(b.cohort)
+            return bGr === targetExNum
+          })
+
+          if (exBlock) {
+            updateSelections(
+              { ...config.selectedSubjects, [subject]: true },
+              {
+                ...config.selectedGroups,
+                [`${subject}:${activity}`]: chosenOptionId,
+                [`${subject}:${exBlock.activity?.toLowerCase().trim() || 'c'}`]: exBlock.id,
+              },
+            )
+            return
+          }
+        }
+      }
+    }
+
     setSubjectGroup(subject, activity, chosenOptionId)
   }
 

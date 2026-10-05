@@ -145,7 +145,7 @@ test('calculates correct teaching week parity A and B starting from 28.09.2026',
   assert.equal(isBlockInWeekParity(weeklyBlock, 'B'), true)
 })
 
-test('generates GK/GL groups for semester 3 and correctly prefills subject selections by group', () => {
+test('generates lab groups GL 1..6 for semester 3 and automatically selects corresponding exercise groups', () => {
   const sem3State = {
     blocks: [
       { id: 'bd_w', subject: 'Bazy danych', cohort: 'I stopień stac sem. 3', activity: 'W', planType: 'stacjonarne' },
@@ -164,21 +164,50 @@ test('generates GK/GL groups for semester 3 and correctly prefills subject selec
 
   const { fields } = getCohortHierarchy(sem3State)
   const sem3Nodes = fields.Informatyka['I stopień'][2]
-  assert.equal(sem3Nodes.length, 3)
-  assert.equal(sem3Nodes[0].label, 'GK/GL 1')
-  assert.equal(sem3Nodes[1].label, 'GK/GL 2')
-  assert.equal(sem3Nodes[2].label, 'GK/GL 3')
+  assert.equal(sem3Nodes.length, 6)
+  assert.equal(sem3Nodes[0].label, 'Grupa GL 1')
+  assert.equal(sem3Nodes[0].sublabel, 'Lab GL 1 · Ćwiczenia C1')
+  assert.equal(sem3Nodes[1].label, 'Grupa GL 2')
+  assert.equal(sem3Nodes[1].sublabel, 'Lab GL 2 · Ćwiczenia C1')
+  assert.equal(sem3Nodes[2].label, 'Grupa GL 3')
+  assert.equal(sem3Nodes[2].sublabel, 'Lab GL 3 · Ćwiczenia C2')
+  assert.equal(sem3Nodes[3].label, 'Grupa GL 4')
+  assert.equal(sem3Nodes[3].sublabel, 'Lab GL 4 · Ćwiczenia C2')
+  assert.equal(sem3Nodes[4].label, 'Grupa GL 5')
+  assert.equal(sem3Nodes[4].sublabel, 'Lab GL 5 · Ćwiczenia C3')
+  assert.equal(sem3Nodes[5].label, 'Grupa GL 6')
+  assert.equal(sem3Nodes[5].sublabel, 'Lab GL 6 · Ćwiczenia C3')
 
-  const catalog = buildSubjectCatalog(sem3State, sem3Nodes[1].cohortBase)
+  const catalog = buildSubjectCatalog(sem3State, sem3Nodes[0].cohortBase)
 
-  // Test prefill for GK/GL 2: exercises should be gr. 2, labs should be GL 3 (2*2-1)
+  // GL 1 -> Lab GL 1, Exercise C1
+  const prefilled1 = prefillScheduleSelections(catalog, 1)
+  assert.equal(prefilled1.selectedGroups['Bazy danych:w'], 'bd_w')
+  assert.equal(prefilled1.selectedGroups['Bazy danych:c'], 'bd_c1')
+  assert.equal(prefilled1.selectedGroups['Bazy danych:l'], 'bd_l1')
+
+  // GL 2 -> Lab GL 2, Exercise C1 (ceil(2/2) = 1)
   const prefilled2 = prefillScheduleSelections(catalog, 2)
-  assert.equal(prefilled2.selectedGroups['Bazy danych:w'], 'bd_w')
-  assert.equal(prefilled2.selectedGroups['Bazy danych:c'], 'bd_c2')
-  assert.equal(prefilled2.selectedGroups['Bazy danych:l'], 'bd_l3')
+  assert.equal(prefilled2.selectedGroups['Bazy danych:c'], 'bd_c1')
+  assert.equal(prefilled2.selectedGroups['Bazy danych:l'], 'bd_l2')
 
-  // Test prefill for GK/GL 3: exercises should be gr. 3, labs should be GL 5 (2*3-1)
+  // GL 3 -> Lab GL 3, Exercise C2 (ceil(3/2) = 2)
   const prefilled3 = prefillScheduleSelections(catalog, 3)
-  assert.equal(prefilled3.selectedGroups['Bazy danych:c'], 'bd_c3')
-  assert.equal(prefilled3.selectedGroups['Bazy danych:l'], 'bd_l5')
+  assert.equal(prefilled3.selectedGroups['Bazy danych:c'], 'bd_c2')
+  assert.equal(prefilled3.selectedGroups['Bazy danych:l'], 'bd_l3')
+
+  // GL 4 -> Lab GL 4, Exercise C2 (ceil(4/2) = 2)
+  const prefilled4 = prefillScheduleSelections(catalog, 4)
+  assert.equal(prefilled4.selectedGroups['Bazy danych:c'], 'bd_c2')
+  assert.equal(prefilled4.selectedGroups['Bazy danych:l'], 'bd_l4')
+
+  // GL 5 -> Lab GL 5, Exercise C3 (ceil(5/2) = 3)
+  const prefilled5 = prefillScheduleSelections(catalog, 5)
+  assert.equal(prefilled5.selectedGroups['Bazy danych:c'], 'bd_c3')
+  assert.equal(prefilled5.selectedGroups['Bazy danych:l'], 'bd_l5')
+
+  // GL 6 -> Lab GL 6, Exercise C3 (ceil(6/2) = 3)
+  const prefilled6 = prefillScheduleSelections(catalog, 6)
+  assert.equal(prefilled6.selectedGroups['Bazy danych:c'], 'bd_c3')
+  assert.equal(prefilled6.selectedGroups['Bazy danych:l'], 'bd_l6')
 })

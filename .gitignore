@@ -30,3 +30,5 @@ logs/
 *.p12
 *.pem
 *.mobileprovision
+
+AGENTS.md

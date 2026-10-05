@@ -9,6 +9,7 @@ import {
 } from "@pk-planner/core";
 import { AlertCircle, Calendar, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { AddCustomBlockModal } from "./components/AddCustomBlockModal";
 import { BlockDetailModal } from "./components/BlockDetailModal";
 import { Header } from "./components/Header";
 import { OnboardingModal } from "./components/OnboardingModal";
@@ -28,6 +29,8 @@ export default function App() {
     saveAllConfig,
     setSubjectGroup,
     setBlockOverride,
+    addCustomBlock,
+    removeCustomBlock,
     resetConfig,
     updateSelections,
   } = useUserSchedule();
@@ -40,10 +43,11 @@ export default function App() {
   );
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
 
   // Resolve active schedule blocks based on user's cohort and chosen groups
   const userBlocks = useMemo(() => {
-    if (!state || !config.cohort) return [];
+    if (!state) return [];
     return resolveUserBlocks(state, config);
   }, [state, config]);
 
@@ -177,6 +181,7 @@ export default function App() {
             planType={config.planType}
             onSelectBlock={setSelectedBlock}
             onOpenCustomize={() => setIsOnboardingOpen(true)}
+            onOpenAddCustom={() => setIsAddCustomOpen(true)}
           />
         ) : (
           /* Search view */
@@ -202,6 +207,14 @@ export default function App() {
         isClosable={isConfigured}
       />
 
+      {/* Add Custom Block Modal */}
+      <AddCustomBlockModal
+        isOpen={isAddCustomOpen}
+        onClose={() => setIsAddCustomOpen(false)}
+        onAddBlock={addCustomBlock}
+        planType={config.planType}
+      />
+
       {/* Block Details Modal */}
       <BlockDetailModal
         block={selectedBlock}
@@ -210,6 +223,7 @@ export default function App() {
         onClose={() => setSelectedBlock(null)}
         onSwitchGroup={handleSwitchGroup}
         onSaveOverride={handleSaveOverride}
+        onRemoveCustomBlock={removeCustomBlock}
       />
 
       {/* Settings Modal */}
@@ -224,6 +238,8 @@ export default function App() {
         onSetTheme={setTheme}
         onReset={resetConfig}
         userBlocks={userBlocks}
+        customBlocksCount={config.customBlocks?.length || 0}
+        onOpenAddCustom={() => setIsAddCustomOpen(true)}
       />
     </div>
   );

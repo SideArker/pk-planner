@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState } from "react";
 import {
   type BlockOverride,
   type PlanType,
@@ -6,22 +6,22 @@ import {
   cohortParts,
   exerciseGroupForLab,
   resolveUserBlocks,
-} from '@pk-planner/core'
-import { AlertCircle, Calendar, RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { BlockDetailModal } from './components/BlockDetailModal'
-import { Header } from './components/Header'
-import { OnboardingModal } from './components/OnboardingModal'
-import { ScheduleView } from './components/ScheduleView'
-import { SearchView } from './components/SearchView'
-import { SettingsModal } from './components/SettingsModal'
-import { useScheduleData } from './hooks/useScheduleData'
-import { useTheme } from './hooks/useTheme'
-import { useUserSchedule } from './hooks/useUserSchedule'
+} from "@pk-planner/core";
+import { AlertCircle, Calendar, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { BlockDetailModal } from "./components/BlockDetailModal";
+import { Header } from "./components/Header";
+import { OnboardingModal } from "./components/OnboardingModal";
+import { ScheduleView } from "./components/ScheduleView";
+import { SearchView } from "./components/SearchView";
+import { SettingsModal } from "./components/SettingsModal";
+import { useScheduleData } from "./hooks/useScheduleData";
+import { useTheme } from "./hooks/useTheme";
+import { useUserSchedule } from "./hooks/useUserSchedule";
 
 export default function App() {
-  const { theme, toggleTheme, setTheme } = useTheme()
-  const { state, isLoading, error, lastUpdated, refresh } = useScheduleData()
+  const { theme, toggleTheme, setTheme } = useTheme();
+  const { state, isLoading, error, lastUpdated, refresh } = useScheduleData();
   const {
     config,
     isConfigured,
@@ -30,18 +30,22 @@ export default function App() {
     setBlockOverride,
     resetConfig,
     updateSelections,
-  } = useUserSchedule()
+  } = useUserSchedule();
 
-  const [currentView, setCurrentView] = useState<'schedule' | 'search'>('schedule')
-  const [selectedBlock, setSelectedBlock] = useState<ScheduleBlock | null>(null)
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+  const [currentView, setCurrentView] = useState<"schedule" | "search">(
+    "schedule",
+  );
+  const [selectedBlock, setSelectedBlock] = useState<ScheduleBlock | null>(
+    null,
+  );
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   // Resolve active schedule blocks based on user's cohort and chosen groups
   const userBlocks = useMemo(() => {
-    if (!state || !config.cohort) return []
-    return resolveUserBlocks(state, config)
-  }, [state, config])
+    if (!state || !config.cohort) return [];
+    return resolveUserBlocks(state, config);
+  }, [state, config]);
 
   // Handlers
   const handleSaveOnboarding = (
@@ -50,28 +54,35 @@ export default function App() {
     selectedSubjects: Record<string, boolean>,
     selectedGroups: Record<string, string>,
   ) => {
-    saveAllConfig(cohort, planType, selectedSubjects, selectedGroups)
-    setIsOnboardingOpen(false)
-  }
+    saveAllConfig(cohort, planType, selectedSubjects, selectedGroups);
+    setIsOnboardingOpen(false);
+  };
 
-  const handleSwitchGroup = (subject: string, activity: string, chosenOptionId: string) => {
-    const actKey = activity.toLowerCase().trim()
-    const isLabOrProj = ['l', 'lab', 'p', 'proj'].includes(actKey)
+  const handleSwitchGroup = (
+    subject: string,
+    activity: string,
+    chosenOptionId: string,
+  ) => {
+    const actKey = activity.toLowerCase().trim();
+    const isLabOrProj = ["l", "lab", "p", "proj"].includes(actKey);
 
     if (isLabOrProj && state) {
-      const chosenBlock = state.blocks.find(b => b.id === chosenOptionId)
+      const chosenBlock = state.blocks.find((b) => b.id === chosenOptionId);
       if (chosenBlock) {
-        const { group: labNum } = cohortParts(chosenBlock.cohort)
+        const { group: labNum } = cohortParts(chosenBlock.cohort);
         if (labNum !== null) {
-          const targetExNum = exerciseGroupForLab(chosenBlock.cohort || config.cohort, labNum)
+          const targetExNum = exerciseGroupForLab(
+            chosenBlock.cohort || config.cohort,
+            labNum,
+          );
           // Find matching exercise block for this subject
-          const exBlock = state.blocks.find(b => {
-            if ((b.subject || '').trim() !== subject.trim()) return false
-            const bAct = (b.activity || '').toLowerCase().trim()
-            if (!['c', 'cw', 'cwiczenia', 'ćw'].includes(bAct)) return false
-            const { group: bGr } = cohortParts(b.cohort)
-            return bGr === targetExNum
-          })
+          const exBlock = state.blocks.find((b) => {
+            if ((b.subject || "").trim() !== subject.trim()) return false;
+            const bAct = (b.activity || "").toLowerCase().trim();
+            if (!["c", "cw", "cwiczenia", "ćw"].includes(bAct)) return false;
+            const { group: bGr } = cohortParts(b.cohort);
+            return bGr === targetExNum;
+          });
 
           if (exBlock) {
             updateSelections(
@@ -79,24 +90,25 @@ export default function App() {
               {
                 ...config.selectedGroups,
                 [`${subject}:${activity}`]: chosenOptionId,
-                [`${subject}:${exBlock.activity?.toLowerCase().trim() || 'c'}`]: exBlock.id,
+                [`${subject}:${exBlock.activity?.toLowerCase().trim() || "c"}`]:
+                  exBlock.id,
               },
-            )
-            return
+            );
+            return;
           }
         }
       }
     }
 
-    setSubjectGroup(subject, activity, chosenOptionId)
-  }
+    setSubjectGroup(subject, activity, chosenOptionId);
+  };
 
   const handleSaveOverride = (blockId: string, override: BlockOverride) => {
-    setBlockOverride(blockId, override)
-  }
+    setBlockOverride(blockId, override);
+  };
 
   // Show onboarding if not configured and not loading
-  const showInitialOnboarding = !isConfigured && !isLoading && Boolean(state)
+  const showInitialOnboarding = !isConfigured && !isLoading && Boolean(state);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors">
@@ -150,16 +162,14 @@ export default function App() {
               Witaj w PK Planer!
             </h2>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md mt-1.5 mb-6">
-              Wybierz swój kierunek, semestr i grupy, aby wyświetlić przejrzysty, spersonalizowany plan zajęć.
+              Wybierz swój kierunek, semestr i grupy, aby wyświetlić
+              przejrzysty, spersonalizowany plan zajęć.
             </p>
-            <Button
-              size="lg"
-              onClick={() => setIsOnboardingOpen(true)}
-            >
+            <Button size="lg" onClick={() => setIsOnboardingOpen(true)}>
               <span>Wybierz swój rocznik</span>
             </Button>
           </div>
-        ) : currentView === 'schedule' ? (
+        ) : currentView === "schedule" ? (
           /* Schedule Timetable */
           <ScheduleView
             blocks={userBlocks}
@@ -175,7 +185,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-zinc-200/80 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-950/50 py-4 text-center text-xs text-zinc-400 dark:text-zinc-500">
-        <p>PK Planer · Politechnika Krakowska</p>
+        <p>PK Planer · SideArker</p>
       </footer>
 
       {/* Onboarding / Cohort Selection Modal */}
@@ -215,5 +225,5 @@ export default function App() {
         userBlocks={userBlocks}
       />
     </div>
-  )
+  );
 }

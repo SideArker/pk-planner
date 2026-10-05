@@ -14,6 +14,7 @@ interface BlockCardProps {
   onClick: (block: ScheduleBlock) => void
   isCompact?: boolean
   collisionInfo?: BlockCollisionInfo[]
+  currentParity?: 'A' | 'B'
 }
 
 const ACTIVITY_STYLES: Record<string, { badge: string; border: string; bg: string }> = {
@@ -65,6 +66,7 @@ export function BlockCard({
   onClick,
   isCompact = false,
   collisionInfo = [],
+  currentParity,
 }: BlockCardProps) {
   const actKey = (block.activity || '').toLowerCase().trim()
   const style = ACTIVITY_STYLES[actKey] || DEFAULT_STYLE
@@ -74,6 +76,12 @@ export function BlockCard({
   const teacher = teacherDisplay(block)
   const room = roomLabel(block.room)
   const hasCollision = Boolean(collisionInfo && collisionInfo.length > 0)
+
+  const isCurrentParity =
+    currentParity != null &&
+    block.teachingWeekParity != null &&
+    ((block.teachingWeekParity === 1 && currentParity === 'A') ||
+      (block.teachingWeekParity === 0 && currentParity === 'B'))
 
   const parityLabel =
     block.frequency === 'co_2_tygodnie' || block.teachingWeekParity != null
@@ -102,8 +110,20 @@ export function BlockCard({
             {formatActivityName(block.activity)}
           </Badge>
           {parityLabel && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-              {parityLabel}
+            <span
+              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] ${
+                isCurrentParity
+                  ? 'font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80'
+                  : 'font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+              }`}
+            >
+              {isCurrentParity && (
+                <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+              )}
+              <span>
+                {parityLabel}
+                {isCurrentParity ? ' (bieżący)' : ''}
+              </span>
             </span>
           )}
           {hasCollision && (

@@ -7,7 +7,7 @@ import type {
   SubjectCatalogItem,
   UserScheduleConfig,
 } from './types.ts'
-import { blockCohorts, cohortParts, roomCampus, teacherDisplay } from './utils.ts'
+import { blockCohorts, cohortParts, minutesToTime, roomCampus, teacherDisplay } from './utils.ts'
 
 export const NOT_APPLICABLE_VALUE = '__not_applicable'
 export const NOT_APPLICABLE_LABEL = '<NIE DOTYCZY>'
@@ -131,7 +131,6 @@ export function getCohortHierarchy(state: ScheduleState): {
     const matchingBlocks = state.blocks.filter(b => blockMatchesBaseCohort(b, baseItem.value))
 
     // Analyze group distribution
-    const exerciseGroups = new Set<number>()
     const labGroups = new Set<number>()
     const allGroups = new Set<number>()
 
@@ -142,28 +141,23 @@ export function getCohortHierarchy(state: ScheduleState): {
         const gr = Number(m[1])
         allGroups.add(gr)
         const act = (b.activity || '').toLowerCase().trim()
-        if (['c', 'cw', 'cwiczenia', 'ćw'].includes(act)) {
-          exerciseGroups.add(gr)
-        } else if (['l', 'lab', 'p', 'proj'].includes(act)) {
+        if (['l', 'lab', 'p', 'proj'].includes(act)) {
           labGroups.add(gr)
         }
       }
     }
 
-    const maxEx = exerciseGroups.size > 0 ? Math.max(...exerciseGroups) : 0
-    const maxLab = labGroups.size > 0 ? Math.max(...labGroups) : 0
     const sortedAllGroups = Array.from(allGroups).sort((a, b) => a - b)
 
     const isFirstDegreeInformatyka =
       meta.field === 'Informatyka' &&
       meta.degree === 'I stopień' &&
-      (maxEx >= 2 || maxLab >= 4 || (maxLab > 0 && maxEx > 0 && maxLab > maxEx))
+      labGroups.size > 0
 
     if (isFirstDegreeInformatyka) {
-      // Standard PK WIiT Informatyka I stopien: lab groups GL 1..numLabGroups
-      // Each lab group GL g automatically corresponds to exercise group C Math.ceil(g / 2)
-      const numLabGroups = Math.max(maxLab, maxEx * 2, 6)
-      for (let g = 1; g <= numLabGroups; g++) {
+      // Only offer laboratory/computer groups present in the schedule.
+      // Exercise numbers can also describe language and elective groups.
+      for (const g of [...labGroups].sort((a, b) => a - b)) {
         const exGr = Math.ceil(g / 2)
         const node: CohortHierarchyNode = {
           value: `${baseItem.value} / GL ${g}`,
@@ -558,4 +552,66 @@ export function findAlternativeGroups(
   }
 
   return options.sort((a, b) => a.group.localeCompare(b.group, 'pl', { numeric: true }))
+}
+
+export interface BlockCollisionInfo {
+  conflictingBlockId: string
+  conflictingSubject: string
+  conflictingActivity: string
+  conflictingTime: string
+}
+
+/**
+ * Detects schedule collisions (overlapping blocks on the same day and compatible parity).
+ */
+export function detectScheduleCollisions(
+  blocks: ScheduleBlock[],
+): Map<string, BlockCollisionInfo[]> {
+  const collisions = new Map<string, BlockCollisionInfo[]>()
+
+  for (let i = 0; i < blocks.length; i++) {
+    for (let j = i + 1; j < blocks.length; j++) {
+      const b1 = blocks[i]
+      const b2 = blocks[j]
+
+      if (!b1.day || !b2.day || b1.day !== b2.day) continue
+      if (b1.start == null || b2.start == null) continue
+
+      // Check parity compatibility:
+      // If one is strictly week A (1) and other is week B (0), they alternate weeks and do not collide.
+      const p1 = b1.teachingWeekParity
+      const p2 = b2.teachingWeekParity
+      if (p1 != null && p2 != null && p1 !== p2) {
+        continue
+      }
+
+      const end1 = b1.start + (b1.duration || 90)
+      const end2 = b2.start + (b2.duration || 90)
+
+      if (Math.max(b1.start, b2.start) < Math.min(end1, end2)) {
+        const time1 = `${minutesToTime(b1.start)} - ${minutesToTime(end1)}`
+        const time2 = `${minutesToTime(b2.start)} - ${minutesToTime(end2)}`
+
+        const b1List = collisions.get(b1.id) || []
+        b1List.push({
+          conflictingBlockId: b2.id,
+          conflictingSubject: b2.subject || 'Zajęcia',
+          conflictingActivity: formatActivityName(b2.activity),
+          conflictingTime: time2,
+        })
+        collisions.set(b1.id, b1List)
+
+        const b2List = collisions.get(b2.id) || []
+        b2List.push({
+          conflictingBlockId: b1.id,
+          conflictingSubject: b1.subject || 'Zajęcia',
+          conflictingActivity: formatActivityName(b1.activity),
+          conflictingTime: time1,
+        })
+        collisions.set(b2.id, b2List)
+      }
+    }
+  }
+
+  return collisions
 }

@@ -98,7 +98,7 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
         <div className="flex items-center gap-1 text-[11px] font-mono text-zinc-500 dark:text-zinc-400 shrink-0">
           <Clock className="h-3 w-3" />
           <span>
-            {startTime}–{endTime}
+            {startTime} - {endTime}
           </span>
         </div>
       </div>

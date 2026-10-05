@@ -9,6 +9,9 @@ import type {
 } from './types.ts'
 import { blockCohorts, cohortParts, roomCampus, teacherDisplay } from './utils.ts'
 
+export const NOT_APPLICABLE_VALUE = '__not_applicable'
+export const NOT_APPLICABLE_LABEL = '<NIE DOTYCZY>'
+
 export const ACTIVITY_LABELS: Record<string, string> = {
   w: 'Wykład',
   c: 'Ćwiczenia',
@@ -29,6 +32,47 @@ export function formatActivityName(activity?: string): string {
   return ACTIVITY_LABELS[key] || activity.toUpperCase()
 }
 
+export type FieldOfStudy = 'Informatyka' | 'Cyberpsychologia'
+export type Degree = 'I stopień' | 'II stopień'
+
+export interface CohortHierarchyNode {
+  value: string
+  label: string
+  field: FieldOfStudy
+  degree: Degree
+  year: number
+  semester: number
+  planType: PlanType
+}
+
+export function parseCohortMetadata(
+  cohortString: string,
+  planType: PlanType = 'stacjonarne',
+): CohortHierarchyNode {
+  const norm = cohortString.toLowerCase()
+  const isCyber = norm.includes('cyberpsychologia')
+  const field: FieldOfStudy = isCyber ? 'Cyberpsychologia' : 'Informatyka'
+
+  const isSecond = norm.includes('ii stopien') || norm.includes('ii stopień')
+  const degree: Degree = isSecond ? 'II stopień' : 'I stopień'
+
+  const semMatch = norm.match(/sem\.?\s*(\d+)/i)
+  const semester = semMatch ? Number(semMatch[1]) : 1
+  const year = Math.max(1, Math.ceil(semester / 2))
+
+  const cleanLabel = cohortString.replace(/[—–]/g, '-').trim()
+
+  return {
+    value: cohortString,
+    label: cleanLabel,
+    field,
+    degree,
+    year,
+    semester,
+    planType,
+  }
+}
+
 /**
  * Extracts unique base cohorts (degree + sem) from schedule state.
  */
@@ -47,7 +91,7 @@ export function extractUniqueCohorts(
       if (!map.has(base)) {
         map.set(base, {
           value: base,
-          label: base,
+          label: base.replace(/[—–]/g, '-'),
           planType: block.planType,
         })
       }
@@ -55,6 +99,35 @@ export function extractUniqueCohorts(
   }
 
   return Array.from(map.values()).sort((a, b) => a.label.localeCompare(b.label, 'pl'))
+}
+
+export function getCohortHierarchy(state: ScheduleState): {
+  fields: Record<FieldOfStudy, Record<Degree, Record<number, CohortHierarchyNode[]>>>
+  allNodes: CohortHierarchyNode[]
+} {
+  const baseCohorts = extractUniqueCohorts(state)
+  const allNodes = baseCohorts.map(c => parseCohortMetadata(c.value, c.planType))
+
+  const fields: Record<FieldOfStudy, Record<Degree, Record<number, CohortHierarchyNode[]>>> = {
+    Informatyka: {
+      'I stopień': {},
+      'II stopień': {},
+    },
+    Cyberpsychologia: {
+      'I stopień': {},
+      'II stopień': {},
+    },
+  }
+
+  for (const node of allNodes) {
+    const degMap = fields[node.field][node.degree]
+    if (!degMap[node.year]) {
+      degMap[node.year] = []
+    }
+    degMap[node.year].push(node)
+  }
+
+  return { fields, allNodes }
 }
 
 /**
@@ -155,7 +228,6 @@ export function resolveUserBlocks(
   const cohortBase = config.cohort.toLowerCase().trim()
   const matchingBlocks = state.blocks.filter(b => blockMatchesBaseCohort(b, cohortBase))
 
-  // Group blocks by subject and activity
   const results: ScheduleBlock[] = []
 
   for (const block of matchingBlocks) {
@@ -168,6 +240,15 @@ export function resolveUserBlocks(
     const activityKey = (block.activity || 'INNE').toLowerCase().trim()
     const selectionKey = `${subject}:${activityKey}`
     const chosenGroupOrId = config.selectedGroups?.[selectionKey]
+
+    // If marked as NOT APPLICABLE (<NIE DOTYCZY>)
+    if (
+      chosenGroupOrId === NOT_APPLICABLE_VALUE ||
+      chosenGroupOrId === NOT_APPLICABLE_LABEL ||
+      chosenGroupOrId === '__none'
+    ) {
+      continue
+    }
 
     // If user made an explicit selection for this activity:
     if (chosenGroupOrId) {

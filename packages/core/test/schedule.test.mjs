@@ -4,6 +4,7 @@ import {
   parseSchedulePayload, importedNotices, mappedCohortParts, matchesCohort,
   matchesWeekend, roomCampus, suggestedTimeSlots, visibleBlocks, cohortDisplayText, weekendKeys,
   extractUniqueCohorts, buildSubjectCatalog, resolveUserBlocks, generateIcs, getGoogleCalendarUrl,
+  getCohortHierarchy,
 } from '../src/index.ts'
 
 const block = {
@@ -72,6 +73,34 @@ test('extracts cohorts, catalogs subjects and resolves user blocks', () => {
   })
   assert.equal(resolved.length, 1)
   assert.equal(resolved[0].subject, 'Zaawansowane Algorytmy')
+
+  // Not applicable test
+  const ignored = resolveUserBlocks(state, {
+    cohort: 'I stopień stac sem. 1',
+    planType: 'stacjonarne',
+    selectedSubjects: { Algorytmy: true },
+    selectedGroups: { 'Algorytmy:c': '__not_applicable' },
+  })
+  assert.equal(ignored.length, 0)
+})
+
+test('categorizes cohorts into hierarchy by field, degree and year', () => {
+  const multiState = {
+    blocks: [
+      { id: '1', subject: 'A', cohort: 'I stopień stac sem. 1 / gr. 1', planType: 'stacjonarne' },
+      { id: '2', subject: 'B', cohort: 'I stopień stac sem. 3 / gr. 1', planType: 'stacjonarne' },
+      { id: '3', subject: 'C', cohort: 'Cyberpsychologia - I stopień stac. sem. 1 / gr. 1', planType: 'stacjonarne' },
+      { id: '4', subject: 'D', cohort: 'II stopień stac sem. 2 CY / gr. 1', planType: 'stacjonarne' },
+    ],
+    rooms: [],
+  }
+
+  const { fields, allNodes } = getCohortHierarchy(multiState)
+  assert.equal(allNodes.length, 4)
+  assert.equal(fields.Informatyka['I stopień'][1].length, 1)
+  assert.equal(fields.Informatyka['I stopień'][2].length, 1)
+  assert.equal(fields.Informatyka['II stopień'][1].length, 1)
+  assert.equal(fields.Cyberpsychologia['I stopień'][1].length, 1)
 })
 
 test('generates ics and google calendar urls', () => {
@@ -84,4 +113,5 @@ test('generates ics and google calendar urls', () => {
   assert.match(gCal, /calendar\.google\.com\/calendar\/render/)
   assert.match(gCal, /Algorytmy/)
 })
+
 

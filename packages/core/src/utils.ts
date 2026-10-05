@@ -27,7 +27,7 @@ export function timeToMinutes(value: string): number | null {
 
 export function subjectTitle(block: ScheduleBlock): string {
   const activity = String(block.activity || '').trim().toUpperCase()
-  return activity ? `${block.subject || 'Zajęcia'} — ${activity}` : block.subject || 'Zajęcia'
+  return activity ? `${block.subject || 'Zajęcia'} - ${activity}` : block.subject || 'Zajęcia'
 }
 
 export function roomLabel(value: string | null | undefined): string {
@@ -111,7 +111,7 @@ export function cohortDisplayLabel(value: string, block?: ScheduleBlock): string
 
 export function cohortDisplayText(block: ScheduleBlock): string {
   if (block.nsMixedLanguageGroups?.languageGroup) {
-    return `Grupa językowa ${block.groupNo || cohortParts(block.cohort).group} · ${curriculumParts(block.cohort).curriculum} (mieszana — wszystkie specjalności/grupy rocznika)`
+    return `Grupa językowa ${block.groupNo || cohortParts(block.cohort).group} · ${curriculumParts(block.cohort).curriculum} (mieszana - wszystkie specjalności/grupy rocznika)`
   }
   if (block.studentGrouping?.kind === 'mixed_language') {
     const values = blockCohorts(block).map(cohort => cohortScopeValue(cohort, false))
@@ -149,8 +149,8 @@ export function roomCampus(block: Pick<ScheduleBlock, 'room' | 'modality' | 'cam
 }
 
 export function blockPlacementText(block: ScheduleBlock): string {
-  if (!block.day || block.start == null) return 'Parking — bez ustalonego terminu'
+  if (!block.day || block.start == null) return 'Parking - bez ustalonego terminu'
   const day = block.date || DAY_INFO[block.day]?.[0] || block.day
   const place = block.modality === 'online' ? 'ONLINE' : block.room ? `s. ${roomLabel(block.room)}` : 'bez sali'
-  return `${day} ${minutesToTime(block.start)}–${minutesToTime(block.start + (block.duration || 90))} · ${place}`
+  return `${day} ${minutesToTime(block.start)}-${minutesToTime(block.start + (block.duration || 90))} · ${place}`
 }

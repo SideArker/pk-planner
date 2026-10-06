@@ -60,4 +60,16 @@ Worker obsługuje zapytania API w dwóch wariantach:
 
 > **Uwaga o domenie `workers.dev`**: Darmowa domena `*.workers.dev` (np. `pk-planner.rsowa126.workers.dev`) nie obsługuje wielopoziomowych subdomen (np. `api.pk-planner...`) z powodu braku certyfikatów SSL wildcard na tym poziomie w Cloudflare. Aby korzystać z subdomeny `api.<domena>`, dodaj Custom Domain w Cloudflare Dashboard (**Workers & Pages** -> **pk-planner** -> **Settings** -> **Domains & Routes** -> **Add Custom Domain**).
 
-Lokalnie wpisz adres JSON do głównego `.env`; `pnpm dev:worker` ładuje ten plik. Wdrożony Worker wymaga ustawienia `UPSTREAM_URL` w `apps/worker/wrangler.jsonc` albo w ustawieniach Cloudflare. Bez adresu endpoint zwraca `501`. W `apps/worker/src/index.ts` są osobne miejsca na cache, CORS i kolejne endpointy.
+Lokalnie wpisz adres JSON do głównego `.env`; `pnpm dev:worker` ładuje ten plik. Wdrożony Worker wymaga ustawienia `UPSTREAM_URL` w ustawieniach Cloudflare. Bez adresu endpoint zwraca `500`.
+
+## Powiadomienia mobilne
+
+W ustawieniach aplikacji można osobno włączyć przypomnienia 30 minut przed zajęciami i na ich początku oraz odliczanie czasu zajęć. Android używa FCM HTTP v1 i Workera, który co minutę sprawdza zapisane plany urządzeń. iOS używa lokalnych powiadomień; Android też przechodzi na nie, jeśli FCM nie jest skonfigurowany lub Worker jest niedostępny. Lokalny harmonogram obejmuje najbliższe 14 dni i odnawia się po otwarciu planu. Na iOS odliczanie pokazuje czas przy rozpoczęciu zajęć, bez aktualizacji w tle.
+
+Aby uruchomić FCM na Androidzie:
+
+1. W Firebase dodaj aplikację Android z identyfikatorem `com.sidearker.pkplanner`, pobierz `google-services.json` i ustaw w głównym `.env` zmienną `GOOGLE_SERVICES_JSON` na **ścieżkę** do tego pliku. Przy budowaniu przez EAS ustaw tę samą zmienną w środowisku budowania jako ścieżkę do przesłanego pliku.
+2. W Firebase wygeneruj JSON konta usługi z uprawnieniem do FCM HTTP v1. Pełną zawartość JSON ustaw jako `FCM_SERVICE_ACCOUNT_JSON` w głównym `.env` dla lokalnego Workera, a we wdrożeniu jako sekret Cloudflare: `pnpm --filter worker exec wrangler secret put FCM_SERVICE_ACCOUNT_JSON`. Nie używaj prefiksu `EXPO_PUBLIC_` dla tego sekretu.
+3. Wdróż Workera z `apps/worker/wrangler.jsonc` i zbuduj nową aplikację Android. Konfiguracja tworzy Durable Object dla rejestracji urządzeń oraz uruchamia wysyłkę co minutę. Powiadomienia push nie działają w Expo Go na Androidzie; potrzebny jest build aplikacji.
+
+FCM wysyła odliczanie co 5 minut, aktualizując jedno powiadomienie przez ten sam `tag`. Po zakończeniu zajęć zastępuje je zwykłym powiadomieniem. Opcja `sticky` utrzymuje je na Androidzie, lecz Android 14 i nowsze pozwalają użytkownikowi usunąć większość takich powiadomień, więc nie można zagwarantować całkowitej blokady usuwania.

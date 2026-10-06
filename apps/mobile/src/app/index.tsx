@@ -1,13 +1,16 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
   ActivityIndicator,
+  Animated,
+  Easing,
   FlatList,
+  PanResponder,
   Pressable,
-  RefreshControl,
   StyleSheet,
   Text,
   View,
+  useAnimatedValue,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,7 +19,9 @@ import {
   type Day,
   type PlanType,
   type ScheduleBlock,
+  availableDays,
   detectScheduleCollisions,
+  getTeachingWeekInfo,
   isBlockInWeekParity,
   resolveUserBlocks,
 } from '@pk-planner/core';
@@ -51,7 +56,18 @@ function getInitialToday(days: Day[]): Day {
   return days.includes(current) ? current : days[0] || 'MON';
 }
 
-const WEEK_DAYS: Day[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const PULL_THRESHOLD = 62;
+
+function springPullTo(value: Animated.Value, toValue: number, onComplete?: () => void) {
+  Animated.spring(value, {
+    toValue,
+    speed: 17,
+    bounciness: 6,
+    useNativeDriver: true,
+  }).start(({ finished }) => {
+    if (finished) onComplete?.();
+  });
+}
 
 export default function ScheduleScreen() {
   const { theme, resolvedTheme } = useAppTheme();
@@ -69,12 +85,95 @@ export default function ScheduleScreen() {
     removeCustomBlock,
   } = useUserSchedule();
 
-  const days = WEEK_DAYS;
+  const days = useMemo(() => availableDays(config.planType), [config.planType]);
 
   const [selectedDay, setSelectedDay] = useState<Day>(() => getInitialToday(days));
   const [selectedParity, setSelectedParity] = useState<WeekParityFilter>('ALL');
   const [scheduleView, setScheduleView] = useState<'list' | 'grid'>('list');
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const scrollOffset = useRef(0);
+  const isLoadingRef = useRef(isLoading);
+  const refreshRef = useRef(refresh);
+  const pullOffset = useAnimatedValue(0);
+  const spinnerRotation = useAnimatedValue(0);
+  const pullDistance = useRef(0);
+  const pullRefreshing = useRef(false);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
+  const [pullReady, setPullReady] = useState(false);
+  const weekInfo = getTeachingWeekInfo();
+
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+    refreshRef.current = refresh;
+  }, [isLoading, refresh]);
+
+  useEffect(() => {
+    if (!isPullRefreshing) {
+      spinnerRotation.setValue(0);
+      return;
+    }
+    const animation = Animated.loop(Animated.timing(spinnerRotation, {
+      toValue: 1,
+      duration: 800,
+      easing: Easing.linear,
+      useNativeDriver: true,
+    }));
+    animation.start();
+    return () => animation.stop();
+  }, [isPullRefreshing, spinnerRotation]);
+
+  // The responder reads these refs only when a touch event occurs.
+  // oxlint-disable-next-line react/refs
+  const [panResponder] = useState(() => PanResponder.create({
+    onMoveShouldSetPanResponderCapture: (_, gesture) =>
+      gesture.numberActiveTouches === 1 &&
+      !isLoadingRef.current &&
+      !pullRefreshing.current &&
+      scrollOffset.current <= 1 &&
+      gesture.dy > 8 &&
+      gesture.dy > Math.abs(gesture.dx) * 1.4,
+    onPanResponderGrant: () => pullOffset.stopAnimation(),
+    onPanResponderMove: (_, gesture) => {
+      // The resistance increases as the content approaches its maximum travel.
+      const distance = 112 * (1 - Math.exp(-Math.max(0, gesture.dy) / 140));
+      pullDistance.current = distance;
+      pullOffset.setValue(distance);
+      setPullReady(distance >= PULL_THRESHOLD);
+    },
+    onPanResponderRelease: () => {
+      if (pullDistance.current >= PULL_THRESHOLD && !isLoadingRef.current) {
+        pullRefreshing.current = true;
+        setIsPullRefreshing(true);
+        springPullTo(pullOffset, 68);
+        void refreshRef.current().finally(() => {
+          springPullTo(pullOffset, 0, () => {
+            pullRefreshing.current = false;
+            setIsPullRefreshing(false);
+            setPullReady(false);
+          });
+        });
+      } else {
+        setPullReady(false);
+        springPullTo(pullOffset, 0);
+      }
+      pullDistance.current = 0;
+    },
+    onPanResponderTerminate: () => {
+      pullDistance.current = 0;
+      setPullReady(false);
+      springPullTo(pullOffset, 0);
+    },
+  }));
+
+  const pullSpin = spinnerRotation.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+  const pullTilt = pullOffset.interpolate({
+    inputRange: [0, PULL_THRESHOLD, 112],
+    outputRange: ['0deg', '150deg', '210deg'],
+    extrapolate: 'clamp',
+  });
 
   useFocusEffect(useCallback(() => {
     setSelectedDay(getInitialToday(days));
@@ -237,7 +336,42 @@ export default function ScheduleScreen() {
           </Pressable>
         </View>
       ) : (
-        <View style={styles.flexOne}>
+        <View style={styles.pullViewport}>
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.pullIndicator,
+              {
+                backgroundColor: isDark ? '#27272a' : '#ffffff',
+                borderColor: theme.border,
+                opacity: pullOffset.interpolate({
+                  inputRange: [0, 22, 55],
+                  outputRange: [0, 0.7, 1],
+                  extrapolate: 'clamp',
+                }),
+                transform: [{
+                  translateY: pullOffset.interpolate({
+                    inputRange: [0, 68, 112],
+                    outputRange: [-16, 0, 12],
+                    extrapolate: 'clamp',
+                  }),
+                }],
+              },
+            ]}>
+            <Animated.View style={{ transform: [{ rotate: isPullRefreshing ? pullSpin : pullTilt }] }}>
+              <Ionicons name="refresh" size={17} color={theme.accent} />
+            </Animated.View>
+            <Text style={[styles.pullIndicatorText, { color: theme.text }]}>
+              {isPullRefreshing
+                ? 'Odświeżanie planu…'
+                : pullReady
+                  ? 'Puść, aby odświeżyć'
+                  : 'Pociągnij, aby odświeżyć'}
+            </Text>
+          </Animated.View>
+          <Animated.View
+            style={[styles.flexOne, { transform: [{ translateY: pullOffset }] }]}
+            {...panResponder.panHandlers}>
           {/* Error Banner */}
           {Boolean(error) && (
             <View
@@ -286,6 +420,7 @@ export default function ScheduleScreen() {
             onSelectParity={setSelectedParity}
           />
 
+          <View style={styles.viewRow}>
           <View
             style={[styles.viewToggle, { backgroundColor: isDark ? '#18181b' : '#e2e8f0' }]}
             accessibilityRole="tablist">
@@ -299,7 +434,10 @@ export default function ScheduleScreen() {
                   key={option.id}
                   accessibilityRole="tab"
                   accessibilityState={{ selected }}
-                  onPress={() => setScheduleView(option.id)}
+                  onPress={() => {
+                    scrollOffset.current = 0;
+                    setScheduleView(option.id);
+                  }}
                   style={({ pressed }) => [
                     styles.viewToggleButton,
                     {
@@ -318,6 +456,14 @@ export default function ScheduleScreen() {
               );
             })}
           </View>
+          <View
+            accessibilityLabel={`Aktualny tydzień ${weekInfo.parityLabel}, numer ${weekInfo.weekNumber}`}
+            style={[styles.weekBadge, { backgroundColor: isDark ? '#27272a' : '#e2e8f0' }]}>
+            <Text style={[styles.weekBadgeText, { color: theme.text }]}>
+              Tydzień {weekInfo.parityLabel}
+            </Text>
+          </View>
+          </View>
 
           {scheduleView === 'grid' ? (
             <View style={styles.gridContainer}>
@@ -326,6 +472,7 @@ export default function ScheduleScreen() {
                 planType={config.planType}
                 parityFilter={selectedParity}
                 onSelectBlock={setSelectedBlock}
+                onVerticalScroll={(offset) => { scrollOffset.current = Math.max(0, offset); }}
               />
             </View>
           ) : (
@@ -340,7 +487,12 @@ export default function ScheduleScreen() {
                 data={dayBlocks}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContent}
-                alwaysBounceVertical
+                bounces={false}
+                overScrollMode="never"
+                scrollEventThrottle={16}
+                onScroll={(event) => {
+                  scrollOffset.current = Math.max(0, event.nativeEvent.contentOffset.y);
+                }}
                 onTouchStart={(event) => {
                   touchStart.current = {
                     x: event.nativeEvent.pageX,
@@ -358,17 +510,8 @@ export default function ScheduleScreen() {
                     if (nextIndex >= 0 && nextIndex < days.length) {
                       setSelectedDay(days[nextIndex]);
                     }
-                  } else if (dayBlocks.length === 0 && dy < -90 && !isLoading) {
-                    refresh();
                   }
                 }}
-                refreshControl={
-                  <RefreshControl
-                    refreshing={isLoading}
-                    onRefresh={refresh}
-                    tintColor={theme.accent}
-                  />
-                }
                 renderItem={({ item }) => (
                   <BlockCard
                     block={item}
@@ -387,6 +530,7 @@ export default function ScheduleScreen() {
               />
             </>
           )}
+          </Animated.View>
         </View>
       )}
 
@@ -432,6 +576,26 @@ const styles = StyleSheet.create({
   },
   flexOne: {
     flex: 1,
+  },
+  pullViewport: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+  pullIndicator: {
+    position: 'absolute',
+    top: 13,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 14,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+  },
+  pullIndicatorText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   centerContainer: {
     flex: 1,
@@ -494,11 +658,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     paddingBottom: 24,
   },
-  viewToggle: {
+  viewRow: {
     flexDirection: 'row',
-    alignSelf: 'flex-start',
+    alignItems: 'center',
+    gap: 10,
     marginHorizontal: Spacing.three,
     marginBottom: 4,
+  },
+  viewToggle: {
+    flexDirection: 'row',
     padding: 3,
     borderRadius: 10,
     backgroundColor: '#e2e8f0',
@@ -515,6 +683,15 @@ const styles = StyleSheet.create({
   },
   viewToggleText: {
     fontSize: 12,
+  },
+  weekBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: 9,
+  },
+  weekBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   gridContainer: {
     flex: 1,

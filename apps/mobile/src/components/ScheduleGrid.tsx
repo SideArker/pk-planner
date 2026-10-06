@@ -32,6 +32,7 @@ export interface ScheduleGridProps {
   parityFilter?: ScheduleGridParityFilter;
   currentTime?: Date;
   onSelectBlock: (block: ScheduleBlock) => void;
+  onVerticalScroll?: (offset: number) => void;
 }
 
 interface PositionedBlock {
@@ -100,6 +101,7 @@ export function ScheduleGrid({
   parityFilter = 'ALL',
   currentTime,
   onSelectBlock,
+  onVerticalScroll,
 }: ScheduleGridProps) {
   const { theme, resolvedTheme } = useAppTheme();
   const [tickTime, setTickTime] = useState(() => new Date());
@@ -191,7 +193,14 @@ export function ScheduleGrid({
   }, [indicatorY, layout.startMinute, nowTop, nowDay, nowMinute]);
 
   return (
-    <ScrollView nestedScrollEnabled style={styles.verticalScroll} showsVerticalScrollIndicator>
+    <ScrollView
+      nestedScrollEnabled
+      bounces={false}
+      overScrollMode="never"
+      style={styles.verticalScroll}
+      showsVerticalScrollIndicator
+      scrollEventThrottle={16}
+      onScroll={(event) => onVerticalScroll?.(event.nativeEvent.contentOffset.y)}>
       <View style={styles.gridRow}>
           <View style={{ width: HOUR_WIDTH }}>
             <View style={[styles.hourHeader, { backgroundColor: theme.card, borderColor: theme.border }]}>

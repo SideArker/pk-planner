@@ -5,7 +5,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { getTeachingWeekInfo } from '@pk-planner/core';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
 
@@ -22,7 +21,6 @@ export function WeekParitySelector({
 }: WeekParitySelectorProps) {
   const { theme, resolvedTheme } = useAppTheme();
   const isDark = resolvedTheme === 'dark';
-  const weekInfo = getTeachingWeekInfo();
 
   const options: { id: WeekParityFilter; label: string }[] = [
     { id: 'A', label: 'Tydzień A' },
@@ -72,13 +70,6 @@ export function WeekParitySelector({
           );
         })}
         </View>
-        {weekInfo && (
-          <View
-            accessibilityLabel={`Aktualny tydzień ${weekInfo.parityLabel}, numer ${weekInfo.weekNumber}`}
-            style={[styles.weekBadge, { backgroundColor: isDark ? '#27272a' : '#e2e8f0' }]}>
-            <Text style={[styles.weekBadgeText, { color: theme.text }]}>Teraz {weekInfo.parityLabel}</Text>
-          </View>
-        )}
       </View>
     </View>
   );
@@ -87,21 +78,13 @@ export function WeekParitySelector({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Spacing.three,
+    marginTop: 10,
     marginBottom: 8,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  weekBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 7,
-    borderRadius: 8,
-  },
-  weekBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
   },
   segmentContainer: {
     flexDirection: 'row',

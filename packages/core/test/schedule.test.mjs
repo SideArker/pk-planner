@@ -5,6 +5,7 @@ import {
   matchesWeekend, roomCampus, suggestedTimeSlots, visibleBlocks, cohortDisplayText, weekendKeys,
   extractUniqueCohorts, buildSubjectCatalog, resolveUserBlocks, generateIcs, getGoogleCalendarUrl,
   getCohortHierarchy, getTeachingWeekInfo, isBlockInWeekParity, prefillScheduleSelections,
+  detectScheduleCollisions,
 } from '../src/index.ts'
 
 const block = {
@@ -211,3 +212,31 @@ test('generates lab groups GL 1..6 for semester 3 and automatically selects corr
   assert.equal(prefilled6.selectedGroups['Bazy danych:c'], 'bd_c3')
   assert.equal(prefilled6.selectedGroups['Bazy danych:l'], 'bd_l6')
 })
+
+test('detectScheduleCollisions correctly identifies overlapping classes and respects alternating parity', () => {
+  const c1 = { id: 'c1', subject: 'Matematyka', day: 'MON', start: 555, duration: 90, activity: 'W' }
+  const c2 = { id: 'c2', subject: 'Fizyka', day: 'MON', start: 600, duration: 90, activity: 'C' } // Overlaps with c1 (600 < 645)
+  const c3 = { id: 'c3', subject: 'Informatyka', day: 'MON', start: 765, duration: 90, activity: 'L' } // No overlap with c1 or c2
+
+  // Alternate weeks: Week A vs Week B at same time do NOT collide
+  const c4a = { id: 'c4a', subject: 'WF A', day: 'TUE', start: 450, duration: 90, teachingWeekParity: 1 }
+  const c4b = { id: 'c4b', subject: 'WF B', day: 'TUE', start: 450, duration: 90, teachingWeekParity: 0 }
+
+  // Weekly class at same time as Week A DOES collide with Week A
+  const c4w = { id: 'c4w', subject: 'Lektorat', day: 'TUE', start: 450, duration: 90 }
+
+  const collisions = detectScheduleCollisions([c1, c2, c3, c4a, c4b, c4w])
+
+  assert.equal(collisions.has('c1'), true)
+  assert.equal(collisions.has('c2'), true)
+  assert.equal(collisions.has('c3'), false)
+
+  assert.equal(collisions.get('c1')[0].conflictingBlockId, 'c2')
+  assert.equal(collisions.get('c2')[0].conflictingBlockId, 'c1')
+
+  // c4a collides with c4w, but not c4b
+  assert.equal(collisions.has('c4a'), true)
+  assert.equal(collisions.get('c4a').some(c => c.conflictingBlockId === 'c4b'), false)
+  assert.equal(collisions.get('c4a').some(c => c.conflictingBlockId === 'c4w'), true)
+})
+

@@ -1,17 +1,19 @@
 import {
+  type BlockCollisionInfo,
   type ScheduleBlock,
   formatActivityName,
   minutesToTime,
   roomLabel,
   teacherDisplay,
 } from '@pk-planner/core'
-import { Clock, MapPin, MoreVertical, User } from 'lucide-react'
+import { AlertTriangle, Clock, MapPin, MoreVertical, User } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 
 interface BlockCardProps {
   block: ScheduleBlock
   onClick: (block: ScheduleBlock) => void
   isCompact?: boolean
+  collisionInfo?: BlockCollisionInfo[]
 }
 
 const ACTIVITY_STYLES: Record<string, { badge: string; border: string; bg: string }> = {
@@ -58,7 +60,12 @@ const DEFAULT_STYLE = {
   bg: 'hover:bg-zinc-50/50 dark:hover:bg-zinc-800/30',
 }
 
-export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps) {
+export function BlockCard({
+  block,
+  onClick,
+  isCompact = false,
+  collisionInfo = [],
+}: BlockCardProps) {
   const actKey = (block.activity || '').toLowerCase().trim()
   const style = ACTIVITY_STYLES[actKey] || DEFAULT_STYLE
 
@@ -66,6 +73,7 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
   const endTime = minutesToTime((block.start ?? 0) + (block.duration || 90))
   const teacher = teacherDisplay(block)
   const room = roomLabel(block.room)
+  const hasCollision = Boolean(collisionInfo && collisionInfo.length > 0)
 
   const parityLabel =
     block.frequency === 'co_2_tygodnie' || block.teachingWeekParity != null
@@ -79,7 +87,11 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
   return (
     <button
       onClick={() => onClick(block)}
-      className={`group relative w-full text-left rounded-xl border border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-900/90 p-3 transition-all duration-150 hover:shadow-md border-l-4 ${style.border} ${style.bg} cursor-pointer`}
+      className={`group relative w-full text-left rounded-xl border ${
+        hasCollision
+          ? 'border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/50 bg-amber-50/15 dark:bg-amber-950/20'
+          : 'border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-900/90'
+      } p-3 transition-all duration-150 hover:shadow-md border-l-4 ${style.border} ${style.bg} cursor-pointer`}
     >
       <div className="flex items-start justify-between gap-1.5 mb-1.5">
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -92,6 +104,12 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
           {parityLabel && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
               {parityLabel}
+            </span>
+          )}
+          {hasCollision && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60">
+              <AlertTriangle className="h-2.5 w-2.5" />
+              <span>Kolizja</span>
             </span>
           )}
         </div>
@@ -112,6 +130,16 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
       <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug group-hover:text-zinc-700 dark:group-hover:text-zinc-200">
         {block.subject}
       </h3>
+
+      {hasCollision && !isCompact && (
+        <div className="mt-2 rounded-lg bg-amber-100/70 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 p-1.5 px-2 flex items-start gap-1.5 text-[11px] text-amber-900 dark:text-amber-200">
+          <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          <div className="line-clamp-2">
+            <span className="font-semibold">Nakłada się z:</span>{' '}
+            {collisionInfo.map(c => `${c.conflictingSubject} (${c.conflictingTime})`).join(', ')}
+          </div>
+        </div>
+      )}
 
       <div className="mt-2 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
         {teacher ? (

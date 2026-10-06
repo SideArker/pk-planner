@@ -17,6 +17,7 @@ import {
 
 import { BlockCard } from '@/components/BlockCard';
 import { BlockDetailModal } from '@/components/BlockDetailModal';
+import { EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useScheduleData } from '@/hooks/useScheduleData';
@@ -194,23 +195,15 @@ export default function SearchScreen() {
           />
         )}
         ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons
-              name={query.trim() ? 'search-outline' : 'school-outline'}
-              size={48}
-              color={theme.textSecondary}
-            />
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>
-              {query.trim()
-                ? 'Brak wyników'
-                : 'Wyszukiwarka zajęć PK'}
-            </Text>
-            <Text style={[styles.emptySub, { color: theme.textSecondary }]}>
-              {query.trim()
+          <EmptyState
+            icon={query.trim() ? 'search-outline' : 'school-outline'}
+            title={query.trim() ? 'Brak wyników' : 'Wyszukiwarka zajęć PK'}
+            subtitle={
+              query.trim()
                 ? 'Nie znaleziono zajęć spełniających podane kryteria.'
-                : 'Wpisz nazwisko wykładowcy, numer sali (np. D21) lub nazwę przedmiotu.'}
-            </Text>
-          </View>
+                : 'Wpisz nazwisko wykładowcy, numer sali (np. D21) lub nazwę przedmiotu.'
+            }
+          />
         }
       />
 

@@ -1,6 +1,7 @@
 import '@/global.css';
 
 import { Platform } from 'react-native';
+import { getActivityMetadata, type ActivityColorTheme } from '@pk-planner/core';
 
 export const Colors = {
   light: {
@@ -45,183 +46,13 @@ export const Colors = {
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 
-export interface ActivityStyle {
-  badgeBg: string;
-  badgeText: string;
-  border: string;
-  cardBg: string;
-}
-
-export const ActivityStyles = {
-  light: {
-    w: {
-      badgeBg: '#dbeafe',
-      badgeText: '#1d4ed8',
-      border: '#3b82f6',
-      cardBg: '#ffffff',
-    },
-    c: {
-      badgeBg: '#d1fae5',
-      badgeText: '#047857',
-      border: '#10b981',
-      cardBg: '#ffffff',
-    },
-    cw: {
-      badgeBg: '#d1fae5',
-      badgeText: '#047857',
-      border: '#10b981',
-      cardBg: '#ffffff',
-    },
-    l: {
-      badgeBg: '#fef3c7',
-      badgeText: '#b45309',
-      border: '#f59e0b',
-      cardBg: '#ffffff',
-    },
-    lab: {
-      badgeBg: '#fef3c7',
-      badgeText: '#b45309',
-      border: '#f59e0b',
-      cardBg: '#ffffff',
-    },
-    p: {
-      badgeBg: '#f3e8ff',
-      badgeText: '#7e22ce',
-      border: '#a855f7',
-      cardBg: '#ffffff',
-    },
-    proj: {
-      badgeBg: '#f3e8ff',
-      badgeText: '#7e22ce',
-      border: '#a855f7',
-      cardBg: '#ffffff',
-    },
-    s: {
-      badgeBg: '#ffe4e6',
-      badgeText: '#be123c',
-      border: '#f43f5e',
-      cardBg: '#ffffff',
-    },
-    sem: {
-      badgeBg: '#ffe4e6',
-      badgeText: '#be123c',
-      border: '#f43f5e',
-      cardBg: '#ffffff',
-    },
-    lektorat: {
-      badgeBg: '#cffafe',
-      badgeText: '#0e7490',
-      border: '#06b6d4',
-      cardBg: '#ffffff',
-    },
-    lek: {
-      badgeBg: '#cffafe',
-      badgeText: '#0e7490',
-      border: '#06b6d4',
-      cardBg: '#ffffff',
-    },
-    wf: {
-      badgeBg: '#ffedd5',
-      badgeText: '#c2410c',
-      border: '#f97316',
-      cardBg: '#ffffff',
-    },
-    default: {
-      badgeBg: '#f1f5f9',
-      badgeText: '#334155',
-      border: '#64748b',
-      cardBg: '#ffffff',
-    },
-  },
-  dark: {
-    w: {
-      badgeBg: '#1e3a8a',
-      badgeText: '#93c5fd',
-      border: '#3b82f6',
-      cardBg: '#18181b',
-    },
-    c: {
-      badgeBg: '#064e3b',
-      badgeText: '#6ee7b7',
-      border: '#10b981',
-      cardBg: '#18181b',
-    },
-    cw: {
-      badgeBg: '#064e3b',
-      badgeText: '#6ee7b7',
-      border: '#10b981',
-      cardBg: '#18181b',
-    },
-    l: {
-      badgeBg: '#78350f',
-      badgeText: '#fde68a',
-      border: '#f59e0b',
-      cardBg: '#18181b',
-    },
-    lab: {
-      badgeBg: '#78350f',
-      badgeText: '#fde68a',
-      border: '#f59e0b',
-      cardBg: '#18181b',
-    },
-    p: {
-      badgeBg: '#581c87',
-      badgeText: '#d8b4fe',
-      border: '#a855f7',
-      cardBg: '#18181b',
-    },
-    proj: {
-      badgeBg: '#581c87',
-      badgeText: '#d8b4fe',
-      border: '#a855f7',
-      cardBg: '#18181b',
-    },
-    s: {
-      badgeBg: '#881337',
-      badgeText: '#fda4af',
-      border: '#f43f5e',
-      cardBg: '#18181b',
-    },
-    sem: {
-      badgeBg: '#881337',
-      badgeText: '#fda4af',
-      border: '#f43f5e',
-      cardBg: '#18181b',
-    },
-    lektorat: {
-      badgeBg: '#164e63',
-      badgeText: '#67e8f9',
-      border: '#06b6d4',
-      cardBg: '#18181b',
-    },
-    lek: {
-      badgeBg: '#164e63',
-      badgeText: '#67e8f9',
-      border: '#06b6d4',
-      cardBg: '#18181b',
-    },
-    wf: {
-      badgeBg: '#7c2d12',
-      badgeText: '#fdba74',
-      border: '#f97316',
-      cardBg: '#18181b',
-    },
-    default: {
-      badgeBg: '#27272a',
-      badgeText: '#d4d4d8',
-      border: '#71717a',
-      cardBg: '#18181b',
-    },
-  },
-} as const;
+export type ActivityStyle = ActivityColorTheme;
 
 export function getActivityStyle(
   activity: string | undefined,
   scheme: 'light' | 'dark',
 ): ActivityStyle {
-  const key = (activity || '').toLowerCase().trim();
-  const styles = ActivityStyles[scheme];
-  return (styles as Record<string, ActivityStyle>)[key] || styles.default;
+  return getActivityMetadata(activity)[scheme];
 }
 
 export const Fonts = Platform.select({

@@ -111,11 +111,13 @@ interface HourlyTimelineViewProps {
   days: Day[]
   blocksByDay: Record<Day, ScheduleBlock[]>
   positionedBlocksByDay: Record<Day, PositionedBlock[]>
-  todayDay: Day
+  todayDay: Day | null
   hours: number[]
   collisions: Map<string, BlockCollisionInfo[]>
   currentParityLabel: 'A' | 'B'
   parityFilter: string
+  activeBlockIds?: Set<string>
+  currentTime: Date
   onSelectBlock: (block: ScheduleBlock) => void
 }
 
@@ -128,8 +130,19 @@ export function HourlyTimelineView({
   collisions,
   currentParityLabel,
   parityFilter,
+  activeBlockIds,
+  currentTime,
   onSelectBlock,
 }: HourlyTimelineViewProps) {
+  const now = currentTime
+  const startMinute = (hours.length > 0 ? hours[0] : 7) * 60
+  const endMinute = (hours.length > 0 ? hours[hours.length - 1] + 1 : 22) * 60
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const currentMinutesFloat = currentMinutes + now.getSeconds() / 60
+  const isTimeInRange = currentMinutes >= startMinute && currentMinutes <= endMinute
+  const currentTop = (currentMinutesFloat - startMinute) * (HOUR_HEIGHT / 60)
+  const formattedTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+
   return (
     <div className="hidden lg:flex flex-col gap-2.5">
       {/* Header Row */}
@@ -180,12 +193,12 @@ export function HourlyTimelineView({
       {/* Grid Canvas */}
       <div className="flex gap-2.5 items-stretch relative">
         {/* Left Hours Axis */}
-        <div className="w-20 shrink-0 flex flex-col rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xs py-1 shadow-xs">
+        <div className="w-20 shrink-0 flex flex-col rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xs shadow-xs relative">
           {hours.map(h => (
             <div
               key={h}
               style={{ height: HOUR_HEIGHT }}
-              className="relative flex items-start justify-center pt-1"
+              className="relative flex items-start justify-center pt-1.5"
             >
               <span className="text-xs font-mono font-medium text-zinc-500 dark:text-zinc-400 tracking-tight">
                 {String(h).padStart(2, '0')}:00
@@ -193,6 +206,18 @@ export function HourlyTimelineView({
               <div className="absolute top-1/2 right-0 left-3 border-t border-dotted border-zinc-200/80 dark:border-zinc-800/80" />
             </div>
           ))}
+
+          {/* Current time indicator badge on Left Hours Axis */}
+          {isTimeInRange && (
+            <div
+              className="absolute left-1 right-1 -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center"
+              style={{ top: currentTop }}
+            >
+              <div className="w-full flex items-center justify-center py-0.5 px-1 rounded-md bg-red-600 dark:bg-red-500 text-white font-mono text-[11px] font-bold shadow-md shadow-red-500/20 tracking-tight">
+                {formattedTime}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Day Columns */}
@@ -240,12 +265,44 @@ export function HourlyTimelineView({
                       currentParity={currentParityLabel}
                       dimWhenNotCurrentWeek={parityFilter === 'all'}
                       isCompact={pos.isNarrow || pos.isShort}
+                      isCurrent={activeBlockIds?.has(pos.block.id)}
+                      currentTime={now}
                       className="h-full flex flex-col justify-between overflow-hidden shadow-xs hover:z-30 hover:shadow-md"
                       onClick={onSelectBlock}
                     />
                   </div>
                 ))}
               </div>
+
+              {/* Current Time Bar */}
+              {isTimeInRange && (
+                isToday ? (
+                  <div
+                    className="absolute inset-x-0 -translate-y-1/2 z-20 pointer-events-none flex items-center"
+                    style={{ top: currentTop }}
+                  >
+                    {/* Pulsing live dot */}
+                    <div className="relative -ml-1 flex h-3.5 w-3.5 items-center justify-center shrink-0">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-600 dark:bg-red-500 ring-2 ring-white dark:ring-zinc-900 shadow-sm" />
+                    </div>
+                    {/* Solid vibrant line */}
+                    <div className="h-[2px] flex-1 bg-red-500 dark:bg-red-400 shadow-xs" />
+                    {/* Time chip badge */}
+                    <div className="mr-1.5 ml-1 px-1.5 py-0.5 rounded-md bg-red-600 dark:bg-red-500 text-white font-mono text-[10px] font-bold shadow-sm flex items-center gap-1 shrink-0">
+                      <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
+                      <span>{formattedTime}</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className="absolute inset-x-0 -translate-y-1/2 z-15 pointer-events-none"
+                    style={{ top: currentTop }}
+                  >
+                    <div className="border-t border-dashed border-red-400/40 dark:border-red-500/30" />
+                  </div>
+                )
+              )}
             </div>
           )
         })}

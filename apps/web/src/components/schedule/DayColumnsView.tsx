@@ -9,10 +9,12 @@ import { BlockCard } from '../BlockCard'
 interface DayColumnsViewProps {
   days: Day[]
   blocksByDay: Record<Day, ScheduleBlock[]>
-  todayDay: Day
+  todayDay: Day | null
   collisions: Map<string, BlockCollisionInfo[]>
   currentParityLabel: 'A' | 'B'
   parityFilter: string
+  activeBlockIds?: Set<string>
+  currentTime: Date
   onSelectBlock: (block: ScheduleBlock) => void
 }
 
@@ -23,6 +25,8 @@ export function DayColumnsView({
   collisions,
   currentParityLabel,
   parityFilter,
+  activeBlockIds,
+  currentTime,
   onSelectBlock,
 }: DayColumnsViewProps) {
   return (
@@ -76,6 +80,8 @@ export function DayColumnsView({
                     collisionInfo={collisions.get(block.id)}
                     currentParity={currentParityLabel}
                     dimWhenNotCurrentWeek={parityFilter === 'all'}
+                    isCurrent={activeBlockIds?.has(block.id)}
+                    currentTime={currentTime}
                     onClick={onSelectBlock}
                   />
                 ))}

@@ -16,6 +16,8 @@ interface BlockCardProps {
   collisionInfo?: BlockCollisionInfo[];
   currentParity?: "A" | "B";
   dimWhenNotCurrentWeek?: boolean;
+  isCurrent?: boolean;
+  currentTime?: Date;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -100,6 +102,8 @@ export function BlockCard({
   collisionInfo = [],
   currentParity,
   dimWhenNotCurrentWeek = false,
+  isCurrent = false,
+  currentTime,
   className = "",
   style: styleProp,
 }: BlockCardProps) {
@@ -111,6 +115,19 @@ export function BlockCard({
   const teacher = teacherDisplay(block);
   const room = roomLabel(block.room);
   const hasCollision = Boolean(collisionInfo && collisionInfo.length > 0);
+
+  const currentMinutes = currentTime
+    ? currentTime.getHours() * 60 + currentTime.getMinutes()
+    : null;
+  const blockStart = block.start ?? 0;
+  const duration = block.duration || 90;
+  const elapsed = currentMinutes != null ? currentMinutes - blockStart : null;
+  const remainingMinutes =
+    elapsed != null ? Math.max(0, duration - elapsed) : null;
+  const progressPercent =
+    elapsed != null && duration > 0
+      ? Math.min(100, Math.max(0, Math.round((elapsed / duration) * 100)))
+      : null;
 
   const isCurrentParity =
     currentParity != null &&
@@ -139,12 +156,23 @@ export function BlockCard({
       className={`group relative w-full text-left rounded-xl border ${
         hasCollision
           ? "border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/50 bg-amber-50/15 dark:bg-amber-950/20"
-          : "border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-900/90"
-      } ${isCompact ? "p-2" : "p-3"} transition-all duration-150 hover:shadow-md border-l-4 ${style.border} ${style.bg} cursor-pointer ${isOtherWeek ? 'opacity-60 grayscale-[35%]' : ''} ${className}`}
+          : isCurrent
+            ? "border-emerald-500/80 dark:border-emerald-400/80 ring-2 ring-emerald-500/80 dark:ring-emerald-400/80 bg-emerald-50/30 dark:bg-emerald-950/25 shadow-md shadow-emerald-500/10"
+            : "border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-900/90"
+      } ${isCompact ? "p-2" : "p-3"} transition-all duration-150 hover:shadow-md border-l-4 ${isCurrent ? "border-l-emerald-500 dark:border-l-emerald-400" : style.border} ${style.bg} cursor-pointer ${isOtherWeek ? 'opacity-60 grayscale-[35%]' : ''} ${className}`}
     >
       <div>
         <div className="flex items-start justify-between gap-1.5 mb-1">
           <div className="flex items-center gap-1.5 flex-wrap">
+            {isCurrent && (
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600 text-white dark:bg-emerald-500 shadow-xs">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                  <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-white" />
+                </span>
+                <span>{isCompact ? "Teraz" : "Trwa teraz"}</span>
+              </span>
+            )}
             <Badge
               variant="outline"
               className={`text-[11px] font-semibold px-1.5 py-0.5 ${style.badge}`}
@@ -182,8 +210,16 @@ export function BlockCard({
           </div>
 
           <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex items-center gap-1 text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
-              <Clock className="h-3 w-3" />
+            <div
+              className={`flex items-center gap-1 text-[11px] font-mono ${
+                isCurrent
+                  ? "text-emerald-700 dark:text-emerald-300 font-bold"
+                  : "text-zinc-500 dark:text-zinc-400"
+              }`}
+            >
+              <Clock
+                className={`h-3 w-3 ${isCurrent ? "text-emerald-600 dark:text-emerald-400" : ""}`}
+              />
               <span>
                 {startTime} - {endTime}
               </span>
@@ -197,6 +233,24 @@ export function BlockCard({
         <h3 className={`font-semibold ${isCompact ? "text-xs" : "text-sm"} text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug group-hover:text-zinc-700 dark:group-hover:text-zinc-200`}>
           {block.subject}
         </h3>
+
+        {isCurrent && !isCompact && progressPercent != null && (
+          <div className="mt-2 pt-1 border-t border-emerald-200/60 dark:border-emerald-800/40 space-y-1">
+            <div className="flex items-center justify-between text-[10px] text-emerald-700 dark:text-emerald-300 font-medium">
+              <span className="flex items-center gap-1 font-semibold">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Zajęcia trwają
+              </span>
+              <span>pozostało {remainingMinutes} min</span>
+            </div>
+            <div className="h-1 w-full bg-emerald-100 dark:bg-emerald-950/60 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-emerald-500 dark:bg-emerald-400 rounded-full transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {hasCollision && !isCompact && (
           <div className="mt-2 rounded-lg bg-amber-100/70 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 p-1.5 px-2 flex items-start gap-1.5 text-[11px] text-amber-900 dark:text-amber-200">

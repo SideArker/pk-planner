@@ -1,14 +1,19 @@
 import mobileAppConfig from "../../mobile/app.json" with { type: "json" };
+import { parseRegistration, NotificationStore } from './notificationStore.ts';
+
+export { NotificationStore };
 
 interface Env {
   UPSTREAM_URL: string;
+  FCM_SERVICE_ACCOUNT_JSON?: string;
+  NOTIFICATIONS: DurableObjectNamespace;
 }
 
 const mobileAppVersion = mobileAppConfig.expo.version;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Methods": "GET, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
@@ -29,14 +34,44 @@ export default {
       return new Response(null, { status: 204, headers: corsHeaders });
     }
 
-    if (request.method !== "GET") {
-      return json({ error: "Method not allowed" }, 405);
-    }
-
     const url = new URL(request.url);
     const hostname = url.hostname.toLowerCase();
     const isApiHost = hostname.startsWith("api.");
     const pathname = url.pathname;
+    const notificationPath = pathname.match(/^\/(?:api\/)?notifications\/([0-9a-f-]{36})$/i);
+    if (notificationPath && (pathname.startsWith('/api/') || isApiHost)) {
+      if (!['PUT', 'DELETE'].includes(request.method)) {
+        return json({ error: 'Method not allowed' }, 405);
+      }
+      if (!env.FCM_SERVICE_ACCOUNT_JSON || !env.NOTIFICATIONS) {
+        return json({ error: 'FCM is not configured' }, 503);
+      }
+      const id = notificationPath[1];
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
+        return json({ error: 'Invalid installation ID' }, 400);
+      }
+      let registration;
+      if (request.method === 'PUT') {
+        const raw = await request.text();
+        if (raw.length > 120_000) return json({ error: 'Payload too large' }, 413);
+        try {
+          registration = parseRegistration(JSON.parse(raw));
+        } catch {
+          return json({ error: 'Invalid JSON' }, 400);
+        }
+        if (!registration) return json({ error: 'Invalid registration' }, 400);
+      }
+      const stub = env.NOTIFICATIONS.getByName('all-devices');
+      const response = await stub.fetch(new Request(`https://notification-store/${id}`, {
+        method: request.method,
+        body: registration ? JSON.stringify(registration) : undefined,
+      }));
+      return json(await response.json(), response.status);
+    }
+
+    if (request.method !== "GET") {
+      return json({ error: "Method not allowed" }, 405);
+    }
 
     const isHealthEndpoint =
       pathname === "/health" ||
@@ -64,6 +99,7 @@ export default {
           schedule: isApiHost ? "/schedule" : "/api/schedule",
           version: isApiHost ? "/version" : "/api/version",
           health: isApiHost ? "/health" : "/api/health",
+          notifications: isApiHost ? '/notifications/:installationId' : '/api/notifications/:installationId',
         },
       });
     }
@@ -129,7 +165,12 @@ export default {
       }
     }
 
-    // Kolejne endpointy API dodaj tutaj.
     return json({ error: "Not found" }, 404);
+  },
+  async scheduled(controller, env): Promise<void> {
+    if (!env.FCM_SERVICE_ACCOUNT_JSON) return;
+    const stub = env.NOTIFICATIONS.getByName('all-devices');
+    const result = await stub.fetch(new Request(`https://notification-store/tick?at=${controller.scheduledTime}`));
+    if (!result.ok) console.error(`Notification tick failed: ${result.status}`);
   },
 } satisfies ExportedHandler<Env>;

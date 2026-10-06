@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View, useAnimatedValue } from 'react-native';
 import {
   type Day,
   type PlanType,
@@ -105,8 +105,16 @@ export function ScheduleGrid({
   const [tickTime, setTickTime] = useState(() => new Date());
   useEffect(() => {
     if (currentTime) return;
-    const interval = setInterval(() => setTickTime(new Date()), 30_000);
-    return () => clearInterval(interval);
+    let timer: ReturnType<typeof setTimeout>;
+    const scheduleNextMinute = () => {
+      const now = new Date();
+      timer = setTimeout(() => {
+        setTickTime(new Date());
+        scheduleNextMinute();
+      }, 60_000 - now.getSeconds() * 1000 - now.getMilliseconds());
+    };
+    scheduleNextMinute();
+    return () => clearTimeout(timer);
   }, [currentTime]);
   const now = currentTime ?? tickTime;
   const currentParity = getTeachingWeekInfo(now).parityLabel;
@@ -153,9 +161,34 @@ export function ScheduleGrid({
     };
   }, [blocks, planType, parityFilter]);
 
-  const nowMinute = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-  const showNow = nowMinute >= layout.startMinute && nowMinute <= layout.endMinute;
+  const nowMinute = now.getHours() * 60 + now.getMinutes();
+  const nowDay = now.toDateString();
+  const showNow = nowMinute >= layout.startMinute && nowMinute < layout.endMinute;
   const nowTop = (nowMinute - layout.startMinute) * HOUR_HEIGHT / 60;
+  const indicatorY = useAnimatedValue(nowTop);
+  const previousPosition = useRef({
+    day: nowDay,
+    startMinute: layout.startMinute,
+    minute: nowMinute,
+  });
+
+  useEffect(() => {
+    if (previousPosition.current.day !== nowDay ||
+        previousPosition.current.startMinute !== layout.startMinute ||
+        Math.abs(previousPosition.current.minute - nowMinute) > 1) {
+      indicatorY.setValue(nowTop);
+    } else {
+      const animation = Animated.timing(indicatorY, {
+        toValue: nowTop,
+        duration: 900,
+        useNativeDriver: true,
+      });
+      animation.start();
+      previousPosition.current = { day: nowDay, startMinute: layout.startMinute, minute: nowMinute };
+      return () => animation.stop();
+    }
+    previousPosition.current = { day: nowDay, startMinute: layout.startMinute, minute: nowMinute };
+  }, [indicatorY, layout.startMinute, nowTop, nowDay, nowMinute]);
 
   return (
     <ScrollView nestedScrollEnabled style={styles.verticalScroll} showsVerticalScrollIndicator>
@@ -172,10 +205,15 @@ export function ScheduleGrid({
                   </Text>
                 </View>
               ))}
-              {showNow && today && layout.days.includes(today) && (
-                <View style={[styles.currentTimeBadge, { top: nowTop - 9, backgroundColor: theme.destructive }]}>
-                  <Text style={styles.currentTimeText}>{minutesToTime(Math.floor(nowMinute))}</Text>
-                </View>
+              {showNow && (
+                <Animated.View
+                  pointerEvents="none"
+                  style={[styles.currentTimeBadge, {
+                    backgroundColor: theme.destructive,
+                    transform: [{ translateY: indicatorY }],
+                  }]}>
+                  <Text style={styles.currentTimeText}>{minutesToTime(nowMinute)}</Text>
+                </Animated.View>
               )}
             </View>
           </View>
@@ -272,8 +310,20 @@ export function ScheduleGrid({
                     );
                   })}
 
-                  {showNow && isToday && (
-                    <View pointerEvents="none" style={[styles.currentTimeLine, { top: nowTop, backgroundColor: theme.destructive }]} />
+                  {showNow && (
+                    <Animated.View
+                      pointerEvents="none"
+                      style={[styles.currentTimeLine, { transform: [{ translateY: indicatorY }] }]}>
+                      {isToday && <View style={[styles.currentTimeDot, { backgroundColor: theme.destructive }]} />}
+                      <View style={[
+                        styles.currentTimeStroke,
+                        {
+                          backgroundColor: isToday ? theme.destructive : 'transparent',
+                          borderColor: theme.destructive,
+                          opacity: isToday ? 1 : 0.4,
+                        },
+                      ]} />
+                    </Animated.View>
                   )}
                 </View>
               </View>
@@ -341,6 +391,7 @@ const styles = StyleSheet.create({
   blockDetails: { fontSize: 9, marginTop: 3 },
   currentTimeBadge: {
     position: 'absolute',
+    top: -9,
     left: 2,
     right: 2,
     borderRadius: 4,
@@ -348,5 +399,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   currentTimeText: { color: '#ffffff', fontSize: 9, fontWeight: '700' },
-  currentTimeLine: { position: 'absolute', left: 0, right: 0, height: 2 },
+  currentTimeLine: {
+    position: 'absolute',
+    top: -4,
+    left: 0,
+    right: 0,
+    height: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  currentTimeDot: { width: 8, height: 8, borderRadius: 4 },
+  currentTimeStroke: { flex: 1, height: 2, borderTopWidth: 1, borderStyle: 'dashed' },
 });

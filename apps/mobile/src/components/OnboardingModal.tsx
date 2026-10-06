@@ -18,7 +18,6 @@ import {
   formatActivityName,
   minutesToTime,
   roomLabel,
-  NOT_APPLICABLE_VALUE,
   type CohortHierarchyNode,
   type Degree,
   type FieldOfStudy,

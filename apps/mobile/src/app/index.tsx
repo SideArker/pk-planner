@@ -193,6 +193,27 @@ export default function ScheduleScreen() {
         </View>
       ) : (
         <View style={styles.flexOne}>
+          {/* Error Banner */}
+          {Boolean(error) && (
+            <View
+              style={[
+                styles.collisionAlert,
+                {
+                  backgroundColor: isDark ? '#450a0a' : '#fee2e2',
+                  borderColor: theme.destructive,
+                },
+              ]}>
+              <Ionicons
+                name="alert-circle-outline"
+                size={18}
+                color={theme.destructive}
+              />
+              <Text style={[styles.collisionAlertText, { color: theme.destructive, flex: 1 }]}>
+                {error}
+              </Text>
+            </View>
+          )}
+
           {/* Collisions Alert Banner if collisions exist */}
           {collisions.size > 0 && (
             <View

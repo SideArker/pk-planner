@@ -1,0 +1,182 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+import type { ScheduleBlock } from '@pk-planner/core';
+import { nextClassOccurrences } from './notificationSchedule';
+
+export interface NotificationPreferences {
+  reminders: boolean;
+  countdown: boolean;
+}
+
+const PREFERENCES_KEY = 'pk_planner_notification_preferences';
+const INSTALLATION_KEY = 'pk_planner_notification_installation';
+const LOCAL_IDS_KEY = 'pk_planner_notification_ids';
+const API_URL = (process.env.EXPO_PUBLIC_API_URL ||
+  'https://pk-planner.rsowa126.workers.dev/api/schedule').replace(/\/schedule\/?$/, '');
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+export async function loadNotificationPreferences(): Promise<NotificationPreferences> {
+  try {
+    const value = await AsyncStorage.getItem(PREFERENCES_KEY);
+    if (value) {
+      const parsed = JSON.parse(value);
+      return { reminders: parsed.reminders === true, countdown: parsed.countdown === true };
+    }
+  } catch {
+    // A missing or invalid preference means notifications are off.
+  }
+  return { reminders: false, countdown: false };
+}
+
+export async function saveNotificationPreferences(value: NotificationPreferences): Promise<void> {
+  await AsyncStorage.setItem(PREFERENCES_KEY, JSON.stringify(value));
+}
+
+async function installationId(): Promise<string> {
+  const stored = await AsyncStorage.getItem(INSTALLATION_KEY);
+  if (stored) return stored;
+  const id = Crypto.randomUUID();
+  await AsyncStorage.setItem(INSTALLATION_KEY, id);
+  return id;
+}
+
+async function clearLocalNotifications(): Promise<void> {
+  const saved = await AsyncStorage.getItem(LOCAL_IDS_KEY);
+  const ids: string[] = saved ? JSON.parse(saved) : [];
+  await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => {})));
+  await AsyncStorage.removeItem(LOCAL_IDS_KEY);
+}
+
+async function createChannels(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  await Notifications.setNotificationChannelAsync('classes', {
+    name: 'Zajęcia',
+    importance: Notifications.AndroidImportance.HIGH,
+  });
+  await Notifications.setNotificationChannelAsync('countdown', {
+    name: 'Odliczanie zajęć',
+    importance: Notifications.AndroidImportance.LOW,
+  });
+}
+
+async function scheduleLocally(
+  blocks: ScheduleBlock[],
+  preferences: NotificationPreferences,
+): Promise<void> {
+  const now = new Date();
+  const requests: Array<{
+    date: Date;
+    title: string;
+    body: string;
+    sticky: boolean;
+    channelId: string;
+  }> = [];
+  for (const occurrence of nextClassOccurrences(blocks, now)) {
+    const { block, startsAt, endsAt } = occurrence;
+    const title = block.subject || 'Zajęcia';
+    if (preferences.reminders) {
+      requests.push({
+        date: new Date(startsAt.getTime() - 30 * 60_000),
+        title: `Za 30 minut: ${title}`,
+        body: `Początek o ${startsAt.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}`,
+        sticky: false,
+        channelId: 'classes',
+      });
+    }
+    if (preferences.reminders || preferences.countdown) {
+      requests.push({
+        date: startsAt,
+        title: preferences.countdown ? `Trwają zajęcia: ${title}` : `Zaczynają się: ${title}`,
+        body: preferences.countdown
+          ? `Do końca ${Math.ceil((endsAt.getTime() - startsAt.getTime()) / 60_000)} min`
+          : 'Zajęcia właśnie się rozpoczynają.',
+        sticky: false,
+        channelId: preferences.countdown ? 'countdown' : 'classes',
+      });
+    }
+  }
+  requests.sort((a, b) => a.date.getTime() - b.date.getTime());
+  const ids: string[] = [];
+  for (const request of requests.filter((item) => item.date > now).slice(0, 60)) {
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: request.title,
+        body: request.body,
+        sticky: request.sticky,
+        data: { pkPlanner: true },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: request.date,
+        channelId: request.channelId,
+      },
+    });
+    ids.push(id);
+  }
+  await AsyncStorage.setItem(LOCAL_IDS_KEY, JSON.stringify(ids));
+}
+
+export async function syncNotifications(
+  blocks: ScheduleBlock[],
+  preferences: NotificationPreferences,
+): Promise<'off' | 'fcm' | 'local' | 'permission-denied'> {
+  if (Platform.OS === 'web') return 'off';
+  const id = await installationId();
+  await clearLocalNotifications();
+  if (!preferences.reminders && !preferences.countdown) {
+    await fetch(`${API_URL}/notifications/${id}`, { method: 'DELETE' }).catch(() => {});
+    return 'off';
+  }
+
+  await createChannels();
+  const existing = await Notifications.getPermissionsAsync();
+  const permission = existing.granted ? existing : await Notifications.requestPermissionsAsync();
+  if (!permission.granted) {
+    await fetch(`${API_URL}/notifications/${id}`, { method: 'DELETE' }).catch(() => {});
+    return 'permission-denied';
+  }
+
+  if (Platform.OS === 'android') {
+    try {
+      const token = await Notifications.getDevicePushTokenAsync();
+      const response = await fetch(`${API_URL}/notifications/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token: token.data,
+          ...preferences,
+          blocks: blocks
+            .filter((block) => block.day && block.start != null)
+            .slice(0, 120)
+            .map((block) => ({
+              id: block.id,
+              subject: block.subject,
+              day: block.day,
+              date: block.date,
+              start: block.start,
+              duration: block.duration || 90,
+              teachingWeekParity: block.teachingWeekParity,
+              allowedWeekends: block.allowedWeekends,
+              occurrenceWeekends: block.occurrenceWeekends,
+            })),
+        }),
+      });
+      if (response.ok) return 'fcm';
+    } catch {
+      // The development build may not contain Firebase credentials yet.
+    }
+  }
+  await fetch(`${API_URL}/notifications/${id}`, { method: 'DELETE' }).catch(() => {});
+  await scheduleLocally(blocks, preferences);
+  return 'local';
+}

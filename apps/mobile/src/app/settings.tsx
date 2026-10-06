@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { resolveUserBlocks, type PlanType } from '@pk-planner/core';
+import Markdown from 'react-native-markdown-display';
 
 import { AddCustomBlockModal } from '@/components/AddCustomBlockModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
@@ -34,7 +35,7 @@ export default function SettingsScreen() {
   const isDark = resolvedTheme === 'dark';
 
   const { state, refresh, isLoading, lastUpdated } = useScheduleData();
-  const { installedVersion, latestVersion, updateAvailable, downloadUrl, isChecking, openUpdate } = useAppVersion();
+  const { installedVersion, latestVersion, updateAvailable, downloadUrl, changelog, isChecking, openUpdate } = useAppVersion();
   const {
     config,
     saveAllConfig,
@@ -505,6 +506,28 @@ export default function SettingsScreen() {
                 </Pressable>
               )}
             </View>
+            {changelog && (
+              <View style={[styles.changelog, { borderTopColor: theme.border }]}>
+                <Text style={[styles.changelogTitle, { color: theme.text }]}>
+                  Co nowego w wersji {latestVersion}
+                </Text>
+                <Markdown
+                  style={{
+                    body: { color: theme.textSecondary, fontSize: 13, lineHeight: 20 },
+                    heading1: { color: theme.text, fontSize: 17 },
+                    heading2: { color: theme.text, fontSize: 15 },
+                    heading3: { color: theme.text, fontSize: 14 },
+                    strong: { color: theme.text },
+                    link: { color: theme.accent },
+                    code_inline: { color: theme.text, backgroundColor: theme.backgroundElement },
+                    code_block: { color: theme.text, backgroundColor: theme.backgroundElement },
+                    fence: { color: theme.text, backgroundColor: theme.backgroundElement },
+                    blockquote: { borderLeftColor: theme.accent },
+                  }}>
+                  {changelog}
+                </Markdown>
+              </View>
+            )}
           </View>
         </View>
 
@@ -583,6 +606,16 @@ const styles = StyleSheet.create({
   cardSubheading: {
     fontSize: 12.5,
     marginTop: 2,
+  },
+  changelog: {
+    borderTopWidth: 1,
+    marginTop: 16,
+    paddingTop: 12,
+  },
+  changelogTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 4,
   },
   activeBadge: {
     paddingHorizontal: 8,

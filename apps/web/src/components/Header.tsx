@@ -35,7 +35,7 @@ export function Header({
           <div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight text-base sm:text-lg">
-                PK Planer
+                PK Planner
               </span>
               {cohort && (
                 <span className="hidden sm:inline-flex items-center rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700/60">

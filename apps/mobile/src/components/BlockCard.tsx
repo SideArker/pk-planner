@@ -16,6 +16,7 @@ import {
 } from '@pk-planner/core';
 import { getActivityStyle, Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
+import { Badge } from '@/components/ui';
 
 interface BlockCardProps {
   block: ScheduleBlock;
@@ -83,91 +84,40 @@ export function BlockCard({
       <View style={styles.badgeRow}>
         <View style={styles.badgeGroup}>
           {/* Activity badge */}
-          <View
-            style={[
-              styles.badge,
-              {
-                backgroundColor: actStyle.badgeBg,
-              },
-            ]}>
-            <Text
-              style={[
-                styles.badgeText,
-                { color: actStyle.badgeText },
-              ]}>
-              {formatActivityName(block.activity) || 'Zajęcia'}
-            </Text>
-          </View>
+          <Badge
+            label={formatActivityName(block.activity) || 'Zajęcia'}
+            backgroundColor={actStyle.badgeBg}
+            textColor={actStyle.badgeText}
+          />
 
           {/* Parity badge */}
           {Boolean(parityLabel) && (
-            <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor:
-                    resolvedTheme === 'dark' ? '#27272a' : '#f1f5f9',
-                },
-              ]}>
-              <Text
-                style={[
-                  styles.badgeText,
-                  {
-                    color: resolvedTheme === 'dark' ? '#d4d4d8' : '#475569',
-                  },
-                ]}>
-                {parityLabel}
-              </Text>
-            </View>
+            <Badge
+              label={parityLabel!}
+              backgroundColor={resolvedTheme === 'dark' ? '#27272a' : '#f1f5f9'}
+              textColor={resolvedTheme === 'dark' ? '#d4d4d8' : '#475569'}
+            />
           )}
 
           {/* Custom block badge */}
           {block.isCustom && (
-            <View
-              style={[
-                styles.badge,
-                {
-                  backgroundColor:
-                    resolvedTheme === 'dark' ? '#451a03' : '#fef3c7',
-                },
-              ]}>
-              <Text
-                style={[
-                  styles.badgeText,
-                  {
-                    color: resolvedTheme === 'dark' ? '#fde68a' : '#b45309',
-                  },
-                ]}>
-                Własne
-              </Text>
-            </View>
+            <Badge
+              label="Własne"
+              backgroundColor={resolvedTheme === 'dark' ? '#451a03' : '#fef3c7'}
+              textColor={resolvedTheme === 'dark' ? '#fde68a' : '#b45309'}
+            />
           )}
         </View>
 
         {/* Collision badge if collision */}
         {hasCollision && (
-          <View
-            style={[
-              styles.collisionBadge,
-              {
-                backgroundColor:
-                  resolvedTheme === 'dark' ? '#450a0a' : '#fee2e2',
-                borderColor: theme.destructive,
-              },
-            ]}>
-            <Ionicons
-              name="alert-circle"
-              size={12}
-              color={theme.destructive}
-            />
-            <Text
-              style={[
-                styles.collisionText,
-                { color: theme.destructive },
-              ]}>
-              Kolizja
-            </Text>
-          </View>
+          <Badge
+            label="Kolizja"
+            backgroundColor={resolvedTheme === 'dark' ? '#450a0a' : '#fee2e2'}
+            textColor={theme.destructive}
+            borderColor={theme.destructive}
+            icon={<Ionicons name="alert-circle" size={12} color={theme.destructive} />}
+          />
         )}
       </View>
 

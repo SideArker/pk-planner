@@ -28,6 +28,7 @@ import { DaySelector } from '@/components/DaySelector';
 import { Header } from '@/components/Header';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { WeekParityFilter, WeekParitySelector } from '@/components/WeekParitySelector';
+import { EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useScheduleData } from '@/hooks/useScheduleData';
@@ -308,19 +309,11 @@ export default function ScheduleScreen() {
               );
             }}
             ListEmptyComponent={
-              <View style={styles.emptyDayContainer}>
-                <Ionicons
-                  name="sunny-outline"
-                  size={42}
-                  color={theme.textSecondary}
-                />
-                <Text style={[styles.emptyDayTitle, { color: theme.text }]}>
-                  Brak zajęć w tym dniu
-                </Text>
-                <Text style={[styles.emptyDaySub, { color: theme.textSecondary }]}>
-                  Dzień wolny lub brak zaplanowanych zajęć
-                </Text>
-              </View>
+              <EmptyState
+                icon="sunny-outline"
+                title="Brak zajęć w tym dniu"
+                subtitle="Dzień wolny lub brak zaplanowanych zajęć"
+              />
             }
           />
         </View>

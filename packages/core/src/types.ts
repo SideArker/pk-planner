@@ -85,3 +85,45 @@ export interface ScheduleEntry {
   id: string
   title: string
 }
+
+export interface BlockOverride {
+  customSubject?: string
+  customTeacher?: string
+  customRoom?: string
+  customNotes?: string
+  hidden?: boolean
+}
+
+export interface UserScheduleConfig {
+  cohort: string
+  planType: PlanType
+  selectedSubjects: Record<string, boolean> // subjectName -> boolean
+  selectedGroups: Record<string, string> // e.g. "subjectName:activity" -> optionId or group string
+  overrides?: Record<string, BlockOverride> // blockId -> custom override
+  theme?: 'light' | 'dark' | 'system'
+}
+
+export interface SubjectActivityOption {
+  id: string
+  cohort: string
+  group: string
+  teacher: string
+  day: Day | null
+  start: number | null
+  duration: number
+  room: string | null
+  campus: string | null
+  parity?: number | null
+}
+
+export interface SubjectActivity {
+  activity: string
+  activityLabel: string
+  options: SubjectActivityOption[]
+}
+
+export interface SubjectCatalogItem {
+  subject: string
+  activities: SubjectActivity[]
+}
+

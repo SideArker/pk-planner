@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {
   parseSchedulePayload, importedNotices, mappedCohortParts, matchesCohort,
   matchesWeekend, roomCampus, suggestedTimeSlots, visibleBlocks, cohortDisplayText, weekendKeys,
+  extractUniqueCohorts, buildSubjectCatalog, resolveUserBlocks, generateIcs, getGoogleCalendarUrl,
 } from '../src/index.ts'
 
 const block = {
@@ -51,3 +52,36 @@ test('formats first-degree groups and joint classes', () => {
   assert.equal(cohortDisplayText(block), 'I stopień stac sem. 1 / C1 (GL1+GL2)')
   assert.match(cohortDisplayText({ ...block, additionalCohorts: ['I stopień stac sem. 3 / gr. 1'] }), /wspólnie z:/)
 })
+
+test('extracts cohorts, catalogs subjects and resolves user blocks', () => {
+  const cohorts = extractUniqueCohorts(state)
+  assert.equal(cohorts.length, 1)
+  assert.equal(cohorts[0].value, 'I stopień stac sem. 1')
+
+  const catalog = buildSubjectCatalog(state, 'I stopień stac sem. 1')
+  assert.equal(catalog.length, 1)
+  assert.equal(catalog[0].subject, 'Algorytmy')
+  assert.equal(catalog[0].activities[0].options[0].group, 'Grupa 1')
+
+  const resolved = resolveUserBlocks(state, {
+    cohort: 'I stopień stac sem. 1',
+    planType: 'stacjonarne',
+    selectedSubjects: { Algorytmy: true },
+    selectedGroups: { 'Algorytmy:c': 'b1' },
+    overrides: { b1: { customSubject: 'Zaawansowane Algorytmy' } },
+  })
+  assert.equal(resolved.length, 1)
+  assert.equal(resolved[0].subject, 'Zaawansowane Algorytmy')
+})
+
+test('generates ics and google calendar urls', () => {
+  const ics = generateIcs([block])
+  assert.match(ics, /BEGIN:VCALENDAR/)
+  assert.match(ics, /SUMMARY:Algorytmy \(C\)/)
+  assert.match(ics, /END:VCALENDAR/)
+
+  const gCal = getGoogleCalendarUrl(block)
+  assert.match(gCal, /calendar\.google\.com\/calendar\/render/)
+  assert.match(gCal, /Algorytmy/)
+})
+

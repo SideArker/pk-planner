@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -25,10 +25,18 @@ export function DaySelector({
 }: DaySelectorProps) {
   const { theme, resolvedTheme } = useAppTheme();
   const isDark = resolvedTheme === 'dark';
+  const scrollRef = useRef<ScrollView>(null);
+  const dayPositions = useRef<Partial<Record<Day, number>>>({});
+
+  useEffect(() => {
+    const x = dayPositions.current[selectedDay];
+    if (x != null) scrollRef.current?.scrollTo({ x: Math.max(0, x - 16), animated: true });
+  }, [selectedDay]);
 
   return (
     <View style={styles.wrapper}>
       <ScrollView
+        ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
@@ -42,6 +50,13 @@ export function DaySelector({
             <Pressable
               key={day}
               onPress={() => onSelectDay(day)}
+              onLayout={(event) => {
+                const x = event.nativeEvent.layout.x;
+                dayPositions.current[day] = x;
+                if (day === selectedDay) {
+                  scrollRef.current?.scrollTo({ x: Math.max(0, x - 16), animated: false });
+                }
+              }}
               style={({ pressed }) => [
                 styles.dayButton,
                 {

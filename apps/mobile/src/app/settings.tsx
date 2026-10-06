@@ -17,12 +17,14 @@ import { Spacing } from '@/constants/theme';
 import { ThemeMode, useAppTheme } from '@/context/ThemeContext';
 import { useScheduleData } from '@/hooks/useScheduleData';
 import { useUserSchedule } from '@/hooks/useUserSchedule';
+import { useAppVersion } from '@/hooks/useAppVersion';
 
 export default function SettingsScreen() {
   const { theme, resolvedTheme, mode, setThemeMode } = useAppTheme();
   const isDark = resolvedTheme === 'dark';
 
   const { state, refresh, isLoading, lastUpdated } = useScheduleData();
+  const { installedVersion, latestVersion, updateAvailable, downloadUrl, isChecking, openUpdate } = useAppVersion();
   const {
     config,
     saveAllConfig,
@@ -374,6 +376,38 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>AKTUALIZACJA APLIKACJI</Text>
+          <View style={[styles.card, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderColor: theme.border }]}>
+            <View style={styles.rowBetween}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.cardHeading, { color: theme.text }]}>
+                  {updateAvailable ? `Dostępna wersja ${latestVersion}` : `Wersja ${installedVersion}`}
+                </Text>
+                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
+                  {updateAvailable
+                    ? downloadUrl
+                      ? 'Pobierz najnowszą wersję aplikacji.'
+                      : 'Nowa wersja jest dostępna. Link do pobrania nie został skonfigurowany.'
+                    : isChecking
+                      ? 'Sprawdzanie aktualizacji...'
+                      : latestVersion
+                        ? 'Masz najnowszą wersję.'
+                        : 'Nie udało się sprawdzić wersji.'}
+                </Text>
+              </View>
+              {updateAvailable && downloadUrl && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void openUpdate()}
+                  style={({ pressed }) => [styles.updateButton, { backgroundColor: theme.accent, opacity: pressed ? 0.75 : 1 }]}>
+                  <Text style={styles.updateButtonText}>Zaktualizuj</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        </View>
+
         {/* App Footer */}
         <View style={styles.footerContainer}>
           <Text style={[styles.footerText, { color: theme.textSecondary }]}>
@@ -477,6 +511,17 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     fontWeight: '600',
     flex: 1,
+  },
+  updateButton: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 9,
+    marginLeft: 12,
+  },
+  updateButtonText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '700',
   },
   themeRow: {
     flexDirection: 'row',

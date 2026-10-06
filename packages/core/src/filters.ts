@@ -11,6 +11,7 @@ import {
   cohortParts,
   cohortScopeValue,
   curriculumParts,
+  labGroupsForExercise,
   mappedCohortParts,
   plain,
   reservationTeachers,
@@ -99,7 +100,7 @@ export function matchesCohort(block: ScheduleBlock, entity: string): boolean {
       ["c", "cw", "cwiczenia"].includes(studentGroupActivity(block)) &&
       !mappedCal;
     return paired
-      ? [2 * current.group - 1, 2 * current.group].includes(selected.group)
+      ? labGroupsForExercise(current.base, current.group).includes(selected.group)
       : current.group === selected.group;
   });
 }
@@ -249,6 +250,6 @@ export function cohortStudentGroups(
   const { group } = cohortParts(cohort);
   if (group === null) return null;
   return ["c", "cw", "cwiczenia"].includes(studentGroupActivity(block))
-    ? [2 * group - 1, 2 * group]
+    ? labGroupsForExercise(cohort || '', group)
     : [group];
 }

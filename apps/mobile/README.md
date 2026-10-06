@@ -17,10 +17,12 @@ Utwórz prywatny keystore poza repozytorium. `keytool` jest częścią JDK:
 ```bash
 keytool -genkeypair -v \
   -keystore "$HOME/pk-planner-release.keystore" \
-  -storetype JKS \
+  -storetype PKCS12 \
   -alias pk-planner \
   -keyalg RSA -keysize 2048 -validity 10000
 ```
+
+Gdy `keytool` zapyta o hasło klucza, naciśnij Enter, aby użyć hasła keystore'a.
 
 Zachowaj kopię keystore'a i haseł. Android wymaga tego samego keystore'a przy każdej aktualizacji aplikacji. Nie commituj ani nie udostępniaj pliku.
 
@@ -29,7 +31,7 @@ Dodaj poniższe sekrety repozytorium w GitHub: **Settings → Secrets and variab
 - `ANDROID_KEYSTORE_BASE64`: keystore zakodowany jako base64. Na Linuxie uruchom `base64 -w 0 "$HOME/pk-planner-release.keystore"`; na macOS `base64 < "$HOME/pk-planner-release.keystore" | tr -d '\n'`.
 - `ANDROID_KEYSTORE_PASSWORD`: hasło keystore'a.
 - `ANDROID_KEY_ALIAS`: `pk-planner`.
-- `ANDROID_KEY_PASSWORD`: hasło klucza podane podczas tworzenia. Może być takie samo jak hasło keystore'a.
+- `ANDROID_KEY_PASSWORD`: hasło klucza. Przy powyższym poleceniu naciśnij Enter, aby było takie samo jak hasło keystore'a.
 
 Wypchnij tag wersji, aby zbudować i opublikować APK:
 

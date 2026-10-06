@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   Animated,
   Easing,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -13,21 +12,19 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { Spacing } from '@/constants/theme';
 
 interface HeaderProps {
-  cohort?: string;
   isLoading: boolean;
   onRefresh: () => void;
-  onOpenSettings?: () => void;
+  onAddCustom: () => void;
   title?: string;
 }
 
 export function Header({
-  cohort,
   isLoading,
   onRefresh,
-  onOpenSettings,
-  title = 'PK Planner',
+  onAddCustom,
+  title = 'Mój Planner',
 }: HeaderProps) {
-  const { theme, resolvedTheme, toggleTheme } = useAppTheme();
+  const { theme, resolvedTheme } = useAppTheme();
   const [spinValue] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
@@ -61,36 +58,9 @@ export function Header({
           borderBottomColor: theme.border,
         },
       ]}>
-      {/* Brand & Cohort */}
       <View style={styles.brandRow}>
-        <Image
-          source={require('@/assets/images/icon.png')}
-          style={styles.iconWrapper}
-        />
-
         <View style={styles.titleColumn}>
-          <View style={styles.titleRow}>
-            <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
-            {Boolean(cohort) && (
-              <View
-                style={[
-                  styles.cohortBadge,
-                  {
-                    backgroundColor: isDark ? '#27272a' : '#f1f5f9',
-                    borderColor: theme.border,
-                  },
-                ]}>
-                <Text
-                  style={[
-                    styles.cohortText,
-                    { color: isDark ? '#e4e4e7' : '#334155' },
-                  ]}
-                  numberOfLines={1}>
-                  {cohort}
-                </Text>
-              </View>
-            )}
-          </View>
+          <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
           <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
             Plan zajęć
           </Text>
@@ -121,9 +91,8 @@ export function Header({
           </Animated.View>
         </Pressable>
 
-        {/* Theme toggle */}
         <Pressable
-          onPress={toggleTheme}
+          onPress={onAddCustom}
           style={({ pressed }) => [
             styles.actionBtn,
             {
@@ -132,34 +101,9 @@ export function Header({
               opacity: pressed ? 0.7 : 1,
             },
           ]}
-          accessibilityLabel="Przełącz motyw">
-          <Ionicons
-            name={isDark ? 'sunny-outline' : 'moon-outline'}
-            size={18}
-            color={isDark ? '#fbbf24' : theme.text}
-          />
+          accessibilityLabel="Dodaj własne zajęcia">
+          <Ionicons name="add" size={20} color={theme.text} />
         </Pressable>
-
-        {/* Settings button if provided */}
-        {onOpenSettings && (
-          <Pressable
-            onPress={onOpenSettings}
-            style={({ pressed }) => [
-              styles.actionBtn,
-              {
-                backgroundColor: isDark ? '#18181b' : '#f8fafc',
-                borderColor: theme.border,
-                opacity: pressed ? 0.7 : 1,
-              },
-            ]}
-            accessibilityLabel="Ustawienia">
-            <Ionicons
-              name="settings-outline"
-              size={18}
-              color={theme.text}
-            />
-          </Pressable>
-        )}
       </View>
     </View>
   );
@@ -180,22 +124,9 @@ const styles = StyleSheet.create({
     gap: 10,
     flex: 1,
   },
-  iconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   titleColumn: {
     justifyContent: 'center',
     flex: 1,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexWrap: 'wrap',
   },
   title: {
     fontSize: 17,
@@ -205,17 +136,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 11,
     marginTop: 1,
-  },
-  cohortBadge: {
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
-    borderWidth: 1,
-    maxWidth: 120,
-  },
-  cohortText: {
-    fontSize: 11,
-    fontWeight: '600',
   },
   actionsRow: {
     flexDirection: 'row',

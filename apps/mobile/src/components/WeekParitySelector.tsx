@@ -32,31 +32,15 @@ export function WeekParitySelector({
 
   return (
     <View style={styles.container}>
-      {/* Current week status badge */}
-      {weekInfo && weekInfo.parity && (
-        <View style={styles.statusRow}>
-          <View
-            style={[
-              styles.currentDot,
-              { backgroundColor: theme.success },
-            ]}
-          />
-          <Text style={[styles.statusText, { color: theme.textSecondary }]}>
-            Aktualnie: <Text style={{ fontWeight: '700', color: theme.text }}>Tydzień {weekInfo.parity}</Text>
-            {weekInfo.weekNumber ? ` (${weekInfo.weekNumber}. tydzień)` : ''}
-          </Text>
-        </View>
-      )}
-
-      {/* Segmented controls */}
-      <View
-        style={[
-          styles.segmentContainer,
-          {
-            backgroundColor: isDark ? '#18181b' : '#f1f5f9',
-            borderColor: theme.border,
-          },
-        ]}>
+      <View style={styles.row}>
+        <View
+          style={[
+            styles.segmentContainer,
+            {
+              backgroundColor: isDark ? '#18181b' : '#f1f5f9',
+              borderColor: theme.border,
+            },
+          ]}>
         {options.map((opt) => {
           const isSelected = selectedParity === opt.id;
           return (
@@ -87,6 +71,14 @@ export function WeekParitySelector({
             </Pressable>
           );
         })}
+        </View>
+        {weekInfo?.parity && (
+          <View
+            accessibilityLabel={`Aktualny tydzień ${weekInfo.parity}${weekInfo.weekNumber ? `, numer ${weekInfo.weekNumber}` : ''}`}
+            style={[styles.weekBadge, { backgroundColor: isDark ? '#27272a' : '#e2e8f0' }]}>
+            <Text style={[styles.weekBadgeText, { color: theme.text }]}>Teraz {weekInfo.parity}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -97,22 +89,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     marginBottom: 8,
   },
-  statusRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
+    gap: 8,
   },
-  currentDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+  weekBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 7,
+    borderRadius: 8,
   },
-  statusText: {
-    fontSize: 11.5,
+  weekBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   segmentContainer: {
     flexDirection: 'row',
+    flex: 1,
     padding: 3,
     borderRadius: 10,
     borderWidth: 1,

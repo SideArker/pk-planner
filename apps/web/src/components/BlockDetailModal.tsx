@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   type BlockOverride,
   type ScheduleBlock,
@@ -40,13 +40,23 @@ export function BlockDetailModal({
   onSwitchGroup,
   onSaveOverride,
 }: BlockDetailModalProps) {
-  if (!isOpen || !block) return null
-
   const [activeTab, setActiveTab] = useState<'details' | 'switchGroup' | 'custom'>('details')
-  const [customSubject, setCustomSubject] = useState(block.subject || '')
-  const [customTeacher, setCustomTeacher] = useState(teacherDisplay(block) || '')
-  const [customRoom, setCustomRoom] = useState(block.room || '')
-  const [customNotes, setCustomNotes] = useState(block.notes || '')
+  const [customSubject, setCustomSubject] = useState('')
+  const [customTeacher, setCustomTeacher] = useState('')
+  const [customRoom, setCustomRoom] = useState('')
+  const [customNotes, setCustomNotes] = useState('')
+
+  useEffect(() => {
+    if (block) {
+      setCustomSubject(block.subject || '')
+      setCustomTeacher(teacherDisplay(block) || '')
+      setCustomRoom(block.room || '')
+      setCustomNotes(block.notes || '')
+      setActiveTab('details')
+    }
+  }, [block])
+
+  if (!isOpen || !block) return null
 
   const alternativeGroups = state ? findAlternativeGroups(state, block) : []
   const gCalUrl = getGoogleCalendarUrl(block)

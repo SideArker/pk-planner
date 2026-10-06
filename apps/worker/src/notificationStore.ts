@@ -12,7 +12,8 @@ export function parseRegistration(input: unknown): Registration | null {
   const value = input as Record<string, unknown>;
   if (typeof value.token !== 'string' || value.token.length < 20 || value.token.length > 4096 ||
     !Array.isArray(value.blocks) || value.blocks.length > 120 ||
-    typeof value.reminders !== 'boolean' || typeof value.countdown !== 'boolean') return null;
+    typeof value.reminders !== 'boolean' || typeof value.countdown !== 'boolean' ||
+    (value.scheduleUpdates != null && typeof value.scheduleUpdates !== 'boolean')) return null;
 
   const blocks: RegisteredBlock[] = [];
   for (const raw of value.blocks) {
@@ -48,6 +49,7 @@ export function parseRegistration(input: unknown): Registration | null {
     token: value.token,
     reminders: value.reminders,
     countdown: value.countdown,
+    scheduleUpdates: value.scheduleUpdates === true,
     blocks,
     registeredAt: Date.now(),
   };
@@ -68,6 +70,35 @@ export class NotificationStore {
 
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
+    if (url.pathname === '/schedule-version') {
+      const version = url.searchParams.get('version');
+      if (!version) return new Response('Missing schedule version', { status: 400 });
+      const previous = await this.state.storage.get<string>('schedule-version');
+      if (!previous) {
+        await this.state.storage.put('schedule-version', version);
+        return Response.json({ changed: false });
+      }
+      if (previous === version) return Response.json({ changed: false });
+      await this.state.storage.put('schedule-version', version);
+      const registrations = await this.state.storage.list<Registration>({ prefix: 'device:' });
+      let sent = 0;
+      for (const [key, registration] of registrations) {
+        if (!registration.scheduleUpdates) continue;
+        try {
+          await sendFcm(this.env.FCM_SERVICE_ACCOUNT_JSON!, registration.token, {
+            title: 'Classes updated',
+            body: 'The class schedule has changed. Open PK Planner to see the latest schedule.',
+            tag: `schedule-${version}`.slice(0, 60),
+            channelId: 'updates',
+            sticky: false,
+          });
+          sent += 1;
+        } catch (error) {
+          console.error('Schedule update notification failed', error instanceof Error ? error.message : error);
+        }
+      }
+      return Response.json({ changed: true, sent });
+    }
     if (url.pathname === '/tick') {
       if (!this.env.FCM_SERVICE_ACCOUNT_JSON) return new Response('FCM not configured', { status: 503 });
       const now = new Date(Number(url.searchParams.get('at')) || Date.now());

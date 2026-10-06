@@ -150,7 +150,15 @@ export default {
           },
         });
 
-        return new Response(upstream.body, {
+        const rawBody = await upstream.text();
+        if (upstream.ok && env.NOTIFICATIONS) {
+          const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(rawBody));
+          const version = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+          const stub = env.NOTIFICATIONS.getByName('all-devices');
+          const result = await stub.fetch(new Request(`https://notification-store/schedule-version?version=${version}`));
+          if (!result.ok) console.error(`Schedule update check failed: ${result.status}`);
+        }
+        return new Response(rawBody, {
           status: upstream.status,
           headers: {
             "Content-Type":
@@ -168,9 +176,23 @@ export default {
     return json({ error: "Not found" }, 404);
   },
   async scheduled(controller, env): Promise<void> {
-    if (!env.FCM_SERVICE_ACCOUNT_JSON) return;
-    const stub = env.NOTIFICATIONS.getByName('all-devices');
-    const result = await stub.fetch(new Request(`https://notification-store/tick?at=${controller.scheduledTime}`));
-    if (!result.ok) console.error(`Notification tick failed: ${result.status}`);
+    if (env.FCM_SERVICE_ACCOUNT_JSON && env.NOTIFICATIONS) {
+      const stub = env.NOTIFICATIONS.getByName('all-devices');
+      const result = await stub.fetch(new Request(`https://notification-store/tick?at=${controller.scheduledTime}`));
+      if (!result.ok) console.error(`Notification tick failed: ${result.status}`);
+    }
+    if (!env.UPSTREAM_URL || !env.NOTIFICATIONS) return;
+    try {
+      const response = await fetch(env.UPSTREAM_URL, { headers: { 'User-Agent': 'PK-Planner-Worker/1.0' } });
+      if (!response.ok) return;
+      const body = await response.arrayBuffer();
+      const digest = await crypto.subtle.digest('SHA-256', body);
+      const version = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+      const stub = env.NOTIFICATIONS.getByName('all-devices');
+      const result = await stub.fetch(new Request(`https://notification-store/schedule-version?version=${version}`));
+      if (!result.ok) console.error(`Schedule update check failed: ${result.status}`);
+    } catch (error) {
+      console.error('Schedule update check failed', error instanceof Error ? error.message : error);
+    }
   },
 } satisfies ExportedHandler<Env>;

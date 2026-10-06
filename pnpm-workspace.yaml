@@ -4,3 +4,7 @@ packages:
 allowBuilds:
   esbuild: true
   workerd: true
+overrides:
+  sharp: ^0.35.5
+  decode-uri-component: ^0.5.0
+  uuid: ^11.1.1

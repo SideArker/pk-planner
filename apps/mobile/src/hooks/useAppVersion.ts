@@ -8,6 +8,7 @@ const VERSION_URL = 'https://pk-planner.rsowa126.workers.dev/api/version';
 interface VersionResponse {
   version?: unknown;
   apkUrl?: unknown;
+  changelog?: unknown;
 }
 
 function compareVersions(left: string, right: string) {
@@ -26,6 +27,7 @@ export function useAppVersion() {
   const installedVersion = Application.nativeApplicationVersion ?? '0.0.0';
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+  const [changelog, setChangelog] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(true);
 
   const checkVersion = useCallback(async () => {
@@ -37,6 +39,7 @@ export function useAppVersion() {
       if (typeof data.version !== 'string') return;
 
       setLatestVersion(data.version);
+      setChangelog(typeof data.changelog === 'string' ? data.changelog.trim() || null : null);
       setDownloadUrl(Platform.OS === 'android' && typeof data.apkUrl === 'string'
         ? data.apkUrl
         : null);
@@ -63,6 +66,7 @@ export function useAppVersion() {
     latestVersion,
     updateAvailable,
     downloadUrl,
+    changelog,
     isChecking,
     openUpdate,
   };

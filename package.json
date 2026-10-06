@@ -9,7 +9,8 @@
   },
   "scripts": {
     "dev:web": "pnpm --filter web dev",
-    "dev:mobile": "pnpm --filter mobile start -- --host lan",
+    "dev:mobile": "pnpm --filter mobile exec expo start --lan --go",
+    "dev:mobile:remote": "node scripts/expo-remote.mjs",
     "dev:worker": "pnpm --filter worker dev",
     "build:web": "pnpm --filter web build",
     "build:mobile": "pnpm --filter mobile build",
@@ -20,6 +21,7 @@
     "typecheck": "pnpm -r --if-present typecheck"
   },
   "devDependencies": {
-    "oxlint": "^1.81.0"
+    "oxlint": "^1.81.0",
+    "toqr": "0.1.1"
   }
 }

@@ -337,7 +337,7 @@ export function ScheduleGrid({
 }
 
 const styles = StyleSheet.create({
-  verticalScroll: { maxHeight: 640 },
+  verticalScroll: { flex: 1, maxHeight: 640 },
   gridRow: { flexDirection: 'row', width: '100%' },
   dayScroll: { flex: 1 },
   dayRow: { flexDirection: 'row' },

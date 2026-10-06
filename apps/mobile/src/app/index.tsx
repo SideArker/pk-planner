@@ -27,6 +27,7 @@ import { BlockDetailModal } from '@/components/BlockDetailModal';
 import { DaySelector } from '@/components/DaySelector';
 import { Header } from '@/components/Header';
 import { OnboardingModal } from '@/components/OnboardingModal';
+import { ScheduleGrid } from '@/components/ScheduleGrid';
 import { WeekParityFilter, WeekParitySelector } from '@/components/WeekParitySelector';
 import { EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
@@ -72,6 +73,7 @@ export default function ScheduleScreen() {
 
   const [selectedDay, setSelectedDay] = useState<Day>(() => getInitialToday(days));
   const [selectedParity, setSelectedParity] = useState<WeekParityFilter>('ALL');
+  const [scheduleView, setScheduleView] = useState<'list' | 'grid'>('list');
   const touchStart = useRef<{ x: number; y: number } | null>(null);
 
   useFocusEffect(useCallback(() => {
@@ -284,67 +286,107 @@ export default function ScheduleScreen() {
             onSelectParity={setSelectedParity}
           />
 
-          {/* Day Selector */}
-          <DaySelector
-            days={days}
-            selectedDay={selectedDay}
-            onSelectDay={setSelectedDay}
-            dayCounts={dayCounts}
-          />
-
-          {/* Schedule List */}
-          <FlatList
-            data={dayBlocks}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.listContent}
-            alwaysBounceVertical
-            onTouchStart={(event) => {
-              touchStart.current = {
-                x: event.nativeEvent.pageX,
-                y: event.nativeEvent.pageY,
-              };
-            }}
-            onTouchEnd={(event) => {
-              const start = touchStart.current;
-              touchStart.current = null;
-              if (!start) return;
-              const dx = event.nativeEvent.pageX - start.x;
-              const dy = event.nativeEvent.pageY - start.y;
-              if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-                const nextIndex = days.indexOf(selectedDay) + (dx < 0 ? 1 : -1);
-                if (nextIndex >= 0 && nextIndex < days.length) {
-                  setSelectedDay(days[nextIndex]);
-                }
-              } else if (dayBlocks.length === 0 && dy < -90 && !isLoading) {
-                refresh();
-              }
-            }}
-            refreshControl={
-              <RefreshControl
-                refreshing={isLoading}
-                onRefresh={refresh}
-                tintColor={theme.accent}
-              />
-            }
-            renderItem={({ item }) => {
-              const itemCollisions = collisions.get(item.id) || [];
+          <View
+            style={[styles.viewToggle, { backgroundColor: isDark ? '#18181b' : '#e2e8f0' }]}
+            accessibilityRole="tablist">
+            {([
+              { id: 'list', label: 'Lista', icon: 'list-outline' as const },
+              { id: 'grid', label: 'Siatka', icon: 'grid-outline' as const },
+            ] as const).map((option) => {
+              const selected = scheduleView === option.id;
               return (
-                <BlockCard
-                  block={item}
-                  onPress={setSelectedBlock}
-                  collisionInfo={itemCollisions}
-                  currentParity={selectedParity === 'ALL' ? undefined : selectedParity}
-                />
+                <Pressable
+                  key={option.id}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected }}
+                  onPress={() => setScheduleView(option.id)}
+                  style={({ pressed }) => [
+                    styles.viewToggleButton,
+                    {
+                      backgroundColor: selected
+                        ? isDark ? '#27272a' : '#ffffff'
+                        : 'transparent',
+                      opacity: pressed ? 0.75 : 1,
+                    },
+                  ]}>
+                  <Ionicons name={option.icon} size={15} color={selected ? theme.text : theme.textSecondary} />
+                  <Text style={[styles.viewToggleText, {
+                    color: selected ? theme.text : theme.textSecondary,
+                    fontWeight: selected ? '700' : '500',
+                  }]}>{option.label}</Text>
+                </Pressable>
               );
-            }}
-            ListEmptyComponent={
-              <EmptyState
-                icon="sunny-outline"
-                title="Brak zajęć w tym dniu"
-                subtitle="Dzień wolny lub brak zaplanowanych zajęć"
+            })}
+          </View>
+
+          {scheduleView === 'grid' ? (
+            <View style={styles.gridContainer}>
+              <ScheduleGrid
+                blocks={userBlocks}
+                planType={config.planType}
+                parityFilter={selectedParity}
+                onSelectBlock={setSelectedBlock}
               />
-            }
-          />
+            </View>
+          ) : (
+            <>
+              <DaySelector
+                days={days}
+                selectedDay={selectedDay}
+                onSelectDay={setSelectedDay}
+                dayCounts={dayCounts}
+              />
+              <FlatList
+                data={dayBlocks}
+                keyExtractor={(item) => item.id}
+                contentContainerStyle={styles.listContent}
+                alwaysBounceVertical
+                onTouchStart={(event) => {
+                  touchStart.current = {
+                    x: event.nativeEvent.pageX,
+                    y: event.nativeEvent.pageY,
+                  };
+                }}
+                onTouchEnd={(event) => {
+                  const start = touchStart.current;
+                  touchStart.current = null;
+                  if (!start) return;
+                  const dx = event.nativeEvent.pageX - start.x;
+                  const dy = event.nativeEvent.pageY - start.y;
+                  if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+                    const nextIndex = days.indexOf(selectedDay) + (dx < 0 ? 1 : -1);
+                    if (nextIndex >= 0 && nextIndex < days.length) {
+                      setSelectedDay(days[nextIndex]);
+                    }
+                  } else if (dayBlocks.length === 0 && dy < -90 && !isLoading) {
+                    refresh();
+                  }
+                }}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={isLoading}
+                    onRefresh={refresh}
+                    tintColor={theme.accent}
+                  />
+                }
+                renderItem={({ item }) => (
+                  <BlockCard
+                    block={item}
+                    onPress={setSelectedBlock}
+                    collisionInfo={collisions.get(item.id) || []}
+                    currentParity={selectedParity === 'ALL' ? undefined : selectedParity}
+                  />
+                )}
+                ListEmptyComponent={
+                  <EmptyState
+                    icon="sunny-outline"
+                    title="Brak zajęć w tym dniu"
+                    subtitle="Dzień wolny lub brak zaplanowanych zajęć"
+                  />
+                }
+              />
+            </>
+          )}
         </View>
       )}
 
@@ -451,6 +493,33 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: Spacing.three,
     paddingBottom: 24,
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    alignSelf: 'flex-start',
+    marginHorizontal: Spacing.three,
+    marginBottom: 4,
+    padding: 3,
+    borderRadius: 10,
+    backgroundColor: '#e2e8f0',
+  },
+  viewToggleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    minWidth: 76,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  viewToggleText: {
+    fontSize: 12,
+  },
+  gridContainer: {
+    flex: 1,
+    paddingHorizontal: Spacing.three,
+    paddingBottom: 8,
   },
   emptyDayContainer: {
     alignItems: 'center',

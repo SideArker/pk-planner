@@ -8,6 +8,7 @@ import {
   prefillScheduleSelections,
   DAY_INFO,
   minutesToTime,
+  roomLabel,
   NOT_APPLICABLE_LABEL,
   NOT_APPLICABLE_VALUE,
   type CohortHierarchyNode,
@@ -54,12 +55,27 @@ function formatOptionLabel(
     opt.start != null
       ? `${minutesToTime(opt.start)}-${minutesToTime(opt.start + (opt.duration || 90))}`
       : ''
-  const roomStr = opt.room ? `s. ${opt.room}` : ''
-  const parityStr = opt.parity != null ? (opt.parity === 1 ? 'Tydz. A' : 'Tydz. B') : ''
+  const isOnline =
+    opt.room?.trim().toUpperCase() === 'ONLINE' ||
+    opt.campus?.trim().toLowerCase() === 'zdalnie'
+  const roomStr = isOnline
+    ? 'zdalnie'
+    : opt.room
+      ? `s. ${roomLabel(opt.room)}`
+      : ''
+  const parityStr =
+    opt.parity != null
+      ? opt.parity === 0
+        ? 'Tydz. A'
+        : opt.parity === 1
+          ? 'Tydz. B'
+          : ''
+      : ''
 
   const actKey = (activity || '').toLowerCase().trim()
   const isLab = ['l', 'lab', 'p', 'proj'].includes(actKey)
   const isEx = ['c', 'cw', 'cwiczenia', 'ćw'].includes(actKey)
+  const isLecture = ['w', 'wyklad', 'wykład'].includes(actKey)
 
   const grMatch = opt.cohort?.match(/\/ gr\.?\s*(\d+)/i) || opt.group?.match(/(\d+)/)
   const grNum = grMatch ? Number(grMatch[1]) : null
@@ -75,17 +91,36 @@ function formatOptionLabel(
       displayGroup = `Grupa C${grNum} (GL ${firstLab}+${secondLab})`
     } else if (isEx) {
       displayGroup = `Grupa C${grNum}`
+    } else if (isLecture) {
+      displayGroup = `Grupa ${grNum}`
     }
+  } else if (
+    isLecture ||
+    opt.group === 'Wszyscy' ||
+    opt.group === opt.cohort ||
+    /^(?:I{1,2}\s+stopień|Cyberpsychologia)/i.test(opt.group)
+  ) {
+    displayGroup = isLecture ? '' : 'Wszyscy'
   }
+
+  const teacher = opt.teacher && opt.teacher !== 'Nieprzypisany' ? opt.teacher : ''
 
   if (mode === 'time') {
     const timeParts = [dayStr, timeStr].filter(Boolean).join(' ')
-    const details = [opt.teacher, roomStr, parityStr].filter(Boolean).join(', ')
-    return `${timeParts ? `${timeParts} - ` : ''}${displayGroup}${details ? ` (${details})` : ''}`
+    if (displayGroup) {
+      const details = [teacher, roomStr, parityStr].filter(Boolean).join(', ')
+      return `${timeParts ? `${timeParts} - ` : ''}${displayGroup}${details ? ` (${details})` : ''}`
+    }
+    const details = [roomStr, parityStr].filter(Boolean).join(', ')
+    const mainLabel = teacher || 'Wykład'
+    return `${timeParts ? `${timeParts} - ` : ''}${mainLabel}${details ? ` (${details})` : ''}`
   } else {
     const timeParts = [dayStr, timeStr].filter(Boolean).join(' ')
     const extra = [timeParts, roomStr, parityStr].filter(Boolean).join(', ')
-    return `${displayGroup} - ${opt.teacher}${extra ? ` (${extra})` : ''}`
+    if (displayGroup) {
+      return `${displayGroup}${teacher ? ` - ${teacher}` : ''}${extra ? ` (${extra})` : ''}`
+    }
+    return `${teacher || 'Wykład'}${extra ? ` (${extra})` : ''}`
   }
 }
 

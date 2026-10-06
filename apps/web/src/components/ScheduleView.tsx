@@ -5,10 +5,13 @@ import {
   type ScheduleBlock,
   availableDays,
   DAY_INFO,
+  DAY_INDEX_TO_DAY,
   detectScheduleCollisions,
   getTeachingWeekInfo,
+  isBlockActiveNow,
   isBlockInWeekParity,
 } from '@pk-planner/core'
+import { useCurrentTime } from '../hooks/useCurrentTime'
 import { BlockCard } from './BlockCard'
 import { CollisionsBanner } from './schedule/CollisionsBanner'
 import { DayColumnsView } from './schedule/DayColumnsView'
@@ -32,21 +35,6 @@ interface ScheduleViewProps {
   onOpenAddCustom: () => void
 }
 
-function getInitialToday(days: Day[]): Day {
-  const dayIndex = new Date().getDay()
-  const map: Record<number, Day> = {
-    1: 'MON',
-    2: 'TUE',
-    3: 'WED',
-    4: 'THU',
-    5: 'FRI',
-    6: 'SAT',
-    0: 'SUN',
-  }
-  const current = map[dayIndex] || 'MON'
-  return days.includes(current) ? current : (days[0] || 'MON')
-}
-
 export function ScheduleView({
   blocks,
   planType,
@@ -54,11 +42,23 @@ export function ScheduleView({
   onOpenCustomize,
   onOpenAddCustom,
 }: ScheduleViewProps) {
+  const now = useCurrentTime()
   const days: Day[] = useMemo(() => availableDays(planType), [planType])
-  const [todayDay] = useState<Day>(() => getInitialToday(availableDays(planType)))
-  const [activeMobileDay, setActiveMobileDay] = useState<Day>(() =>
-    getInitialToday(availableDays(planType)),
-  )
+
+  const actualToday: Day | null = useMemo(() => {
+    return DAY_INDEX_TO_DAY[now.getDay()] ?? null
+  }, [now])
+
+  const todayDay: Day | null = useMemo(() => {
+    if (!actualToday) return null
+    return days.includes(actualToday) ? actualToday : null
+  }, [actualToday, days])
+
+  const [activeMobileDay, setActiveMobileDay] = useState<Day>(() => {
+    const real = DAY_INDEX_TO_DAY[new Date().getDay()] || 'MON'
+    const avail = availableDays(planType)
+    return avail.includes(real) ? real : (avail[0] || 'MON')
+  })
   const [desktopLayout, setDesktopLayout] = useState<'columns' | 'grid'>(() => {
     const saved = localStorage.getItem('pk_planner_desktop_layout')
     return saved === 'grid' ? 'grid' : 'columns'
@@ -69,7 +69,7 @@ export function ScheduleView({
     localStorage.setItem('pk_planner_desktop_layout', newLayout)
   }
 
-  const currentWeek = useMemo(() => getTeachingWeekInfo(), [])
+  const currentWeek = useMemo(() => getTeachingWeekInfo(now), [now])
   const [parityFilter, setParityFilter] = useState<ParityFilterType>('all')
 
   // Filter blocks by parity
@@ -80,6 +80,17 @@ export function ScheduleView({
       return isBlockInWeekParity(b, targetParity)
     })
   }, [blocks, parityFilter, currentWeek])
+
+  // Active blocks that are happening right now
+  const activeBlockIds = useMemo(() => {
+    const set = new Set<string>()
+    for (const b of filteredBlocks) {
+      if (isBlockActiveNow(b, now, currentWeek.parityLabel)) {
+        set.add(b.id)
+      }
+    }
+    return set
+  }, [filteredBlocks, now, currentWeek.parityLabel])
 
   // Collisions detection
   const collisions = useMemo(() => {
@@ -224,6 +235,8 @@ export function ScheduleView({
                 collisionInfo={collisions.get(block.id)}
                 currentParity={currentWeek.parityLabel}
                 dimWhenNotCurrentWeek={parityFilter === 'all'}
+                isCurrent={activeBlockIds.has(block.id)}
+                currentTime={now}
                 onClick={onSelectBlock}
               />
             ))}
@@ -244,6 +257,8 @@ export function ScheduleView({
           collisions={collisions}
           currentParityLabel={currentWeek.parityLabel}
           parityFilter={parityFilter}
+          activeBlockIds={activeBlockIds}
+          currentTime={now}
           onSelectBlock={onSelectBlock}
         />
       ) : (
@@ -254,6 +269,8 @@ export function ScheduleView({
           collisions={collisions}
           currentParityLabel={currentWeek.parityLabel}
           parityFilter={parityFilter}
+          activeBlockIds={activeBlockIds}
+          currentTime={now}
           onSelectBlock={onSelectBlock}
         />
       )}

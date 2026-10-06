@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 11,
-    marginTop: 1,
+    marginTop: 4,
   },
   actionsRow: {
     flexDirection: 'row',

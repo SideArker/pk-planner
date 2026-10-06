@@ -1,5 +1,6 @@
 import {
   type ScheduleBlock,
+  formatActivityName,
   minutesToTime,
   roomLabel,
   teacherDisplay,
@@ -86,7 +87,7 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
             variant="outline"
             className={`text-[11px] font-semibold px-1.5 py-0.5 ${style.badge}`}
           >
-            {block.activity?.toUpperCase() || 'ZAJĘCIA'}
+            {formatActivityName(block.activity)}
           </Badge>
           {parityLabel && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
@@ -95,11 +96,16 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
           )}
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] font-mono text-zinc-500 dark:text-zinc-400 shrink-0">
-          <Clock className="h-3 w-3" />
-          <span>
-            {startTime} - {endTime}
-          </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+            <Clock className="h-3 w-3" />
+            <span>
+              {startTime} - {endTime}
+            </span>
+          </div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+            <MoreVertical className="h-3.5 w-3.5" />
+          </div>
         </div>
       </div>
 
@@ -128,10 +134,7 @@ export function BlockCard({ block, onClick, isCompact = false }: BlockCardProps)
           {block.notes}
         </p>
       )}
-
-      <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
-        <MoreVertical className="h-3.5 w-3.5" />
-      </div>
     </button>
   )
 }
+

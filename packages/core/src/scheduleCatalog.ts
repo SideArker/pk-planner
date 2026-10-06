@@ -154,17 +154,24 @@ export function getCohortHierarchy(state: ScheduleState): {
     const maxLab = labGroups.size > 0 ? Math.max(...labGroups) : 0
     const sortedAllGroups = Array.from(allGroups).sort((a, b) => a - b)
 
-    if (meta.field === 'Informatyka' && meta.degree === 'I stopień' && (maxEx >= 3 || maxLab >= 6)) {
-      // Standard PK WIiT Informatyka I stopien: 3 GK/GL groups
-      const numGroups = Math.max(maxEx, Math.ceil(maxLab / 2), 3)
-      for (let g = 1; g <= numGroups; g++) {
+    const isFirstDegreeInformatyka =
+      meta.field === 'Informatyka' &&
+      meta.degree === 'I stopień' &&
+      (maxEx >= 2 || maxLab >= 4 || (maxLab > 0 && maxEx > 0 && maxLab > maxEx))
+
+    if (isFirstDegreeInformatyka) {
+      // Standard PK WIiT Informatyka I stopien: lab groups GL 1..numLabGroups
+      // Each lab group GL g automatically corresponds to exercise group C Math.ceil(g / 2)
+      const numLabGroups = Math.max(maxLab, maxEx * 2, 6)
+      for (let g = 1; g <= numLabGroups; g++) {
+        const exGr = Math.ceil(g / 2)
         const node: CohortHierarchyNode = {
-          value: `${baseItem.value} / GK/GL ${g}`,
+          value: `${baseItem.value} / GL ${g}`,
           cohortBase: baseItem.value,
           groupNumber: g,
-          groupLabel: `GK/GL ${g}`,
-          label: `GK/GL ${g}`,
-          sublabel: `Ćwiczenia C${g} · Lab GL${2 * g - 1} / GL${2 * g}`,
+          groupLabel: `GL ${g}`,
+          label: `Grupa GL ${g}`,
+          sublabel: `Lab GL ${g} · Ćwiczenia C${exGr}`,
           field: meta.field,
           degree: meta.degree,
           year: meta.year,
@@ -178,7 +185,7 @@ export function getCohortHierarchy(state: ScheduleState): {
         const specMatch = baseItem.value.match(/\b(CY|DS|SIR)\b/i)
         const spec = specMatch ? specMatch[1].toUpperCase() : null
 
-        const label = spec ? `${spec} - Grupa ${g}` : `GK/GL ${g}`
+        const label = spec ? `${spec} - Grupa ${g}` : `Grupa ${g}`
         const sublabel = spec
           ? `${spec} · Grupa ${g} · sem. ${meta.semester}`
           : `Semestr ${meta.semester} · Grupa ${g}`
@@ -230,7 +237,7 @@ export function getCohortHierarchy(state: ScheduleState): {
  */
 export function blockMatchesBaseCohort(block: ScheduleBlock, cohortBase: string): boolean {
   const cleanTarget = cohortBase
-    .replace(/\s*\/\s*(?:GK\/GL|gr\.).*$/i, '')
+    .replace(/\s*\/\s*(?:GK\/GL|GL|Grupa\s*GL|gr\.).*$/i, '')
     .replace(/[—–]/g, '-')
     .toLowerCase()
     .trim()
@@ -244,18 +251,43 @@ export function blockMatchesBaseCohort(block: ScheduleBlock, cohortBase: string)
 }
 
 /**
+ * Detects whether the catalog cohort has 2:1 paired lab/exercise groups.
+ */
+export function detectIsPairedCohort(catalog: SubjectCatalogItem[]): boolean {
+  let maxLab = 0
+  let maxEx = 0
+  for (const item of catalog) {
+    for (const act of item.activities) {
+      const isLab = ['l', 'lab', 'p', 'proj'].includes(act.activity.toLowerCase().trim())
+      const isEx = ['c', 'cw', 'cwiczenia', 'ćw'].includes(act.activity.toLowerCase().trim())
+      for (const opt of act.options) {
+        const m = opt.cohort?.match(/\/ gr\.?\s*(\d+)/i) || opt.group?.match(/(\d+)/)
+        const gr = m ? Number(m[1]) : 0
+        if (isLab && gr > maxLab) maxLab = gr
+        if (isEx && gr > maxEx) maxEx = gr
+      }
+    }
+  }
+  return maxLab > 3 || (maxLab > 0 && maxEx > 0 && maxLab > maxEx)
+}
+
+/**
  * Selects best matching activity option based on chosen group number.
+ * When groupNumber is provided (the student's chosen laboratory group):
+ * - For lab/project: selects matching lab group (e.g. GL 4).
+ * - For exercises (C): automatically maps to C = Math.ceil(groupNumber / 2) (e.g. C2).
  */
 export function pickBestOptionForGroup(
   options: SubjectActivityOption[],
   activity: string,
   groupNumber?: number,
+  isPaired?: boolean,
 ): SubjectActivityOption | undefined {
   if (!options || options.length === 0) return undefined
   if (!groupNumber || options.length === 1) return options[0]
 
   const act = activity.toLowerCase().trim()
-  const isLabOrProj = ['l', 'lab', 'p', 'proj'].includes(act)
+  const isExercise = ['c', 'cw', 'cwiczenia', 'ćw'].includes(act)
 
   const optionGroups = options.map(opt => {
     const m = opt.cohort?.match(/\/ gr\.?\s*(\d+)/i) || opt.group?.match(/(\d+)/)
@@ -265,32 +297,25 @@ export function pickBestOptionForGroup(
     }
   })
 
-  const maxGr = Math.max(...optionGroups.map(o => o.gr ?? 0))
+  // For paired cohorts: selecting lab group L automatically chooses exercise C = Math.ceil(L / 2)
+  const targetGr = isExercise && isPaired ? Math.ceil(groupNumber / 2) : groupNumber
 
-  // In PK Informatyka: 1 exercise group corresponds to 2 lab groups:
-  // GK 1 -> GL 1 (+ GL 2), GK 2 -> GL 3 (+ GL 4), GK 3 -> GL 5 (+ GL 6)
-  if (isLabOrProj && maxGr > 3) {
-    const targetLab = 2 * groupNumber - 1
-    const labMatch = optionGroups.find(o => o.gr === targetLab)
-    if (labMatch) return labMatch.option
-  }
-
-  // Direct numeric group match
-  const directMatch = optionGroups.find(o => o.gr === groupNumber)
+  // 1. Direct numeric match
+  const directMatch = optionGroups.find(o => o.gr === targetGr)
   if (directMatch) return directMatch.option
 
-  // Lab fallback: even lab group (2 * groupNumber)
-  if (isLabOrProj && maxGr > 3) {
-    const labMatch2 = optionGroups.find(o => o.gr === 2 * groupNumber)
-    if (labMatch2) return labMatch2.option
-  }
-
-  // Substring match in group label
+  // 2. Substring match in group label or cohort
   const strMatch = options.find(opt =>
-    opt.group.includes(String(groupNumber)) ||
-    Boolean(opt.cohort && opt.cohort.includes(`gr. ${groupNumber}`))
+    opt.group.includes(String(targetGr)) ||
+    Boolean(opt.cohort && opt.cohort.includes(`gr. ${targetGr}`))
   )
   if (strMatch) return strMatch
+
+  // Fallback for exercise: try groupNumber directly if targetGr wasn't found
+  if (isExercise && targetGr !== groupNumber) {
+    const fallbackMatch = optionGroups.find(o => o.gr === groupNumber)
+    if (fallbackMatch) return fallbackMatch.option
+  }
 
   return options[0]
 }
@@ -301,18 +326,20 @@ export function pickBestOptionForGroup(
 export function prefillScheduleSelections(
   catalog: SubjectCatalogItem[],
   groupNumber?: number,
+  options?: { isPaired?: boolean },
 ): {
   selectedSubjects: Record<string, boolean>
   selectedGroups: Record<string, string>
 } {
   const selectedSubjects: Record<string, boolean> = {}
   const selectedGroups: Record<string, string> = {}
+  const isPaired = options?.isPaired ?? detectIsPairedCohort(catalog)
 
   for (const item of catalog) {
     selectedSubjects[item.subject] = true
     for (const act of item.activities) {
       if (act.options.length === 0) continue
-      const chosen = pickBestOptionForGroup(act.options, act.activity, groupNumber)
+      const chosen = pickBestOptionForGroup(act.options, act.activity, groupNumber, isPaired)
       if (chosen) {
         const key = `${item.subject}:${act.activity}`
         selectedGroups[key] = chosen.id
@@ -445,6 +472,23 @@ export function resolveUserBlocks(
 
       if (!isSelected) {
         continue
+      }
+    } else {
+      // Fallback: check if cohort specifies lab group, e.g. "/ GL 4" or "/ gr. 4"
+      const cohortLabMatch = config.cohort.match(/\/\s*(?:GL|gr\.)\s*(\d+)/i)
+      if (cohortLabMatch) {
+        const labNum = Number(cohortLabMatch[1])
+        const { group } = cohortParts(block.cohort)
+        if (group !== null) {
+          const isLab = ['l', 'lab', 'p', 'proj'].includes(activityKey)
+          const isEx = ['c', 'cw', 'cwiczenia', 'ćw'].includes(activityKey)
+          if (isLab && group !== labNum) {
+            continue
+          }
+          if (isEx && group !== Math.ceil(labNum / 2)) {
+            continue
+          }
+        }
       }
     }
 

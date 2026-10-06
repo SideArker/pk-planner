@@ -473,92 +473,118 @@ export function resolveUserBlocks(
   state: ScheduleState,
   config: UserScheduleConfig,
 ): ScheduleBlock[] {
-  if (!config.cohort) return [];
-
-  const cohortBase = config.cohort.toLowerCase().trim();
-  const matchingBlocks = state.blocks.filter((b) =>
-    blockMatchesBaseCohort(b, cohortBase),
-  );
-
   const results: ScheduleBlock[] = [];
 
-  for (const block of matchingBlocks) {
-    const subject = (block.subject || "Bez nazwy").trim();
-    // If user explicitly excluded this subject
-    if (config.selectedSubjects && config.selectedSubjects[subject] === false) {
-      continue;
-    }
+  if (config.cohort) {
+    const cohortBase = config.cohort.toLowerCase().trim();
+    const matchingBlocks = state.blocks.filter((b) =>
+      blockMatchesBaseCohort(b, cohortBase),
+    );
 
-    const activityKey = (block.activity || "INNE").toLowerCase().trim();
-    const selectionKey = `${subject}:${activityKey}`;
-    const chosenGroupOrId = config.selectedGroups?.[selectionKey];
-
-    // If marked as NOT APPLICABLE (<NIE DOTYCZY>)
-    if (
-      chosenGroupOrId === NOT_APPLICABLE_VALUE ||
-      chosenGroupOrId === NOT_APPLICABLE_LABEL ||
-      chosenGroupOrId === "__none"
-    ) {
-      continue;
-    }
-
-    // If user made an explicit selection for this activity:
-    if (chosenGroupOrId) {
-      const { group } = cohortParts(block.cohort);
-      const groupString =
-        group !== null ? `Grupa ${group}` : block.cohort || "Wszyscy";
-
-      // Matches either direct block ID or group label
-      const isSelected =
-        block.id === chosenGroupOrId ||
-        groupString === chosenGroupOrId ||
-        String(group) === chosenGroupOrId;
-
-      if (!isSelected) {
+    for (const block of matchingBlocks) {
+      const subject = (block.subject || "Bez nazwy").trim();
+      // If user explicitly excluded this subject
+      if (config.selectedSubjects && config.selectedSubjects[subject] === false) {
         continue;
       }
-    } else {
-      // Fallback: check if cohort specifies lab group, e.g. "/ GL 4" or "/ gr. 4"
-      const cohortLabMatch = config.cohort.match(
-        /\/\s*(?:GL|GK|gr\.)\s*(\d+)/i,
-      );
-      if (cohortLabMatch) {
-        const labNum = Number(cohortLabMatch[1]);
+
+      const activityKey = (block.activity || "INNE").toLowerCase().trim();
+      const selectionKey = `${subject}:${activityKey}`;
+      const chosenGroupOrId = config.selectedGroups?.[selectionKey];
+
+      // If marked as NOT APPLICABLE (<NIE DOTYCZY>)
+      if (
+        chosenGroupOrId === NOT_APPLICABLE_VALUE ||
+        chosenGroupOrId === NOT_APPLICABLE_LABEL ||
+        chosenGroupOrId === "__none"
+      ) {
+        continue;
+      }
+
+      // If user made an explicit selection for this activity:
+      if (chosenGroupOrId) {
         const { group } = cohortParts(block.cohort);
-        if (group !== null) {
-          const isLab = ["l", "lab", "p", "proj"].includes(activityKey);
-          const isEx = ["c", "cw", "cwiczenia", "ćw"].includes(activityKey);
-          if (isLab && group !== labNum) {
-            continue;
-          }
-          if (isEx && group !== exerciseGroupForLab(config.cohort, labNum)) {
-            continue;
+        const groupString =
+          group !== null ? `Grupa ${group}` : block.cohort || "Wszyscy";
+
+        // Matches either direct block ID or group label
+        const isSelected =
+          block.id === chosenGroupOrId ||
+          groupString === chosenGroupOrId ||
+          String(group) === chosenGroupOrId;
+
+        if (!isSelected) {
+          continue;
+        }
+      } else {
+        // Fallback: check if cohort specifies lab group, e.g. "/ GL 4" or "/ gr. 4"
+        const cohortLabMatch = config.cohort.match(
+          /\/\s*(?:GL|GK|gr\.)\s*(\d+)/i,
+        );
+        if (cohortLabMatch) {
+          const labNum = Number(cohortLabMatch[1]);
+          const { group } = cohortParts(block.cohort);
+          if (group !== null) {
+            const isLab = ["l", "lab", "p", "proj"].includes(activityKey);
+            const isEx = ["c", "cw", "cwiczenia", "ćw"].includes(activityKey);
+            if (isLab && group !== labNum) {
+              continue;
+            }
+            if (isEx && group !== exerciseGroupForLab(config.cohort, labNum)) {
+              continue;
+            }
           }
         }
       }
-    }
 
-    // Check custom overrides
-    const override = config.overrides?.[block.id];
-    if (override?.hidden) {
-      continue;
-    }
+      // Check custom overrides
+      const override = config.overrides?.[block.id];
+      if (override?.hidden) {
+        continue;
+      }
 
-    if (override) {
+      if (override) {
+        results.push({
+          ...block,
+          subject: override.customSubject || block.subject,
+          teacher: override.customTeacher || block.teacher,
+          teacherDisplay: override.customTeacher || block.teacherDisplay,
+          room:
+            override.customRoom !== undefined ? override.customRoom : block.room,
+          notes:
+            override.customNotes !== undefined
+              ? override.customNotes
+              : block.notes,
+        });
+      } else {
+        results.push(block);
+      }
+    }
+  }
+
+  // Include user's custom blocks
+  if (config.customBlocks && config.customBlocks.length > 0) {
+    for (const customBlock of config.customBlocks) {
+      const override = config.overrides?.[customBlock.id];
+      if (override?.hidden) {
+        continue;
+      }
+
       results.push({
-        ...block,
-        subject: override.customSubject || block.subject,
-        teacher: override.customTeacher || block.teacher,
-        teacherDisplay: override.customTeacher || block.teacherDisplay,
+        ...customBlock,
+        isCustom: true,
+        subject: override?.customSubject || customBlock.subject,
+        teacher: override?.customTeacher || customBlock.teacher,
+        teacherDisplay: override?.customTeacher || customBlock.teacherDisplay,
         room:
-          override.customRoom !== undefined ? override.customRoom : block.room,
+          override?.customRoom !== undefined
+            ? override.customRoom
+            : customBlock.room,
         notes:
-          override.customNotes !== undefined
+          override?.customNotes !== undefined
             ? override.customNotes
-            : block.notes,
+            : customBlock.notes,
       });
-    } else {
-      results.push(block);
     }
   }
 

@@ -51,8 +51,8 @@ export function getTeachingWeekInfo(
   const weekDiff = Math.floor(diffDays / 7);
   const weekNumber = weekDiff >= 0 ? weekDiff + 1 : 1;
 
-  const parity: 0 | 1 = weekNumber % 2 === 1 ? 1 : 0;
-  const parityLabel: "A" | "B" = parity === 1 ? "A" : "B";
+  const parity: 0 | 1 = weekNumber % 2 === 1 ? 0 : 1;
+  const parityLabel: "A" | "B" = parity === 0 ? "A" : "B";
 
   const pad = (n: number) => String(n).padStart(2, "0");
   const dateRangeLabel = `${pad(monday.getDate())}.${pad(monday.getMonth() + 1)} - ${pad(sunday.getDate())}.${pad(sunday.getMonth() + 1)}`;

@@ -242,14 +242,14 @@ test("calculates correct teaching week parity A and B starting from 28.09.2026",
   assert.equal(week3.parity, 0);
   assert.equal(week3.parityLabel, "A");
 
-  const oddBlock = { ...block, teachingWeekParity: 1 };
-  const evenBlock = { ...block, teachingWeekParity: 0 };
+  const blockA = { ...block, teachingWeekParity: 0 };
+  const blockB = { ...block, teachingWeekParity: 1 };
   const weeklyBlock = { ...block, teachingWeekParity: null };
 
-  assert.equal(isBlockInWeekParity(oddBlock, "A"), true);
-  assert.equal(isBlockInWeekParity(oddBlock, "B"), false);
-  assert.equal(isBlockInWeekParity(evenBlock, "A"), false);
-  assert.equal(isBlockInWeekParity(evenBlock, "B"), true);
+  assert.equal(isBlockInWeekParity(blockA, "A"), true);
+  assert.equal(isBlockInWeekParity(blockA, "B"), false);
+  assert.equal(isBlockInWeekParity(blockB, "A"), false);
+  assert.equal(isBlockInWeekParity(blockB, "B"), true);
   assert.equal(isBlockInWeekParity(weeklyBlock, "A"), true);
   assert.equal(isBlockInWeekParity(weeklyBlock, "B"), true);
 });
@@ -454,3 +454,42 @@ test("detectScheduleCollisions correctly identifies overlapping classes and resp
     true,
   );
 });
+
+test("resolveUserBlocks includes user custom blocks and handles overrides", () => {
+  const emptyState = { blocks: [], rooms: [] };
+  const custom1 = {
+    id: "custom-1",
+    subject: "Własny lektorat",
+    day: "WED",
+    start: 450,
+    duration: 90,
+    activity: "Lektorat",
+    planType: "stacjonarne",
+  };
+  const custom2 = {
+    id: "custom-2",
+    subject: "Ukryte zajęcia",
+    day: "THU",
+    start: 600,
+    duration: 90,
+    planType: "stacjonarne",
+  };
+
+  const resolved = resolveUserBlocks(emptyState, {
+    cohort: "INF / GL 1",
+    planType: "stacjonarne",
+    selectedSubjects: {},
+    selectedGroups: {},
+    customBlocks: [custom1, custom2],
+    overrides: {
+      "custom-2": { hidden: true },
+      "custom-1": { customSubject: "Język hiszpański" },
+    },
+  });
+
+  assert.equal(resolved.length, 1);
+  assert.equal(resolved[0].id, "custom-1");
+  assert.equal(resolved[0].subject, "Język hiszpański");
+  assert.equal(resolved[0].isCustom, true);
+});
+

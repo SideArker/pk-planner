@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Animated,
   Easing,
+  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -62,17 +63,10 @@ export function Header({
       ]}>
       {/* Brand & Cohort */}
       <View style={styles.brandRow}>
-        <View
-          style={[
-            styles.iconWrapper,
-            { backgroundColor: isDark ? '#ffffff' : '#0f172a' },
-          ]}>
-          <Ionicons
-            name="calendar"
-            size={18}
-            color={isDark ? '#09090b' : '#ffffff'}
-          />
-        </View>
+        <Image
+          source={require('@/assets/images/icon.png')}
+          style={styles.iconWrapper}
+        />
 
         <View style={styles.titleColumn}>
           <View style={styles.titleRow}>

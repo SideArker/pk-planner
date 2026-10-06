@@ -8,6 +8,60 @@ export const DAY_INFO: Record<Day, readonly [string, string]> = {
   SUN: ['Niedziela', 'niedz.'],
 }
 
+export const SEMESTER_START_DATE = '2026-09-28'
+
+export interface TeachingWeekInfo {
+  weekNumber: number
+  parity: 0 | 1
+  parityLabel: 'A' | 'B'
+  startDate: Date
+  endDate: Date
+  dateRangeLabel: string
+}
+
+export function getTeachingWeekInfo(targetDate: Date = new Date()): TeachingWeekInfo {
+  const [startY, startM, startD] = SEMESTER_START_DATE.split('-').map(Number)
+  const anchor = new Date(startY, startM - 1, startD, 0, 0, 0, 0)
+
+  const current = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0)
+  const dayOfWeek = (current.getDay() + 6) % 7 // Monday = 0
+  const monday = new Date(current)
+  monday.setDate(current.getDate() - dayOfWeek)
+
+  const sunday = new Date(monday)
+  sunday.setDate(monday.getDate() + 6)
+
+  const diffDays = Math.round((monday.getTime() - anchor.getTime()) / (24 * 60 * 60 * 1000))
+  const weekDiff = Math.floor(diffDays / 7)
+  const weekNumber = weekDiff >= 0 ? weekDiff + 1 : 1
+
+  const parity: 0 | 1 = weekNumber % 2 === 1 ? 1 : 0
+  const parityLabel: 'A' | 'B' = parity === 1 ? 'A' : 'B'
+
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const dateRangeLabel = `${pad(monday.getDate())}.${pad(monday.getMonth() + 1)} - ${pad(sunday.getDate())}.${pad(sunday.getMonth() + 1)}`
+
+  return {
+    weekNumber,
+    parity,
+    parityLabel,
+    startDate: monday,
+    endDate: sunday,
+    dateRangeLabel,
+  }
+}
+
+export function isBlockInWeekParity(
+  block: ScheduleBlock,
+  filter: 'all' | 'A' | 'B',
+): boolean {
+  if (filter === 'all') return true
+  if (block.teachingWeekParity == null) return true
+  if (filter === 'A') return block.teachingWeekParity === 1
+  if (filter === 'B') return block.teachingWeekParity === 0
+  return true
+}
+
 export function plain(value: unknown): string {
   return String(value ?? '').replaceAll('ł', 'l').replaceAll('Ł', 'L')
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pl').trim()

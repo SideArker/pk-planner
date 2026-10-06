@@ -5,6 +5,8 @@ import {
   type ScheduleBlock,
   availableDays,
   DAY_INFO,
+  getTeachingWeekInfo,
+  isBlockInWeekParity,
 } from '@pk-planner/core'
 import { Calendar, Filter, Sparkles } from 'lucide-react'
 import { BlockCard } from './BlockCard'
@@ -42,18 +44,18 @@ export function ScheduleView({
   const [activeMobileDay, setActiveMobileDay] = useState<Day>(() =>
     getInitialToday(availableDays(planType)),
   )
-  const [parityFilter, setParityFilter] = useState<'all' | 'odd' | 'even'>('all')
+
+  const currentWeek = useMemo(() => getTeachingWeekInfo(), [])
+  const [parityFilter, setParityFilter] = useState<'current' | 'A' | 'B' | 'all'>('current')
 
   // Filter blocks by parity
   const filteredBlocks = useMemo(() => {
     return blocks.filter(b => {
       if (parityFilter === 'all') return true
-      if (b.teachingWeekParity == null) return true
-      if (parityFilter === 'odd') return b.teachingWeekParity === 1
-      if (parityFilter === 'even') return b.teachingWeekParity === 0
-      return true
+      const targetParity = parityFilter === 'current' ? currentWeek.parityLabel : parityFilter
+      return isBlockInWeekParity(b, targetParity)
     })
-  }, [blocks, parityFilter])
+  }, [blocks, parityFilter, currentWeek])
 
   // Group blocks by day
   const blocksByDay = useMemo(() => {
@@ -85,20 +87,53 @@ export function ScheduleView({
     <div className="space-y-4">
       {/* Subheader Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 px-4 shadow-xs">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Calendar className="h-4 w-4 text-zinc-500" />
           <span className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100">
             {planType === 'stacjonarne' ? 'Plan stacjonarny' : 'Zjazdy niestacjonarne'}
           </span>
-          <span className="text-xs text-zinc-400">· {blocks.length} zajęć w planie</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 font-medium text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/60">
+            Bieżący: Tydzień {currentWeek.parityLabel} ({currentWeek.dateRangeLabel})
+          </span>
+          <span className="text-xs text-zinc-400">· {filteredBlocks.length} zajęć</span>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Parity filter */}
           <div className="flex items-center rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800 text-xs">
             <button
+              onClick={() => setParityFilter('current')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                parityFilter === 'current'
+                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              }`}
+            >
+              Bieżący ({currentWeek.parityLabel})
+            </button>
+            <button
+              onClick={() => setParityFilter('A')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                parityFilter === 'A'
+                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              }`}
+            >
+              Tydzień A
+            </button>
+            <button
+              onClick={() => setParityFilter('B')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                parityFilter === 'B'
+                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              }`}
+            >
+              Tydzień B
+            </button>
+            <button
               onClick={() => setParityFilter('all')}
-              className={`px-2.5 py-1 rounded-md transition-all ${
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                 parityFilter === 'all'
                   ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
                   : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
@@ -106,31 +141,11 @@ export function ScheduleView({
             >
               Wszystkie
             </button>
-            <button
-              onClick={() => setParityFilter('odd')}
-              className={`px-2.5 py-1 rounded-md transition-all ${
-                parityFilter === 'odd'
-                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-              }`}
-            >
-              Nieparz. (A)
-            </button>
-            <button
-              onClick={() => setParityFilter('even')}
-              className={`px-2.5 py-1 rounded-md transition-all ${
-                parityFilter === 'even'
-                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-              }`}
-            >
-              Parz. (B)
-            </button>
           </div>
 
           <button
             onClick={onOpenCustomize}
-            className="hidden sm:flex items-center gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+            className="hidden sm:flex items-center gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <Filter className="h-3.5 w-3.5" />
             <span>Filtruj grupy</span>

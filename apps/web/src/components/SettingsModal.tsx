@@ -6,6 +6,7 @@ import {
   GraduationCap,
   Layers,
   Moon,
+  Plus,
   RotateCcw,
   Sun,
   X,
@@ -24,6 +25,8 @@ interface SettingsModalProps {
   onSetTheme: (theme: Theme) => void
   onReset: () => void
   userBlocks: ScheduleBlock[]
+  customBlocksCount?: number
+  onOpenAddCustom?: () => void
 }
 
 export function SettingsModal({
@@ -37,6 +40,8 @@ export function SettingsModal({
   onSetTheme,
   onReset,
   userBlocks,
+  customBlocksCount,
+  onOpenAddCustom,
 }: SettingsModalProps) {
   if (!isOpen) return null
 
@@ -103,7 +108,7 @@ export function SettingsModal({
                 onClose()
                 onReconfigureGroups()
               }}
-              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-950 text-left hover:border-zinc-400 dark:hover:border-zinc-700 transition-colors flex items-center justify-between"
+              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-950 text-left hover:border-zinc-400 dark:hover:border-zinc-700 transition-colors flex items-center justify-between cursor-pointer"
             >
               <div>
                 <p className="font-medium text-zinc-900 dark:text-zinc-100">
@@ -115,6 +120,38 @@ export function SettingsModal({
               </div>
               <span className="text-xs text-zinc-400">Edytuj →</span>
             </button>
+          </div>
+
+          {/* Section: Własne zajęcia */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+              <Plus className="h-4 w-4" />
+              <span>Własne zajęcia ({customBlocksCount || 0})</span>
+            </h3>
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-950 flex items-center justify-between">
+              <div>
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                  {customBlocksCount ? `${customBlocksCount} dodanych zajęć` : 'Brak dodanych zajęć'}
+                </p>
+                <p className="text-[11px] text-zinc-500">
+                  Lektoraty, WF, koła naukowe
+                </p>
+              </div>
+              {onOpenAddCustom && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    onClose()
+                    onOpenAddCustom()
+                  }}
+                  className="gap-1 cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Dodaj</span>
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Section: Eksport całego planu */}

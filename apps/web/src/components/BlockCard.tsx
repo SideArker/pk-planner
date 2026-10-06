@@ -15,6 +15,7 @@ interface BlockCardProps {
   isCompact?: boolean;
   collisionInfo?: BlockCollisionInfo[];
   currentParity?: "A" | "B";
+  dimWhenNotCurrentWeek?: boolean;
 }
 
 const ACTIVITY_STYLES: Record<
@@ -63,6 +64,24 @@ const ACTIVITY_STYLES: Record<
     border: "border-l-rose-500",
     bg: "hover:bg-rose-50/40 dark:hover:bg-rose-950/20",
   },
+  lektorat: {
+    badge:
+      "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/80 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60",
+    border: "border-l-cyan-500",
+    bg: "hover:bg-cyan-50/40 dark:hover:bg-cyan-950/20",
+  },
+  lek: {
+    badge:
+      "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/80 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800/60",
+    border: "border-l-cyan-500",
+    bg: "hover:bg-cyan-50/40 dark:hover:bg-cyan-950/20",
+  },
+  wf: {
+    badge:
+      "bg-orange-100 text-orange-700 dark:bg-orange-950/80 dark:text-orange-300 border-orange-200 dark:border-orange-800/60",
+    border: "border-l-orange-500",
+    bg: "hover:bg-orange-50/40 dark:hover:bg-orange-950/20",
+  },
 };
 
 const DEFAULT_STYLE = {
@@ -78,6 +97,7 @@ export function BlockCard({
   isCompact = false,
   collisionInfo = [],
   currentParity,
+  dimWhenNotCurrentWeek = false,
 }: BlockCardProps) {
   const actKey = (block.activity || "").toLowerCase().trim();
   const style = ACTIVITY_STYLES[actKey] || DEFAULT_STYLE;
@@ -93,6 +113,11 @@ export function BlockCard({
     block.teachingWeekParity != null &&
     ((block.teachingWeekParity === 1 && currentParity === "B") ||
       (block.teachingWeekParity === 0 && currentParity === "A"));
+  const isOtherWeek =
+    dimWhenNotCurrentWeek &&
+    block.teachingWeekParity != null &&
+    currentParity != null &&
+    !isCurrentParity;
 
   const parityLabel =
     block.frequency === "co_2_tygodnie" || block.teachingWeekParity != null
@@ -110,7 +135,7 @@ export function BlockCard({
         hasCollision
           ? "border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/50 bg-amber-50/15 dark:bg-amber-950/20"
           : "border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-900/90"
-      } p-3 transition-all duration-150 hover:shadow-md border-l-4 ${style.border} ${style.bg} cursor-pointer`}
+      } p-3 transition-all duration-150 hover:shadow-md border-l-4 ${style.border} ${style.bg} cursor-pointer ${isOtherWeek ? 'opacity-60 grayscale-[35%]' : ''}`}
     >
       <div className="flex items-start justify-between gap-1.5 mb-1.5">
         <div className="flex items-center gap-1.5 flex-wrap">
@@ -120,6 +145,11 @@ export function BlockCard({
           >
             {formatActivityName(block.activity)}
           </Badge>
+          {(block.isCustom || block.id.startsWith("custom-")) && (
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80">
+              Własne
+            </span>
+          )}
           {parityLabel && (
             <span
               className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] ${

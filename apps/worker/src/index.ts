@@ -121,19 +121,24 @@ export default {
         if (release.ok) {
           const data = await release.json() as {
             tag_name?: string;
+            body?: string;
             assets?: Array<{ name?: string; browser_download_url?: string }>;
           };
           const version = data.tag_name?.replace(/^v/, "");
           const apk = data.assets?.find((asset) => asset.name === "app-release.apk");
-          if (version && apk?.browser_download_url) {
-            return json({ version, apkUrl: apk.browser_download_url });
+          if (version) {
+            return json({
+              version,
+              apkUrl: apk?.browser_download_url,
+              changelog: typeof data.body === 'string' ? data.body : '',
+            });
           }
         }
       } catch {
         // Fall back to the version built into this Worker.
       }
 
-      return json({ version: mobileAppVersion });
+      return json({ version: mobileAppVersion, changelog: '' });
     }
 
     if (isScheduleEndpoint) {

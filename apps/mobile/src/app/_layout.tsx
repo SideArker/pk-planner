@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, Tabs, ThemeProvider as NavigationThemeProvider
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -13,6 +14,7 @@ function RootTabsLayout() {
   const { resolvedTheme, theme } = useAppTheme();
   const insets = useSafeAreaInsets();
   const isDark = resolvedTheme === 'dark';
+  const tabBarBottomPadding = Math.max(insets.bottom, Platform.OS === 'android' ? 28 : 12) + 8;
 
   return (
     <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
@@ -25,8 +27,8 @@ function RootTabsLayout() {
             backgroundColor: isDark ? '#09090b' : '#ffffff',
             borderTopColor: theme.border,
             borderTopWidth: 1,
-            height: 56 + Math.max(insets.bottom, 8),
-            paddingBottom: Math.max(insets.bottom, 8),
+            height: 56 + tabBarBottomPadding,
+            paddingBottom: tabBarBottomPadding,
             paddingTop: 8,
           },
           tabBarActiveTintColor: isDark ? '#fafafa' : '#0f172a',

@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  FlatList,
   PanResponder,
   Pressable,
   StyleSheet,
@@ -27,14 +26,13 @@ import {
 } from '@pk-planner/core';
 
 import { AddCustomBlockModal } from '@/components/AddCustomBlockModal';
-import { BlockCard } from '@/components/BlockCard';
 import { BlockDetailModal } from '@/components/BlockDetailModal';
 import { DaySelector } from '@/components/DaySelector';
 import { Header } from '@/components/Header';
 import { OnboardingModal } from '@/components/OnboardingModal';
+import { ScheduleDayPager } from '@/components/ScheduleDayPager';
 import { ScheduleGrid } from '@/components/ScheduleGrid';
 import { WeekParityFilter, WeekParitySelector } from '@/components/WeekParitySelector';
-import { EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useScheduleData } from '@/hooks/useScheduleData';
@@ -90,7 +88,6 @@ export default function ScheduleScreen() {
   const [selectedDay, setSelectedDay] = useState<Day>(() => getInitialToday(days));
   const [selectedParity, setSelectedParity] = useState<WeekParityFilter>('ALL');
   const [scheduleView, setScheduleView] = useState<'list' | 'grid'>('list');
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const scrollOffset = useRef(0);
   const isLoadingRef = useRef(isLoading);
   const refreshRef = useRef(refresh);
@@ -216,19 +213,6 @@ export default function ScheduleScreen() {
     }
     return counts;
   }, [userBlocks, selectedParity]);
-
-  // Filtered blocks for selected day
-  const dayBlocks = useMemo(() => {
-    const filtered = userBlocks.filter((b) => {
-      if (b.day !== selectedDay) return false;
-      if (selectedParity !== 'ALL' && !isBlockInWeekParity(b, selectedParity)) {
-        return false;
-      }
-      return true;
-    });
-
-    return filtered.sort((a, b) => (a.start ?? 0) - (b.start ?? 0));
-  }, [userBlocks, selectedDay, selectedParity]);
 
   const handleSaveOnboarding = (
     cohort: string,
@@ -483,50 +467,18 @@ export default function ScheduleScreen() {
                 onSelectDay={setSelectedDay}
                 dayCounts={dayCounts}
               />
-              <FlatList
-                data={dayBlocks}
-                keyExtractor={(item) => item.id}
-                contentContainerStyle={styles.listContent}
-                bounces={false}
-                overScrollMode="never"
-                scrollEventThrottle={16}
-                onScroll={(event) => {
-                  scrollOffset.current = Math.max(0, event.nativeEvent.contentOffset.y);
+              <ScheduleDayPager
+                days={days}
+                selectedDay={selectedDay}
+                onSelectDay={setSelectedDay}
+                blocks={userBlocks}
+                parity={selectedParity}
+                collisions={collisions}
+                onSelectBlock={setSelectedBlock}
+                onVerticalScroll={(day, offset) => {
+                  if (day === selectedDay) scrollOffset.current = offset;
                 }}
-                onTouchStart={(event) => {
-                  touchStart.current = {
-                    x: event.nativeEvent.pageX,
-                    y: event.nativeEvent.pageY,
-                  };
-                }}
-                onTouchEnd={(event) => {
-                  const start = touchStart.current;
-                  touchStart.current = null;
-                  if (!start) return;
-                  const dx = event.nativeEvent.pageX - start.x;
-                  const dy = event.nativeEvent.pageY - start.y;
-                  if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.3) {
-                    const nextIndex = days.indexOf(selectedDay) + (dx < 0 ? 1 : -1);
-                    if (nextIndex >= 0 && nextIndex < days.length) {
-                      setSelectedDay(days[nextIndex]);
-                    }
-                  }
-                }}
-                renderItem={({ item }) => (
-                  <BlockCard
-                    block={item}
-                    onPress={setSelectedBlock}
-                    collisionInfo={collisions.get(item.id) || []}
-                    currentParity={selectedParity === 'ALL' ? undefined : selectedParity}
-                  />
-                )}
-                ListEmptyComponent={
-                  <EmptyState
-                    icon="sunny-outline"
-                    title="Brak zajęć w tym dniu"
-                    subtitle="Dzień wolny lub brak zaplanowanych zajęć"
-                  />
-                }
+                onSelectedDayScroll={(offset) => { scrollOffset.current = offset; }}
               />
             </>
           )}
@@ -652,11 +604,6 @@ const styles = StyleSheet.create({
   collisionAlertText: {
     fontSize: 12.5,
     fontWeight: '700',
-  },
-  listContent: {
-    flexGrow: 1,
-    paddingHorizontal: Spacing.three,
-    paddingBottom: 24,
   },
   viewRow: {
     flexDirection: 'row',

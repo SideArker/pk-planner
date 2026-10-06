@@ -101,9 +101,11 @@ export default {
     }
 
     if (isScheduleEndpoint) {
-      const upstreamUrl =
-        env.UPSTREAM_URL ||
-        "https://example.com/api/schedule-snapshot.php";
+      const upstreamUrl = env.UPSTREAM_URL;
+
+      if (!upstreamUrl) {
+        return json({ error: "UPSTREAM_URL is not configured" }, 500);
+      }
 
       try {
         const upstream = await fetch(upstreamUrl, {

@@ -46,7 +46,7 @@ Web i mobile mają zależność `@pk-planner/core: workspace:*`. Importuj typy i
 
 ## Worker
 
-`GET /health` zwraca stan Workera. `GET /api/schedule` pobiera JSON z `UPSTREAM_URL` i zwraca go klientowi. `GET /api/version` zwraca wersję aplikacji mobilnej z `apps/mobile/app.json`, np. `{ "version": "1.0.0" }`; klient mobilny może porównać ją ze swoją zainstalowaną wersją. Odpowiedź ma `Cache-Control: no-store`.
+`GET /health` zwraca stan Workera. `GET /api/schedule` pobiera JSON z `UPSTREAM_URL` i zwraca go klientowi. `GET /api/version` zwraca najnowszą wersję aplikacji, opcjonalny `apkUrl` oraz `changelog` w formacie Markdown pobrany z opisu wydania GitHub. Gdy wydanie jest niedostępne, zwraca wersję z `apps/mobile/app.json` i pusty changelog, np. `{ "version": "1.0.0", "changelog": "" }`. Klient mobilny może porównać tę wersję ze swoją zainstalowaną wersją. Odpowiedź ma `Cache-Control: no-store`.
 
 ### Routing API i obsługa subdomeny (`api.*`)
 

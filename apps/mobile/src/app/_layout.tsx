@@ -2,11 +2,13 @@ import { DarkTheme, DefaultTheme, Tabs, ThemeProvider as NavigationThemeProvider
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { Platform } from 'react-native';
+import React, { useEffect } from 'react';
+import { AppState, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ThemeProvider, useAppTheme } from '@/context/ThemeContext';
+import { requestNotificationPermission } from '@/utils/notifications';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -15,6 +17,21 @@ function RootTabsLayout() {
   const insets = useSafeAreaInsets();
   const isDark = resolvedTheme === 'dark';
   const tabBarBottomPadding = Math.max(insets.bottom, Platform.OS === 'android' ? 28 : 12) + 8;
+
+  useEffect(() => {
+    // Automatyczne zapytanie o wysyłanie powiadomień po wejściu na apkę
+    void requestNotificationPermission();
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void requestNotificationPermission();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   return (
     <NavigationThemeProvider value={isDark ? DarkTheme : DefaultTheme}>

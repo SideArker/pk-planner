@@ -7,6 +7,7 @@ import {
   PanResponder,
   Pressable,
   StyleSheet,
+  AppState,
   Text,
   View,
   useAnimatedValue,
@@ -194,6 +195,24 @@ export default function ScheduleScreen() {
     });
     return () => { active = false; };
   }, [isLoaded, state, userBlocks]));
+
+  // Wejście na apkę automatycznie synchronizuje plan i powiadomienia
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        void refresh();
+        if (isLoaded && state) {
+          void loadNotificationPreferences().then((preferences) => {
+            void syncNotifications(userBlocks, preferences).catch(() => {});
+          });
+        }
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [refresh, isLoaded, state, userBlocks]);
 
   // Collisions detection
   const collisions = useMemo(() => {
@@ -517,6 +536,7 @@ export default function ScheduleScreen() {
         onSwitchGroup={setSubjectGroup}
         onSaveOverride={handleSaveOverride}
         onRemoveCustomBlock={removeCustomBlock}
+        collisionInfo={selectedBlock ? (collisions.get(selectedBlock.id) || []) : []}
       />
     </SafeAreaView>
   );

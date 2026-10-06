@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { parseSchedulePayload, type SchedulePayload } from '@pk-planner/core';
 
@@ -11,6 +12,8 @@ export function useScheduleData() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const lastFetchTimeRef = useRef<number>(0);
+  const isFetchingRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Load from cache first
@@ -35,6 +38,13 @@ export function useScheduleData() {
   }, []);
 
   const fetchSchedule = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force) {
+      if (isFetchingRef.current) return;
+      if (now - lastFetchTimeRef.current < 6000) return;
+    }
+    lastFetchTimeRef.current = now;
+    isFetchingRef.current = true;
     setIsLoading(true);
     setError(null);
 
@@ -63,12 +73,23 @@ export function useScheduleData() {
       const message = err instanceof Error ? err.message : 'Nie udało się pobrać planu zajęć';
       setError(message);
     } finally {
+      isFetchingRef.current = false;
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchSchedule();
+    void fetchSchedule();
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        void fetchSchedule();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, [fetchSchedule]);
 
   return {

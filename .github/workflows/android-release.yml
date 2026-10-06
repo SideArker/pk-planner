@@ -1,0 +1,55 @@
+name: Android release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 12.9.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Set release version
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: |
+          node -e 'const fs=require("fs"); const p="apps/mobile/app.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); const v=process.env.GITHUB_REF_NAME.slice(1); if(!/^\d+\.\d+\.\d+$/.test(v)) throw new Error("Tag must match vMAJOR.MINOR.PATCH"); c.expo.version=v; c.expo.android.versionCode=Number(process.env.VERSION_CODE); fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n")'
+          pnpm --filter mobile exec expo prebuild --platform android --no-install --clean
+
+      - name: Build signed APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: PK Planner ${{ github.ref_name }}
+          generate_release_notes: true
+          files: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          fail_on_unmatched_files: true

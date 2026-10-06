@@ -73,6 +73,30 @@ export default {
     }
 
     if (isVersionEndpoint) {
+      try {
+        const release = await fetch("https://api.github.com/repos/SideArker/pk-planner/releases/latest", {
+          headers: {
+            Accept: "application/vnd.github+json",
+            "User-Agent": "PK-Planner-Worker",
+          },
+          cf: { cacheTtl: 300, cacheEverything: true },
+        });
+
+        if (release.ok) {
+          const data = await release.json() as {
+            tag_name?: string;
+            assets?: Array<{ name?: string; browser_download_url?: string }>;
+          };
+          const version = data.tag_name?.replace(/^v/, "");
+          const apk = data.assets?.find((asset) => asset.name === "app-release.apk");
+          if (version && apk?.browser_download_url) {
+            return json({ version, apkUrl: apk.browser_download_url });
+          }
+        }
+      } catch {
+        // Fall back to the version built into this Worker.
+      }
+
       return json({ version: mobileAppVersion });
     }
 

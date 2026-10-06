@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev:web": "pnpm --filter web dev",
-    "dev:mobile": "pnpm --filter mobile start",
+    "dev:mobile": "pnpm --filter mobile start -- --host lan",
     "dev:worker": "pnpm --filter worker dev",
     "build:web": "pnpm --filter web build",
     "build:mobile": "pnpm --filter mobile build",

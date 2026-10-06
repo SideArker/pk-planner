@@ -22,6 +22,7 @@ import {
   isBlockInWeekParity,
   prefillScheduleSelections,
   detectScheduleCollisions,
+  blockPlacementText,
 } from "../src/index.ts";
 
 const block = {
@@ -491,5 +492,69 @@ test("resolveUserBlocks includes user custom blocks and handles overrides", () =
   assert.equal(resolved[0].id, "custom-1");
   assert.equal(resolved[0].subject, "Język hiszpański");
   assert.equal(resolved[0].isCustom, true);
+});
+
+test("catalog simplifies lecture group to Wszyscy and handles online room formatting", () => {
+  const testState = {
+    blocks: [
+      {
+        id: "lecture-1",
+        subject: "Bazy danych I",
+        activity: "W",
+        teacher: "Stankievych Olena",
+        cohort: "I stopień stac sem. 3",
+        planType: "stacjonarne",
+        day: "WED",
+        start: 630,
+        duration: 90,
+        room: "ONLINE",
+      },
+      {
+        id: "biz-1",
+        subject: "Komunikacja w biznesie",
+        activity: "C",
+        teacher: "Jacek Jaśtal",
+        cohort: "I stopień stac sem. 3 / gr. 1",
+        planType: "stacjonarne",
+        day: "TUE",
+        start: 975,
+        duration: 90,
+        room: "SEMINARYJNA",
+        teachingWeekParity: 0,
+      },
+      {
+        id: "biz-2",
+        subject: "Komunikacja w biznesie",
+        activity: "C",
+        teacher: "Jacek Jaśtal",
+        cohort: "I stopień stac sem. 3 / gr. 2",
+        planType: "stacjonarne",
+        day: "TUE",
+        start: 975,
+        duration: 90,
+        room: "SEMINARYJNA",
+        teachingWeekParity: 1,
+      },
+    ],
+    rooms: [],
+  };
+
+  const catalog = buildSubjectCatalog(testState, "I stopień stac sem. 3");
+  const lectureItem = catalog.find((i) => i.subject === "Bazy danych I");
+  assert.ok(lectureItem);
+  assert.equal(lectureItem.activities[0].options[0].group, "Wszyscy");
+
+  const bizItem = catalog.find((i) => i.subject === "Komunikacja w biznesie");
+  assert.ok(bizItem);
+  const bizOptions = bizItem.activities[0].options;
+  assert.equal(bizOptions.find((o) => o.id === "biz-1")?.parity, 0);
+  assert.equal(bizOptions.find((o) => o.id === "biz-2")?.parity, 1);
+
+  // Online room in placement text and ics
+  const placement = blockPlacementText(testState.blocks[0]);
+  assert.match(placement, /ONLINE/);
+
+  const ics = generateIcs([testState.blocks[0]]);
+  assert.match(ics, /LOCATION:Online/);
 });
 

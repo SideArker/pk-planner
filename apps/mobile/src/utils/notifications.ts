@@ -13,6 +13,7 @@ export interface NotificationPreferences {
 const PREFERENCES_KEY = 'pk_planner_notification_preferences';
 const INSTALLATION_KEY = 'pk_planner_notification_installation';
 const LOCAL_IDS_KEY = 'pk_planner_notification_ids';
+const COUNTDOWN_STATE_KEY = 'pk_planner_countdown_enabled';
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ||
   'https://pk-planner.rsowa126.workers.dev/api/schedule').replace(/\/schedule\/?$/, '');
 
@@ -52,7 +53,13 @@ async function installationId(): Promise<string> {
 
 async function clearLocalNotifications(): Promise<void> {
   const saved = await AsyncStorage.getItem(LOCAL_IDS_KEY);
-  const ids: string[] = saved ? JSON.parse(saved) : [];
+  let ids: string[] = [];
+  try {
+    const parsed = saved ? JSON.parse(saved) : [];
+    if (Array.isArray(parsed)) ids = parsed.filter((item) => typeof item === 'string');
+  } catch {
+    // Discard a corrupted local ID list and rebuild the schedule.
+  }
   await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => {})));
   await AsyncStorage.removeItem(LOCAL_IDS_KEY);
 }
@@ -133,6 +140,11 @@ export async function syncNotifications(
   if (Platform.OS === 'web') return 'off';
   const id = await installationId();
   await clearLocalNotifications();
+  const previousCountdown = await AsyncStorage.getItem(COUNTDOWN_STATE_KEY) === '1';
+  if (previousCountdown && !preferences.countdown) {
+    await Notifications.dismissAllNotificationsAsync().catch(() => {});
+  }
+  await AsyncStorage.setItem(COUNTDOWN_STATE_KEY, preferences.countdown ? '1' : '0');
   if (!preferences.reminders && !preferences.countdown) {
     await fetch(`${API_URL}/notifications/${id}`, { method: 'DELETE' }).catch(() => {});
     return 'off';

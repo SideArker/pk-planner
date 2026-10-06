@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   ActivityIndicator,
   FlatList,
@@ -71,6 +72,11 @@ export default function ScheduleScreen() {
 
   const [selectedDay, setSelectedDay] = useState<Day>(() => getInitialToday(days));
   const [selectedParity, setSelectedParity] = useState<WeekParityFilter>('ALL');
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  useFocusEffect(useCallback(() => {
+    setSelectedDay(getInitialToday(days));
+  }, [days]));
 
   const [selectedBlock, setSelectedBlock] = useState<ScheduleBlock | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
@@ -139,9 +145,9 @@ export default function ScheduleScreen() {
       ]}>
       {/* Header */}
       <Header
-        cohort={config.cohort}
         isLoading={isLoading}
         onRefresh={refresh}
+        onAddCustom={() => setIsAddCustomOpen(true)}
       />
 
       {/* Main Content */}
@@ -277,46 +283,33 @@ export default function ScheduleScreen() {
             dayCounts={dayCounts}
           />
 
-          {/* Quick Actions Bar */}
-          <View style={styles.quickBar}>
-            <Pressable
-              onPress={() => setIsOnboardingOpen(true)}
-              style={({ pressed }) => [
-                styles.quickBtn,
-                {
-                  backgroundColor: isDark ? '#18181b' : '#ffffff',
-                  borderColor: theme.border,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}>
-              <Ionicons name="options-outline" size={15} color={theme.text} />
-              <Text style={[styles.quickBtnText, { color: theme.text }]}>
-                Dostosuj grupy
-              </Text>
-            </Pressable>
-
-            <Pressable
-              onPress={() => setIsAddCustomOpen(true)}
-              style={({ pressed }) => [
-                styles.quickBtn,
-                {
-                  backgroundColor: isDark ? '#18181b' : '#ffffff',
-                  borderColor: theme.border,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}>
-              <Ionicons name="add" size={16} color={theme.text} />
-              <Text style={[styles.quickBtnText, { color: theme.text }]}>
-                Dodaj własne
-              </Text>
-            </Pressable>
-          </View>
-
           {/* Schedule List */}
           <FlatList
             data={dayBlocks}
             keyExtractor={(item) => item.id}
             contentContainerStyle={styles.listContent}
+            alwaysBounceVertical
+            onTouchStart={(event) => {
+              touchStart.current = {
+                x: event.nativeEvent.pageX,
+                y: event.nativeEvent.pageY,
+              };
+            }}
+            onTouchEnd={(event) => {
+              const start = touchStart.current;
+              touchStart.current = null;
+              if (!start) return;
+              const dx = event.nativeEvent.pageX - start.x;
+              const dy = event.nativeEvent.pageY - start.y;
+              if (Math.abs(dx) > 55 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+                const nextIndex = days.indexOf(selectedDay) + (dx < 0 ? 1 : -1);
+                if (nextIndex >= 0 && nextIndex < days.length) {
+                  setSelectedDay(days[nextIndex]);
+                }
+              } else if (dayBlocks.length === 0 && dy < -90 && !isLoading) {
+                refresh();
+              }
+            }}
             refreshControl={
               <RefreshControl
                 refreshing={isLoading}
@@ -445,26 +438,8 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '700',
   },
-  quickBar: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: Spacing.three,
-    paddingBottom: 8,
-  },
-  quickBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 11,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-  },
-  quickBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
   listContent: {
+    flexGrow: 1,
     paddingHorizontal: Spacing.three,
     paddingBottom: 24,
   },

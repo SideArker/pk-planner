@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import type { BlockOverride, PlanType, UserScheduleConfig } from '@pk-planner/core'
+import type { BlockOverride, PlanType, ScheduleBlock, UserScheduleConfig } from '@pk-planner/core'
 
 const USER_CONFIG_KEY = 'pk_planner_user_config'
 
@@ -9,6 +9,7 @@ const defaultConfig: UserScheduleConfig = {
   selectedSubjects: {},
   selectedGroups: {},
   overrides: {},
+  customBlocks: [],
 }
 
 export function useUserSchedule() {
@@ -48,6 +49,7 @@ export function useUserSchedule() {
       selectedSubjects,
       selectedGroups,
       overrides: prev.overrides || {},
+      customBlocks: prev.customBlocks || [],
     }))
   }, [saveConfig])
 
@@ -58,6 +60,7 @@ export function useUserSchedule() {
       planType,
       selectedSubjects: {},
       selectedGroups: {},
+      customBlocks: prev.customBlocks || [],
     }))
   }, [saveConfig])
 
@@ -93,11 +96,49 @@ export function useUserSchedule() {
     }))
   }, [saveConfig])
 
+  const addCustomBlock = useCallback((blockData: Partial<ScheduleBlock> & { subject: string; planType: PlanType }) => {
+    const id = blockData.id || `custom-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+    const newBlock: ScheduleBlock = {
+      ...blockData,
+      id,
+      subject: blockData.subject,
+      planType: blockData.planType,
+      isCustom: true,
+    }
+    saveConfig(prev => ({
+      ...prev,
+      customBlocks: [...(prev.customBlocks || []), newBlock],
+    }))
+    return newBlock
+  }, [saveConfig])
+
+  const updateCustomBlock = useCallback((blockId: string, updated: Partial<ScheduleBlock>) => {
+    saveConfig(prev => ({
+      ...prev,
+      customBlocks: (prev.customBlocks || []).map(b => (b.id === blockId ? { ...b, ...updated } : b)),
+    }))
+  }, [saveConfig])
+
+  const removeCustomBlock = useCallback((blockId: string) => {
+    saveConfig(prev => {
+      const nextOverrides = { ...(prev.overrides || {}) }
+      delete nextOverrides[blockId]
+      return {
+        ...prev,
+        overrides: nextOverrides,
+        customBlocks: (prev.customBlocks || []).filter(b => b.id !== blockId),
+      }
+    })
+  }, [saveConfig])
+
   const resetConfig = useCallback(() => {
     saveConfig(defaultConfig)
   }, [saveConfig])
 
-  const isConfigured = Boolean(config.cohort && config.cohort.trim().length > 0)
+  const isConfigured = Boolean(
+    (config.cohort && config.cohort.trim().length > 0) ||
+    (config.customBlocks && config.customBlocks.length > 0)
+  )
 
   return {
     config,
@@ -107,8 +148,12 @@ export function useUserSchedule() {
     updateSelections,
     setSubjectGroup,
     setBlockOverride,
+    addCustomBlock,
+    updateCustomBlock,
+    removeCustomBlock,
     resetConfig,
     saveConfig,
   }
 }
+
 

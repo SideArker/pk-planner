@@ -18,6 +18,7 @@ import {
   MapPin,
   Save,
   Settings2,
+  Trash2,
   User,
   Users,
   X,
@@ -32,6 +33,7 @@ interface BlockDetailModalProps {
   onClose: () => void
   onSwitchGroup: (subject: string, activity: string, chosenOptionId: string) => void
   onSaveOverride: (blockId: string, override: BlockOverride) => void
+  onRemoveCustomBlock?: (blockId: string) => void
 }
 
 export function BlockDetailModal({
@@ -41,6 +43,7 @@ export function BlockDetailModal({
   onClose,
   onSwitchGroup,
   onSaveOverride,
+  onRemoveCustomBlock,
 }: BlockDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'details' | 'switchGroup' | 'custom'>('details')
   const [customSubject, setCustomSubject] = useState('')
@@ -95,16 +98,23 @@ export function BlockDetailModal({
   const startTime = minutesToTime(block.start)
   const endTime = minutesToTime((block.start ?? 0) + (block.duration || 90))
 
+  const isCustomBlock = Boolean(block.isCustom || block.id.startsWith('custom-'))
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4">
       <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="shrink-0 border-b border-zinc-100 dark:border-zinc-800/80 px-6 py-4 flex items-start justify-between">
           <div className="space-y-1 pr-6">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
                 {block.activity?.toUpperCase() || 'ZAJĘCIA'}
               </span>
+              {isCustomBlock && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-700 dark:bg-purple-950/80 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60">
+                  Własne
+                </span>
+              )}
               {typeof block.frequency === 'string' && (
                 <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
                   {block.frequency === 'co_tydzien' ? 'Co tydzień' : String(block.frequency)}
@@ -136,17 +146,19 @@ export function BlockDetailModal({
           >
             Szczegóły
           </button>
-          <button
-            onClick={() => setActiveTab('switchGroup')}
-            className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 transition-colors cursor-pointer ${
-              activeTab === 'switchGroup'
-                ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
-                : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
-            }`}
-          >
-            <Users className="h-3.5 w-3.5" />
-            <span>Zmień grupę ({alternativeGroups.length})</span>
-          </button>
+          {!isCustomBlock && (
+            <button
+              onClick={() => setActiveTab('switchGroup')}
+              className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 transition-colors cursor-pointer ${
+                activeTab === 'switchGroup'
+                  ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
+                  : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
+              }`}
+            >
+              <Users className="h-3.5 w-3.5" />
+              <span>Zmień grupę ({alternativeGroups.length})</span>
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('custom')}
             className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 transition-colors cursor-pointer ${
@@ -229,6 +241,23 @@ export function BlockDetailModal({
                   <span>Pobierz .ics</span>
                 </Button>
               </div>
+
+              {isCustomBlock && onRemoveCustomBlock && (
+                <div className="pt-1">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      onRemoveCustomBlock(block.id)
+                      onClose()
+                    }}
+                    className="w-full gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Usuń własne zajęcia</span>
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
@@ -327,14 +356,29 @@ export function BlockDetailModal({
               </div>
 
               <div className="pt-2 flex items-center justify-between gap-3">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleHideBlock}
-                >
-                  <EyeOff className="h-3.5 w-3.5" />
-                  <span>Ukryj te zajęcia</span>
-                </Button>
+                {isCustomBlock && onRemoveCustomBlock ? (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => {
+                      onRemoveCustomBlock(block.id)
+                      onClose()
+                    }}
+                    className="gap-1.5 cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Usuń te zajęcia</span>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleHideBlock}
+                  >
+                    <EyeOff className="h-3.5 w-3.5" />
+                    <span>Ukryj te zajęcia</span>
+                  </Button>
+                )}
 
                 <Button
                   size="sm"

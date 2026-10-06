@@ -75,3 +75,38 @@ test('Version endpoint returns mobile app version', async () => {
   const body2 = await res2.json()
   assert.equal(body2.version, body1.version)
 })
+
+test('notification registration validates input and reaches storage', async () => {
+  const calls = []
+  const env = {
+    ...mockEnv,
+    FCM_SERVICE_ACCOUNT_JSON: 'configured',
+    NOTIFICATIONS: {
+      getByName: () => ({
+        fetch: async (request) => {
+          calls.push(request)
+          return Response.json({ ok: true })
+        },
+      }),
+    },
+  }
+  const id = '123e4567-e89b-42d3-a456-426614174000'
+  const url = `https://pk-planner.workers.dev/api/notifications/${id}`
+  const bad = await worker.fetch(new Request(url, {
+    method: 'PUT', body: JSON.stringify({ token: 'short', reminders: true, countdown: false, blocks: [] }),
+  }), env)
+  assert.equal(bad.status, 400)
+  assert.equal(calls.length, 0)
+
+  const good = await worker.fetch(new Request(url, {
+    method: 'PUT',
+    body: JSON.stringify({ token: 'a'.repeat(40), reminders: true, countdown: false, blocks: [] }),
+  }), env)
+  assert.equal(good.status, 200)
+  assert.equal(calls.length, 1)
+  assert.equal(calls[0].method, 'PUT')
+
+  const deleted = await worker.fetch(new Request(url, { method: 'DELETE' }), env)
+  assert.equal(deleted.status, 200)
+  assert.equal(calls[1].method, 'DELETE')
+})

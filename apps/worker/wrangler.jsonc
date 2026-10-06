@@ -3,6 +3,13 @@
   "name": "pk-planner",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-06",
+  "durable_objects": {
+    "bindings": [{ "name": "NOTIFICATIONS", "class_name": "NotificationStore" }]
+  },
+  "exports": {
+    "NotificationStore": { "type": "durable-object", "storage": "sqlite" }
+  },
+  "triggers": { "crons": ["* * * * *"] },
   "assets": {
     "directory": "../web/dist",
     "binding": "ASSETS",

@@ -16,7 +16,6 @@ import {
   type Day,
   type PlanType,
   type ScheduleBlock,
-  availableDays,
   detectScheduleCollisions,
   isBlockInWeekParity,
   resolveUserBlocks,
@@ -51,6 +50,8 @@ function getInitialToday(days: Day[]): Day {
   return days.includes(current) ? current : days[0] || 'MON';
 }
 
+const WEEK_DAYS: Day[] = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
 export default function ScheduleScreen() {
   const { theme, resolvedTheme } = useAppTheme();
   const isDark = resolvedTheme === 'dark';
@@ -67,10 +68,7 @@ export default function ScheduleScreen() {
     removeCustomBlock,
   } = useUserSchedule();
 
-  const days: Day[] = useMemo(
-    () => availableDays(config.planType || 'stacjonarne'),
-    [config.planType],
-  );
+  const days = WEEK_DAYS;
 
   const [selectedDay, setSelectedDay] = useState<Day>(() => getInitialToday(days));
   const [selectedParity, setSelectedParity] = useState<WeekParityFilter>('ALL');

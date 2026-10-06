@@ -4,6 +4,7 @@ import {
   type PlanType,
   type ScheduleBlock,
   cohortParts,
+  exerciseGroupForLab,
   resolveUserBlocks,
 } from '@pk-planner/core'
 import { AlertCircle, Calendar, RefreshCw } from 'lucide-react'
@@ -62,7 +63,7 @@ export default function App() {
       if (chosenBlock) {
         const { group: labNum } = cohortParts(chosenBlock.cohort)
         if (labNum !== null) {
-          const targetExNum = Math.ceil(labNum / 2)
+          const targetExNum = exerciseGroupForLab(chosenBlock.cohort || config.cohort, labNum)
           // Find matching exercise block for this subject
           const exBlock = state.blocks.find(b => {
             if ((b.subject || '').trim() !== subject.trim()) return false

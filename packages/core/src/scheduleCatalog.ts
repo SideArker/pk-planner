@@ -37,7 +37,11 @@ export type Degree = 'I stopień' | 'II stopień'
 
 export interface CohortHierarchyNode {
   value: string
+  cohortBase?: string
+  groupNumber?: number
+  groupLabel?: string
   label: string
+  sublabel?: string
   field: FieldOfStudy
   degree: Degree
   year: number
@@ -64,6 +68,7 @@ export function parseCohortMetadata(
 
   return {
     value: cohortString,
+    cohortBase: cohortString,
     label: cleanLabel,
     field,
     degree,
@@ -106,7 +111,7 @@ export function getCohortHierarchy(state: ScheduleState): {
   allNodes: CohortHierarchyNode[]
 } {
   const baseCohorts = extractUniqueCohorts(state)
-  const allNodes = baseCohorts.map(c => parseCohortMetadata(c.value, c.planType))
+  const allNodes: CohortHierarchyNode[] = []
 
   const fields: Record<FieldOfStudy, Record<Degree, Record<number, CohortHierarchyNode[]>>> = {
     Informatyka: {
@@ -117,6 +122,96 @@ export function getCohortHierarchy(state: ScheduleState): {
       'I stopień': {},
       'II stopień': {},
     },
+  }
+
+  for (const baseItem of baseCohorts) {
+    const meta = parseCohortMetadata(baseItem.value, baseItem.planType)
+
+    // Find all blocks matching this base cohort
+    const matchingBlocks = state.blocks.filter(b => blockMatchesBaseCohort(b, baseItem.value))
+
+    // Analyze group distribution
+    const exerciseGroups = new Set<number>()
+    const labGroups = new Set<number>()
+    const allGroups = new Set<number>()
+
+    for (const b of matchingBlocks) {
+      if (!b.cohort) continue
+      const m = b.cohort.match(/\/ gr\.?\s*(\d+)/i)
+      if (m) {
+        const gr = Number(m[1])
+        allGroups.add(gr)
+        const act = (b.activity || '').toLowerCase().trim()
+        if (['c', 'cw', 'cwiczenia', 'ćw'].includes(act)) {
+          exerciseGroups.add(gr)
+        } else if (['l', 'lab', 'p', 'proj'].includes(act)) {
+          labGroups.add(gr)
+        }
+      }
+    }
+
+    const maxEx = exerciseGroups.size > 0 ? Math.max(...exerciseGroups) : 0
+    const maxLab = labGroups.size > 0 ? Math.max(...labGroups) : 0
+    const sortedAllGroups = Array.from(allGroups).sort((a, b) => a - b)
+
+    if (meta.field === 'Informatyka' && meta.degree === 'I stopień' && (maxEx >= 3 || maxLab >= 6)) {
+      // Standard PK WIiT Informatyka I stopien: 3 GK/GL groups
+      const numGroups = Math.max(maxEx, Math.ceil(maxLab / 2), 3)
+      for (let g = 1; g <= numGroups; g++) {
+        const node: CohortHierarchyNode = {
+          value: `${baseItem.value} / GK/GL ${g}`,
+          cohortBase: baseItem.value,
+          groupNumber: g,
+          groupLabel: `GK/GL ${g}`,
+          label: `GK/GL ${g}`,
+          sublabel: `Ćwiczenia C${g} · Lab GL${2 * g - 1} / GL${2 * g}`,
+          field: meta.field,
+          degree: meta.degree,
+          year: meta.year,
+          semester: meta.semester,
+          planType: meta.planType,
+        }
+        allNodes.push(node)
+      }
+    } else if (sortedAllGroups.length > 0) {
+      for (const g of sortedAllGroups) {
+        const specMatch = baseItem.value.match(/\b(CY|DS|SIR)\b/i)
+        const spec = specMatch ? specMatch[1].toUpperCase() : null
+
+        const label = spec ? `${spec} - Grupa ${g}` : `GK/GL ${g}`
+        const sublabel = spec
+          ? `${spec} · Grupa ${g} · sem. ${meta.semester}`
+          : `Semestr ${meta.semester} · Grupa ${g}`
+
+        const node: CohortHierarchyNode = {
+          value: `${baseItem.value} / gr. ${g}`,
+          cohortBase: baseItem.value,
+          groupNumber: g,
+          groupLabel: `gr. ${g}`,
+          label,
+          sublabel,
+          field: meta.field,
+          degree: meta.degree,
+          year: meta.year,
+          semester: meta.semester,
+          planType: meta.planType,
+        }
+        allNodes.push(node)
+      }
+    } else {
+      const node: CohortHierarchyNode = {
+        value: baseItem.value,
+        cohortBase: baseItem.value,
+        label: baseItem.label,
+        sublabel: `Semestr ${meta.semester} · ${meta.planType}`,
+        field: meta.field,
+        degree: meta.degree,
+        year: meta.year,
+        semester: meta.semester,
+        planType: meta.planType,
+      }
+      allNodes.push(node)
+    }
   }
 
   for (const node of allNodes) {
@@ -134,13 +229,100 @@ export function getCohortHierarchy(state: ScheduleState): {
  * Checks if a block belongs to the selected cohort base.
  */
 export function blockMatchesBaseCohort(block: ScheduleBlock, cohortBase: string): boolean {
-  const target = cohortBase.toLowerCase().trim()
+  const cleanTarget = cohortBase
+    .replace(/\s*\/\s*(?:GK\/GL|gr\.).*$/i, '')
+    .replace(/[—–]/g, '-')
+    .toLowerCase()
+    .trim()
+
   const cohorts = blockCohorts(block)
   return cohorts.some(c => {
     const part = cohortParts(c)
-    return part.base.toLowerCase().trim() === target
+    const cleanBase = part.base.replace(/[—–]/g, '-').toLowerCase().trim()
+    return cleanBase === cleanTarget
   })
 }
+
+/**
+ * Selects best matching activity option based on chosen group number.
+ */
+export function pickBestOptionForGroup(
+  options: SubjectActivityOption[],
+  activity: string,
+  groupNumber?: number,
+): SubjectActivityOption | undefined {
+  if (!options || options.length === 0) return undefined
+  if (!groupNumber || options.length === 1) return options[0]
+
+  const act = activity.toLowerCase().trim()
+  const isLabOrProj = ['l', 'lab', 'p', 'proj'].includes(act)
+
+  const optionGroups = options.map(opt => {
+    const m = opt.cohort?.match(/\/ gr\.?\s*(\d+)/i) || opt.group?.match(/(\d+)/)
+    return {
+      option: opt,
+      gr: m ? Number(m[1]) : null,
+    }
+  })
+
+  const maxGr = Math.max(...optionGroups.map(o => o.gr ?? 0))
+
+  // In PK Informatyka: 1 exercise group corresponds to 2 lab groups:
+  // GK 1 -> GL 1 (+ GL 2), GK 2 -> GL 3 (+ GL 4), GK 3 -> GL 5 (+ GL 6)
+  if (isLabOrProj && maxGr > 3) {
+    const targetLab = 2 * groupNumber - 1
+    const labMatch = optionGroups.find(o => o.gr === targetLab)
+    if (labMatch) return labMatch.option
+  }
+
+  // Direct numeric group match
+  const directMatch = optionGroups.find(o => o.gr === groupNumber)
+  if (directMatch) return directMatch.option
+
+  // Lab fallback: even lab group (2 * groupNumber)
+  if (isLabOrProj && maxGr > 3) {
+    const labMatch2 = optionGroups.find(o => o.gr === 2 * groupNumber)
+    if (labMatch2) return labMatch2.option
+  }
+
+  // Substring match in group label
+  const strMatch = options.find(opt =>
+    opt.group.includes(String(groupNumber)) ||
+    Boolean(opt.cohort && opt.cohort.includes(`gr. ${groupNumber}`))
+  )
+  if (strMatch) return strMatch
+
+  return options[0]
+}
+
+/**
+ * Prefills subject selection with defaults matching student's group.
+ */
+export function prefillScheduleSelections(
+  catalog: SubjectCatalogItem[],
+  groupNumber?: number,
+): {
+  selectedSubjects: Record<string, boolean>
+  selectedGroups: Record<string, string>
+} {
+  const selectedSubjects: Record<string, boolean> = {}
+  const selectedGroups: Record<string, string> = {}
+
+  for (const item of catalog) {
+    selectedSubjects[item.subject] = true
+    for (const act of item.activities) {
+      if (act.options.length === 0) continue
+      const chosen = pickBestOptionForGroup(act.options, act.activity, groupNumber)
+      if (chosen) {
+        const key = `${item.subject}:${act.activity}`
+        selectedGroups[key] = chosen.id
+      }
+    }
+  }
+
+  return { selectedSubjects, selectedGroups }
+}
+
 
 /**
  * Extracts unique subjects and all their activity options (groups/teachers/times)

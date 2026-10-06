@@ -2,8 +2,10 @@ import { useMemo, useState } from 'react'
 import {
   buildSubjectCatalog,
   getCohortHierarchy,
+  prefillScheduleSelections,
   NOT_APPLICABLE_LABEL,
   NOT_APPLICABLE_VALUE,
+  type CohortHierarchyNode,
   type Degree,
   type FieldOfStudy,
   type PlanType,
@@ -94,29 +96,21 @@ export function OnboardingModal({
 
   if (!isOpen) return null
 
-  const handleSelectCohortNode = (cohortValue: string, planType: PlanType) => {
-    setSelectedCohort(cohortValue)
-    setSelectedPlanType(planType)
+  const handleSelectCohortNode = (node: CohortHierarchyNode) => {
+    setSelectedCohort(node.value)
+    setSelectedPlanType(node.planType)
 
-    // Pre-populate defaults for newly selected cohort
+    // Pre-populate defaults matching student's chosen group
     if (state) {
-      const catalog = buildSubjectCatalog(state, cohortValue)
-      const subjects: Record<string, boolean> = {}
-      const groups: Record<string, string> = {}
+      const baseToUse = node.cohortBase || node.value
+      const catalog = buildSubjectCatalog(state, baseToUse)
+      const { selectedSubjects: subs, selectedGroups: grps } = prefillScheduleSelections(
+        catalog,
+        node.groupNumber,
+      )
 
-      for (const item of catalog) {
-        subjects[item.subject] = true
-        for (const act of item.activities) {
-          if (act.options.length > 0) {
-            const key = `${item.subject}:${act.activity}`
-            // default to first option
-            groups[key] = act.options[0].id
-          }
-        }
-      }
-
-      setSelectedSubjects(subjects)
-      setSelectedGroups(groups)
+      setSelectedSubjects(subs)
+      setSelectedGroups(grps)
     }
 
     setStep(2)
@@ -347,7 +341,7 @@ export function OnboardingModal({
                         <button
                           key={c.value}
                           type="button"
-                          onClick={() => handleSelectCohortNode(c.value, c.planType)}
+                          onClick={() => handleSelectCohortNode(c)}
                           className={`flex items-center justify-between p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
                             isSelected
                               ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900 shadow-sm'
@@ -355,7 +349,7 @@ export function OnboardingModal({
                           }`}
                         >
                           <div>
-                            <div className="font-medium text-xs sm:text-sm">{c.label}</div>
+                            <div className="font-semibold text-xs sm:text-sm">{c.label}</div>
                             <span
                               className={`inline-block text-[10px] mt-1 px-1.5 py-0.5 rounded font-mono ${
                                 isSelected
@@ -363,7 +357,7 @@ export function OnboardingModal({
                                   : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
                               }`}
                             >
-                              Semestr {c.semester} · {c.planType}
+                              {c.sublabel || `Semestr ${c.semester} · ${c.planType}`}
                             </span>
                           </div>
                           <ArrowRight className="h-4 w-4 shrink-0 text-zinc-400" />

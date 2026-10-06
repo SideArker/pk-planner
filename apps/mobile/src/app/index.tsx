@@ -174,8 +174,35 @@ export default function ScheduleScreen() {
           <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>
             Wybierz swój kierunek, semestr i grupy, aby wyświetlić przejrzysty plan zajęć.
           </Text>
+          {Boolean(error) && (
+            <View
+              style={[
+                styles.collisionAlert,
+                {
+                  backgroundColor: isDark ? '#450a0a' : '#fee2e2',
+                  borderColor: theme.destructive,
+                  marginBottom: 16,
+                  maxWidth: 340,
+                },
+              ]}>
+              <Ionicons
+                name="alert-circle-outline"
+                size={18}
+                color={theme.destructive}
+              />
+              <Text style={[styles.collisionAlertText, { color: theme.destructive, flex: 1 }]}>
+                {error}
+              </Text>
+            </View>
+          )}
           <Pressable
-            onPress={() => setIsOnboardingOpen(true)}
+            onPress={() => {
+              if (error && !state) {
+                refresh();
+              } else {
+                setIsOnboardingOpen(true);
+              }
+            }}
             style={({ pressed }) => [
               styles.primaryBtn,
               {
@@ -188,7 +215,7 @@ export default function ScheduleScreen() {
                 styles.primaryBtnText,
                 { color: isDark ? '#09090b' : '#ffffff' },
               ]}>
-              Wybierz swój rocznik
+              {error && !state ? 'Spróbuj pobrać ponownie' : 'Wybierz swój rocznik'}
             </Text>
           </Pressable>
         </View>

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   ScrollView,
@@ -92,10 +93,36 @@ export function OnboardingModal({
       .sort((a, b) => a - b);
   }, [hierarchy, selectedField, selectedDegree]);
 
+  const effectiveYear =
+    availableYears.length > 0 && !availableYears.includes(selectedYear)
+      ? availableYears[0]
+      : selectedYear;
+
   const currentCohorts = useMemo(() => {
     const yearsMap = hierarchy.fields[selectedField]?.[selectedDegree] || {};
-    return yearsMap[selectedYear] || [];
-  }, [hierarchy, selectedField, selectedDegree, selectedYear]);
+    return yearsMap[effectiveYear] || [];
+  }, [hierarchy, selectedField, selectedDegree, effectiveYear]);
+
+  const handleSelectField = (field: FieldOfStudy) => {
+    setSelectedField(field);
+    setSelectedDegree('I stopień');
+    const years = Object.keys(hierarchy.fields[field]?.['I stopień'] || {})
+      .map(Number)
+      .sort((a, b) => a - b);
+    if (years.length > 0) {
+      setSelectedYear(years[0]);
+    }
+  };
+
+  const handleSelectDegree = (deg: Degree) => {
+    setSelectedDegree(deg);
+    const years = Object.keys(hierarchy.fields[selectedField]?.[deg] || {})
+      .map(Number)
+      .sort((a, b) => a - b);
+    if (years.length > 0) {
+      setSelectedYear(years[0]);
+    }
+  };
 
   const subjectCatalog = useMemo(() => {
     if (!state || !selectedCohort) return [];
@@ -233,7 +260,7 @@ export function OnboardingModal({
                     return (
                       <Pressable
                         key={f}
-                        onPress={() => setSelectedField(f)}
+                        onPress={() => handleSelectField(f)}
                         style={[
                           styles.chip,
                           {
@@ -275,13 +302,17 @@ export function OnboardingModal({
                 <View style={styles.chipsRow}>
                   {degrees.map((d) => {
                     const isSelected = selectedDegree === d;
+                    const degMap = hierarchy.fields[selectedField]?.[d] || {};
+                    const hasData = Object.keys(degMap).length > 0;
                     return (
                       <Pressable
                         key={d}
-                        onPress={() => setSelectedDegree(d)}
+                        disabled={!hasData}
+                        onPress={() => handleSelectDegree(d)}
                         style={[
                           styles.chip,
                           {
+                            opacity: !hasData ? 0.35 : 1,
                             backgroundColor: isSelected
                               ? isDark
                                 ? '#fafafa'
@@ -321,7 +352,7 @@ export function OnboardingModal({
                     <Text style={[styles.sectionLabel, { color: theme.text }]}>Rok studiów</Text>
                     <View style={styles.chipsRow}>
                       {availableYears.map((yr) => {
-                        const isSelected = selectedYear === yr;
+                        const isSelected = effectiveYear === yr;
                         return (
                           <Pressable
                             key={yr}
@@ -368,43 +399,58 @@ export function OnboardingModal({
                 <Text style={[styles.sectionLabel, { color: theme.text }]}>
                   Wybierz grupę / rocznik:
                 </Text>
-                <View style={styles.cohortsGrid}>
-                  {currentCohorts.map((node) => {
-                    const isSelected = selectedCohort === node.value;
-                    return (
-                      <Pressable
-                        key={node.value}
-                        onPress={() => handleSelectCohortNode(node)}
-                        style={({ pressed }) => [
-                          styles.cohortCard,
-                          {
-                            backgroundColor: isSelected
-                              ? isDark
-                                ? '#27272a'
-                                : '#f1f5f9'
-                              : isDark
-                                ? '#18181b'
-                                : '#ffffff',
-                            borderColor: isSelected
-                              ? theme.accent
-                              : theme.border,
-                            opacity: pressed ? 0.8 : 1,
-                          },
-                        ]}>
-                        <Text
-                          style={[
-                            styles.cohortCardTitle,
-                            { color: isSelected ? theme.accent : theme.text },
+                {!state ? (
+                  <View style={styles.emptyCohortsBox}>
+                    <ActivityIndicator size="small" color={theme.accent} style={{ marginBottom: 6 }} />
+                    <Text style={[styles.emptyCohortsText, { color: theme.textSecondary }]}>
+                      Pobieranie listy grup z serwera...
+                    </Text>
+                  </View>
+                ) : currentCohorts.length === 0 ? (
+                  <View style={styles.emptyCohortsBox}>
+                    <Text style={[styles.emptyCohortsText, { color: theme.textSecondary }]}>
+                      Brak zdefiniowanych grup dla wybranego kierunku, stopnia i roku studiów.
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.cohortsGrid}>
+                    {currentCohorts.map((node) => {
+                      const isSelected = selectedCohort === node.value;
+                      return (
+                        <Pressable
+                          key={node.value}
+                          onPress={() => handleSelectCohortNode(node)}
+                          style={({ pressed }) => [
+                            styles.cohortCard,
+                            {
+                              backgroundColor: isSelected
+                                ? isDark
+                                  ? '#27272a'
+                                  : '#f1f5f9'
+                                : isDark
+                                  ? '#18181b'
+                                  : '#ffffff',
+                              borderColor: isSelected
+                                ? theme.accent
+                                : theme.border,
+                              opacity: pressed ? 0.8 : 1,
+                            },
                           ]}>
-                          {node.label}
-                        </Text>
-                        <Text style={[styles.cohortCardMeta, { color: theme.textSecondary }]}>
-                          {node.planType === 'stacjonarne' ? 'Stacjonarne' : 'Niestacjonarne'}
-                        </Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
+                          <Text
+                            style={[
+                              styles.cohortCardTitle,
+                              { color: isSelected ? theme.accent : theme.text },
+                            ]}>
+                            {node.label}
+                          </Text>
+                          <Text style={[styles.cohortCardMeta, { color: theme.textSecondary }]}>
+                            {node.planType === 'stacjonarne' ? 'Stacjonarne' : 'Niestacjonarne'}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                )}
               </View>
             ) : (
               <View style={styles.stepContainer}>
@@ -671,6 +717,20 @@ const styles = StyleSheet.create({
   },
   cohortsGrid: {
     gap: 8,
+  },
+  emptyCohortsBox: {
+    padding: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#3f3f46',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyCohortsText: {
+    fontSize: 12.5,
+    textAlign: 'center',
+    lineHeight: 18,
   },
   cohortCard: {
     padding: 12,

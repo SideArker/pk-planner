@@ -4,6 +4,7 @@ import { parseSchedulePayload, type SchedulePayload } from '@pk-planner/core';
 
 const CACHE_KEY = 'pk_planner_cached_payload';
 const CACHE_TIME_KEY = 'pk_planner_cached_time';
+const DEFAULT_API_URL = 'https://pk-planner.rsowa126.workers.dev/api/schedule';
 const FALLBACK_URL = 'https://example.com/api/schedule-snapshot.php';
 
 export function useScheduleData() {
@@ -38,12 +39,23 @@ export function useScheduleData() {
     setIsLoading(true);
     setError(null);
 
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL || DEFAULT_API_URL;
+
     try {
-      const res = await fetch(FALLBACK_URL, {
-        headers: force ? { 'Cache-Control': 'no-cache' } : {},
-      });
-      if (!res.ok) {
-        throw new Error(`Błąd pobierania (${res.status})`);
+      let res: Response;
+      try {
+        res = await fetch(apiUrl, {
+          headers: force ? { 'Cache-Control': 'no-cache' } : {},
+        });
+        if (!res.ok) {
+          throw new Error(`Worker HTTP ${res.status}`);
+        }
+      } catch (workerErr) {
+        // Fallback directly to public university snapshot if worker not reachable
+        res = await fetch(FALLBACK_URL);
+        if (!res.ok) {
+          throw workerErr instanceof Error ? workerErr : new Error('Błąd pobierania planu');
+        }
       }
 
       const json = await res.json();

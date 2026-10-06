@@ -1,33 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Background Gradient -->
+    <!-- Background Gradient (Dark Zinc/Obsidian) -->
     <radialGradient id="bgGrad" cx="50%" cy="40%" r="65%">
-      <stop offset="0%" stop-color="#181c26" />
-      <stop offset="70%" stop-color="#0c0e13" />
-      <stop offset="100%" stop-color="#050608" />
+      <stop offset="0%" stop-color="#18181c" />
+      <stop offset="70%" stop-color="#0c0c0f" />
+      <stop offset="100%" stop-color="#060608" />
     </radialGradient>
 
-    <!-- Book Cover Gradient -->
+    <!-- Book Cover Gradient (Matte Dark Zinc Leather) -->
     <linearGradient id="coverGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#242834" />
-      <stop offset="100%" stop-color="#101218" />
+      <stop offset="0%" stop-color="#24242c" />
+      <stop offset="100%" stop-color="#121216" />
     </linearGradient>
 
-    <!-- Silk Ribbon Gradient -->
-    <linearGradient id="ribbonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#0284c7" />
-      <stop offset="40%" stop-color="#2563eb" />
-      <stop offset="100%" stop-color="#38bdf8" />
-    </linearGradient>
-
-    <!-- Soft Ambient Drop Shadow -->
+    <!-- Subtle Ambient Drop Shadow -->
     <filter id="bookShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.65" />
-      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.8" />
-    </filter>
-
-    <filter id="ribbonShadow" x="-30%" y="-15%" width="160%" height="130%">
-      <feDropShadow dx="4" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.5" />
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.75" />
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.85" />
     </filter>
   </defs>
 
@@ -37,110 +26,134 @@
   <!-- Book Container with Shadow -->
   <g filter="url(#bookShadow)">
     <!-- Stacked Pages (Fore-edge on Right) -->
-    <rect x="390" y="80" width="16" height="344" rx="4" fill="#2b2e3a" />
-    <line x1="392" y1="95" x2="404" y2="95" stroke="#3d4254" stroke-width="1.5" />
-    <line x1="392" y1="145" x2="404" y2="145" stroke="#3d4254" stroke-width="1.5" />
-    <line x1="392" y1="205" x2="404" y2="205" stroke="#3d4254" stroke-width="1.5" />
-    <line x1="392" y1="275" x2="404" y2="275" stroke="#3d4254" stroke-width="1.5" />
-    <line x1="392" y1="345" x2="404" y2="345" stroke="#3d4254" stroke-width="1.5" />
-    <line x1="392" y1="405" x2="404" y2="405" stroke="#3d4254" stroke-width="1.5" />
+    <rect x="390" y="80" width="16" height="344" rx="4" fill="#26262e" />
+    <line x1="392" y1="95" x2="404" y2="95" stroke="#383844" stroke-width="1.5" />
+    <line x1="392" y1="145" x2="404" y2="145" stroke="#383844" stroke-width="1.5" />
+    <line x1="392" y1="205" x2="404" y2="205" stroke="#383844" stroke-width="1.5" />
+    <line x1="392" y1="275" x2="404" y2="275" stroke="#383844" stroke-width="1.5" />
+    <line x1="392" y1="345" x2="404" y2="345" stroke="#383844" stroke-width="1.5" />
+    <line x1="392" y1="405" x2="404" y2="405" stroke="#383844" stroke-width="1.5" />
 
     <!-- Hardcover Body -->
-    <rect x="96" y="70" width="300" height="364" rx="20" fill="url(#coverGrad)" stroke="#3f4557" stroke-width="1" />
+    <rect x="96" y="70" width="300" height="364" rx="20" fill="url(#coverGrad)" stroke="#3a3a46" stroke-width="1" />
 
     <!-- Spine Hinge & Crease -->
-    <line x1="134" y1="72" x2="134" y2="432" stroke="#0a0b0e" stroke-width="2.5" />
-    <line x1="136" y1="72" x2="136" y2="432" stroke="#485065" stroke-width="1" stroke-opacity="0.6" />
+    <line x1="134" y1="72" x2="134" y2="432" stroke="#08080a" stroke-width="2.5" />
+    <line x1="136" y1="72" x2="136" y2="432" stroke="#444452" stroke-width="1" stroke-opacity="0.6" />
 
-    <!-- Spine Ribs -->
-    <line x1="102" y1="126" x2="131" y2="126" stroke="#4a5369" stroke-width="2" />
-    <line x1="102" y1="206" x2="131" y2="206" stroke="#4a5369" stroke-width="2" />
-    <line x1="102" y1="296" x2="131" y2="296" stroke="#4a5369" stroke-width="2" />
-    <line x1="102" y1="376" x2="131" y2="376" stroke="#4a5369" stroke-width="2" />
+    <!-- Spine Ribs / Stitches -->
+    <line x1="102" y1="126" x2="131" y2="126" stroke="#484856" stroke-width="2" />
+    <line x1="102" y1="206" x2="131" y2="206" stroke="#484856" stroke-width="2" />
+    <line x1="102" y1="296" x2="131" y2="296" stroke="#484856" stroke-width="2" />
+    <line x1="102" y1="376" x2="131" y2="376" stroke="#484856" stroke-width="2" />
 
     <!-- Corner Metal Guard (Top Right & Bottom Right) -->
-    <polygon points="372,71 395,71 395,94" fill="#3b4255" stroke="#687596" stroke-width="1" />
-    <polygon points="372,433 395,433 395,410" fill="#3b4255" stroke="#687596" stroke-width="1" />
+    <polygon points="372,71 395,71 395,94" fill="#32323e" stroke="#5a5a6c" stroke-width="1" />
+    <polygon points="372,433 395,433 395,410" fill="#32323e" stroke="#5a5a6c" stroke-width="1" />
 
     <!-- Front Cover Debossed Timetable Grid -->
     <!-- Grid Header Bar -->
-    <rect x="154" y="106" width="224" height="22" rx="5" fill="#0d0f14" stroke="#363c4e" stroke-width="1" />
-    <circle cx="176" cy="117" r="2.5" fill="#64748b" />
-    <circle cx="221" cy="117" r="2.5" fill="#64748b" />
-    <circle cx="266" cy="117" r="2.5" fill="#64748b" />
-    <circle cx="311" cy="117" r="2.5" fill="#64748b" />
-    <circle cx="356" cy="117" r="2.5" fill="#64748b" />
+    <rect x="154" y="106" width="224" height="22" rx="5" fill="#0c0c10" stroke="#30303c" stroke-width="1" />
+    <rect x="168" y="114" width="16" height="6" rx="2" fill="#3f3f4c" />
+    <rect x="213" y="114" width="16" height="6" rx="2" fill="#3f3f4c" />
+    <rect x="258" y="114" width="16" height="6" rx="2" fill="#3f3f4c" />
+    <rect x="303" y="114" width="16" height="6" rx="2" fill="#3f3f4c" />
+    <rect x="348" y="114" width="16" height="6" rx="2" fill="#3f3f4c" />
 
-    <!-- Timetable Cells (5 Columns x 5 Rows) -->
+    <!-- Timetable Cells (5 Columns x 5 Rows) in Monochromatic Zinc -->
     <!-- Row 1 -->
-    <rect x="154" y="136" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="158" y="154" width="32" height="10" rx="3" fill="#38bdf8" />
-    <rect x="200" y="136" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="220" cy="159" r="2" fill="#333a4c" />
-    <rect x="246" y="136" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="250" y="154" width="32" height="10" rx="3" fill="#2563eb" />
-    <rect x="292" y="136" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="312" cy="159" r="2" fill="#333a4c" />
-    <rect x="338" y="136" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="342" y="154" width="32" height="10" rx="3" fill="#60a5fa" />
+    <rect x="154" y="136" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="158" y="154" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="162" y1="157" x2="186" y2="157" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="200" y="136" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="220" cy="159" r="2" fill="#2a2a36" />
+
+    <rect x="246" y="136" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="250" y="154" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="254" y1="157" x2="278" y2="157" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="292" y="136" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="312" cy="159" r="2" fill="#2a2a36" />
+
+    <rect x="338" y="136" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="342" y="154" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="346" y1="157" x2="370" y2="157" stroke="#9090a2" stroke-width="0.75" />
 
     <!-- Row 2 -->
-    <rect x="154" y="188" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="158" y="206" width="32" height="10" rx="3" fill="#0284c7" />
-    <rect x="200" y="188" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="204" y="206" width="32" height="10" rx="3" fill="#38bdf8" />
-    <rect x="246" y="188" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="266" cy="211" r="2" fill="#333a4c" />
-    <rect x="292" y="188" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="296" y="206" width="32" height="10" rx="3" fill="#38bdf8" />
-    <rect x="338" y="188" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="358" cy="211" r="2" fill="#333a4c" />
+    <rect x="154" y="188" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="158" y="206" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="162" y1="209" x2="186" y2="209" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="200" y="188" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="204" y="206" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="208" y1="209" x2="232" y2="209" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="246" y="188" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="266" cy="211" r="2" fill="#2a2a36" />
+
+    <rect x="292" y="188" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="296" y="206" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="300" y1="209" x2="324" y2="209" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="338" y="188" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="342" y="206" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="346" y1="209" x2="370" y2="209" stroke="#9090a2" stroke-width="0.75" />
 
     <!-- Row 3 -->
-    <rect x="154" y="240" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="174" cy="263" r="2" fill="#333a4c" />
-    <rect x="200" y="240" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="220" cy="263" r="2" fill="#333a4c" />
-    <rect x="246" y="240" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="250" y="258" width="32" height="10" rx="3" fill="#2563eb" />
-    <rect x="292" y="240" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="296" y="258" width="32" height="10" rx="3" fill="#38bdf8" />
-    <rect x="338" y="240" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="342" y="258" width="32" height="10" rx="3" fill="#38bdf8" />
+    <rect x="154" y="240" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="174" cy="263" r="2" fill="#2a2a36" />
+
+    <rect x="200" y="240" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="204" y="258" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="208" y1="261" x2="232" y2="261" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="246" y="240" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="250" y="258" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="254" y1="261" x2="278" y2="261" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="292" y="240" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="296" y="258" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="300" y1="261" x2="324" y2="261" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="338" y="240" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="358" cy="263" r="2" fill="#2a2a36" />
 
     <!-- Row 4 -->
-    <rect x="154" y="292" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="158" y="310" width="32" height="10" rx="3" fill="#60a5fa" />
-    <rect x="200" y="292" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="220" cy="315" r="2" fill="#333a4c" />
-    <rect x="246" y="292" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="250" y="310" width="32" height="10" rx="3" fill="#38bdf8" />
-    <rect x="292" y="292" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="296" y="310" width="32" height="10" rx="3" fill="#2563eb" />
-    <rect x="338" y="292" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="358" cy="315" r="2" fill="#333a4c" />
+    <rect x="154" y="292" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="158" y="310" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="162" y1="313" x2="186" y2="313" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="200" y="292" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="204" y="310" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="208" y1="313" x2="232" y2="313" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="246" y="292" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="266" cy="315" r="2" fill="#2a2a36" />
+
+    <rect x="292" y="292" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="296" y="310" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="300" y1="313" x2="324" y2="313" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="338" y="292" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="342" y="310" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="346" y1="313" x2="370" y2="313" stroke="#9090a2" stroke-width="0.75" />
 
     <!-- Row 5 -->
-    <rect x="154" y="344" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="174" cy="367" r="2" fill="#333a4c" />
-    <rect x="200" y="344" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <rect x="204" y="362" width="32" height="10" rx="3" fill="#38bdf8" />
-    <rect x="246" y="344" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="266" cy="367" r="2" fill="#333a4c" />
-    <rect x="292" y="344" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="312" cy="367" r="2" fill="#333a4c" />
-    <rect x="338" y="344" width="40" height="46" rx="4" fill="#0a0c10" stroke="#2a3040" stroke-width="0.75" />
-    <circle cx="358" cy="367" r="2" fill="#333a4c" />
+    <rect x="154" y="344" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="174" cy="367" r="2" fill="#2a2a36" />
 
-    <!-- Silk Bookmark Ribbon -->
-    <g filter="url(#ribbonShadow)">
-      <!-- Ribbon Body with Chevron Notch at Bottom -->
-      <polygon points="318,58 338,58 338,454 328,443 318,454" fill="url(#ribbonGrad)" />
-      <!-- Silk Highlight -->
-      <line x1="322" y1="58" x2="322" y2="447" stroke="#ffffff" stroke-width="1.2" stroke-opacity="0.65" />
-      <line x1="334" y1="58" x2="334" y2="447" stroke="#0f172a" stroke-width="1" stroke-opacity="0.4" />
-      <!-- Top Fold Accent -->
-      <rect x="318" y="58" width="20" height="6" fill="#0369a1" />
-    </g>
+    <rect x="200" y="344" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="220" cy="367" r="2" fill="#2a2a36" />
+
+    <rect x="246" y="344" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <rect x="250" y="362" width="32" height="10" rx="3" fill="#4a4a5a" stroke="#68687a" stroke-width="0.75" />
+    <line x1="254" y1="365" x2="278" y2="365" stroke="#9090a2" stroke-width="0.75" />
+
+    <rect x="292" y="344" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="312" cy="367" r="2" fill="#2a2a36" />
+
+    <rect x="338" y="344" width="40" height="46" rx="4" fill="#09090d" stroke="#262632" stroke-width="0.75" />
+    <circle cx="358" cy="367" r="2" fill="#2a2a36" />
   </g>
 </svg>

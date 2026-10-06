@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { isRunningInExpoGo } from 'expo';
+import React, { useEffect, useState } from "react";
+import { isRunningInExpoGo } from "expo";
 import {
   Alert,
   Platform,
@@ -9,33 +9,43 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { resolveUserBlocks, type PlanType } from '@pk-planner/core';
-import Markdown from 'react-native-markdown-display';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { resolveUserBlocks, type PlanType } from "@pk-planner/core";
+import Markdown from "react-native-markdown-display";
 
-import { AddCustomBlockModal } from '@/components/AddCustomBlockModal';
-import { OnboardingModal } from '@/components/OnboardingModal';
-import { Spacing } from '@/constants/theme';
-import { ThemeMode, useAppTheme } from '@/context/ThemeContext';
-import { useScheduleData } from '@/hooks/useScheduleData';
-import { useUserSchedule } from '@/hooks/useUserSchedule';
-import { useAppVersion } from '@/hooks/useAppVersion';
+import { AddCustomBlockModal } from "@/components/AddCustomBlockModal";
+import { OnboardingModal } from "@/components/OnboardingModal";
+import { Spacing } from "@/constants/theme";
+import { ThemeMode, useAppTheme } from "@/context/ThemeContext";
+import { useScheduleData } from "@/hooks/useScheduleData";
+import { useUserSchedule } from "@/hooks/useUserSchedule";
+import { useAppVersion } from "@/hooks/useAppVersion";
 import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
   loadNotificationPreferences,
   saveNotificationPreferences,
   syncNotifications,
   type NotificationPreferences,
-} from '@/utils/notifications';
+} from "@/utils/notifications";
 
 export default function SettingsScreen() {
-  const notificationsSupported = !(Platform.OS === 'android' && isRunningInExpoGo());
+  const isWeb = Platform.OS === "web";
+  const isExpoGo = Platform.OS === "android" && isRunningInExpoGo();
   const { theme, resolvedTheme, mode, setThemeMode } = useAppTheme();
-  const isDark = resolvedTheme === 'dark';
+  const isDark = resolvedTheme === "dark";
 
   const { state, refresh, isLoading, lastUpdated } = useScheduleData();
-  const { installedVersion, latestVersion, updateAvailable, downloadUrl, changelog, isChecking, openUpdate } = useAppVersion();
+  const {
+    installedVersion,
+    latestVersion,
+    updateAvailable,
+    downloadUrl,
+    changelog,
+    isChecking,
+    openUpdate,
+  } = useAppVersion();
   const {
     config,
     saveAllConfig,
@@ -46,13 +56,12 @@ export default function SettingsScreen() {
 
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
-  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>({
-    reminders: false,
-    countdown: false,
-    scheduleUpdates: false,
-  });
+  const [notificationPreferences, setNotificationPreferences] =
+    useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
   const [notificationsReady, setNotificationsReady] = useState(false);
-  const [notificationStatus, setNotificationStatus] = useState<string | null>(null);
+  const [notificationStatus, setNotificationStatus] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     void loadNotificationPreferences().then((value) => {
@@ -64,20 +73,24 @@ export default function SettingsScreen() {
   const updateNotifications = async (next: NotificationPreferences) => {
     setNotificationPreferences(next);
     await saveNotificationPreferences(next);
-    if (!state) return;
     try {
-      const result = await syncNotifications(resolveUserBlocks(state, config), next);
-      setNotificationStatus(result === 'unsupported'
-        ? 'Powiadomienia są niedostępne w Expo Go na Androidzie.'
-        : result === 'permission-denied'
-        ? 'Włącz powiadomienia w ustawieniach telefonu.'
-        : result === 'fcm'
-          ? 'Aktywne przez FCM.'
-          : result === 'local'
-            ? 'Aktywne lokalnie na urządzeniu.'
-            : null);
+      const blocks = state ? resolveUserBlocks(state, config) : [];
+      const result = await syncNotifications(blocks, next);
+      setNotificationStatus(
+        result === "permission-denied"
+          ? "Włącz powiadomienia w ustawieniach telefonu."
+          : result === "fcm"
+            ? "Aktywne przez FCM."
+            : result === "local"
+              ? isExpoGo
+                ? "Aktywne lokalnie na urządzeniu (Expo Go)."
+                : "Aktywne lokalnie na urządzeniu."
+              : null,
+      );
     } catch {
-      setNotificationStatus('Nie udało się skonfigurować powiadomień. Spróbuj ponownie.');
+      setNotificationStatus(
+        "Nie udało się skonfigurować powiadomień. Spróbuj ponownie.",
+      );
     }
   };
 
@@ -93,13 +106,13 @@ export default function SettingsScreen() {
 
   const handleReset = () => {
     Alert.alert(
-      'Zresetować konfigurację?',
-      'Spowoduje to usunięcie zapisanego rocznika, wyborów grup oraz własnych zajęć.',
+      "Zresetować konfigurację?",
+      "Spowoduje to usunięcie zapisanego rocznika, wyborów grup oraz własnych zajęć.",
       [
-        { text: 'Anuluj', style: 'cancel' },
+        { text: "Anuluj", style: "cancel" },
         {
-          text: 'Zresetuj',
-          style: 'destructive',
+          text: "Zresetuj",
+          style: "destructive",
           onPress: () => resetConfig(),
         },
       ],
@@ -107,33 +120,38 @@ export default function SettingsScreen() {
   };
 
   const THEME_OPTIONS: { id: ThemeMode; label: string; icon: any }[] = [
-    { id: 'system', label: 'Systemowy', icon: 'phone-portrait-outline' },
-    { id: 'light', label: 'Jasny', icon: 'sunny-outline' },
-    { id: 'dark', label: 'Ciemny', icon: 'moon-outline' },
+    { id: "system", label: "Systemowy", icon: "phone-portrait-outline" },
+    { id: "light", label: "Jasny", icon: "sunny-outline" },
+    { id: "dark", label: "Ciemny", icon: "moon-outline" },
   ];
 
   return (
     <SafeAreaView
-      edges={['top']}
+      edges={["top"]}
       style={[
         styles.safeArea,
-        { backgroundColor: isDark ? '#09090b' : '#f8fafc' },
-      ]}>
+        { backgroundColor: isDark ? "#09090b" : "#f8fafc" },
+      ]}
+    >
       {/* Top Title Bar */}
       <View
         style={[
           styles.headerBar,
           {
-            backgroundColor: isDark ? '#09090b' : '#ffffff',
+            backgroundColor: isDark ? "#09090b" : "#ffffff",
             borderBottomColor: theme.border,
           },
-        ]}>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Ustawienia</Text>
+        ]}
+      >
+        <Text style={[styles.headerTitle, { color: theme.text }]}>
+          Ustawienia
+        </Text>
       </View>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         {/* Section 1: Active Schedule */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
@@ -144,17 +162,26 @@ export default function SettingsScreen() {
             style={[
               styles.card,
               {
-                backgroundColor: isDark ? '#18181b' : '#ffffff',
+                backgroundColor: isDark ? "#18181b" : "#ffffff",
                 borderColor: theme.border,
               },
-            ]}>
+            ]}
+          >
             <View style={styles.rowBetween}>
               <View>
                 <Text style={[styles.cardHeading, { color: theme.text }]}>
-                  {config.cohort || 'Brak wybranego rocznika'}
+                  {config.cohort || "Brak wybranego rocznika"}
                 </Text>
-                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
-                  Studia {config.planType === 'niestacjonarne' ? 'niestacjonarne' : 'stacjonarne'}
+                <Text
+                  style={[
+                    styles.cardSubheading,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  Studia{" "}
+                  {config.planType === "niestacjonarne"
+                    ? "niestacjonarne"
+                    : "stacjonarne"}
                 </Text>
               </View>
 
@@ -162,9 +189,15 @@ export default function SettingsScreen() {
                 <View
                   style={[
                     styles.activeBadge,
-                    { backgroundColor: isDark ? '#064e3b' : '#d1fae5' },
-                  ]}>
-                  <Text style={[styles.activeBadgeText, { color: isDark ? '#6ee7b7' : '#047857' }]}>
+                    { backgroundColor: isDark ? "#064e3b" : "#d1fae5" },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.activeBadgeText,
+                      { color: isDark ? "#6ee7b7" : "#047857" },
+                    ]}
+                  >
                     Aktywny
                   </Text>
                 </View>
@@ -179,15 +212,20 @@ export default function SettingsScreen() {
                 style={({ pressed }) => [
                   styles.menuBtn,
                   {
-                    backgroundColor: isDark ? '#27272a' : '#f1f5f9',
+                    backgroundColor: isDark ? "#27272a" : "#f1f5f9",
                     opacity: pressed ? 0.8 : 1,
                   },
-                ]}>
+                ]}
+              >
                 <Ionicons name="school-outline" size={18} color={theme.text} />
                 <Text style={[styles.menuBtnText, { color: theme.text }]}>
                   Zmień kierunek i rocznik
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={theme.textSecondary}
+                />
               </Pressable>
 
               <Pressable
@@ -195,15 +233,20 @@ export default function SettingsScreen() {
                 style={({ pressed }) => [
                   styles.menuBtn,
                   {
-                    backgroundColor: isDark ? '#27272a' : '#f1f5f9',
+                    backgroundColor: isDark ? "#27272a" : "#f1f5f9",
                     opacity: pressed ? 0.8 : 1,
                   },
-                ]}>
+                ]}
+              >
                 <Ionicons name="options-outline" size={18} color={theme.text} />
                 <Text style={[styles.menuBtnText, { color: theme.text }]}>
                   Dostosuj grupy ćwiczeniowe / lab
                 </Text>
-                <Ionicons name="chevron-forward" size={16} color={theme.textSecondary} />
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={theme.textSecondary}
+                />
               </Pressable>
             </View>
           </View>
@@ -219,10 +262,11 @@ export default function SettingsScreen() {
             style={[
               styles.card,
               {
-                backgroundColor: isDark ? '#18181b' : '#ffffff',
+                backgroundColor: isDark ? "#18181b" : "#ffffff",
                 borderColor: theme.border,
               },
-            ]}>
+            ]}
+          >
             <View style={styles.themeRow}>
               {THEME_OPTIONS.map((opt) => {
                 const isSelected = mode === opt.id;
@@ -235,27 +279,28 @@ export default function SettingsScreen() {
                       {
                         backgroundColor: isSelected
                           ? isDark
-                            ? '#fafafa'
-                            : '#18181b'
+                            ? "#fafafa"
+                            : "#18181b"
                           : isDark
-                            ? '#27272a'
-                            : '#f1f5f9',
+                            ? "#27272a"
+                            : "#f1f5f9",
                         borderColor: isSelected
                           ? isDark
-                            ? '#fafafa'
-                            : '#18181b'
+                            ? "#fafafa"
+                            : "#18181b"
                           : theme.border,
                         opacity: pressed ? 0.8 : 1,
                       },
-                    ]}>
+                    ]}
+                  >
                     <Ionicons
                       name={opt.icon}
                       size={20}
                       color={
                         isSelected
                           ? isDark
-                            ? '#09090b'
-                            : '#ffffff'
+                            ? "#09090b"
+                            : "#ffffff"
                           : theme.text
                       }
                     />
@@ -265,12 +310,13 @@ export default function SettingsScreen() {
                         {
                           color: isSelected
                             ? isDark
-                              ? '#09090b'
-                              : '#ffffff'
+                              ? "#09090b"
+                              : "#ffffff"
                             : theme.text,
-                          fontWeight: isSelected ? '700' : '500',
+                          fontWeight: isSelected ? "700" : "500",
                         },
-                      ]}>
+                      ]}
+                    >
                       {opt.label}
                     </Text>
                   </Pressable>
@@ -281,57 +327,119 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>POWIADOMIENIA</Text>
-          <View style={[styles.card, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderColor: theme.border }]}>
-          <View style={styles.notificationRow}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+            POWIADOMIENIA
+          </Text>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: isDark ? "#18181b" : "#ffffff",
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <View style={styles.notificationRow}>
               <View style={styles.notificationText}>
-                <Text style={[styles.cardHeading, { color: theme.text }]}>Przypomnienia</Text>
-                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
+                <Text style={[styles.cardHeading, { color: theme.text }]}>
+                  Przypomnienia
+                </Text>
+                <Text
+                  style={[
+                    styles.cardSubheading,
+                    { color: theme.textSecondary },
+                  ]}
+                >
                   30 minut przed zajęciami i przy ich rozpoczęciu.
                 </Text>
               </View>
               <Switch
                 accessibilityLabel="Przypomnienia o zajęciach"
-                disabled={!notificationsReady || !notificationsSupported}
-                value={notificationsSupported && notificationPreferences.reminders}
-                onValueChange={(reminders) => void updateNotifications({ ...notificationPreferences, reminders })}
+                disabled={!notificationsReady || isWeb}
+                value={notificationPreferences.reminders}
+                onValueChange={(reminders) =>
+                  void updateNotifications({
+                    ...notificationPreferences,
+                    reminders,
+                  })
+                }
               />
             </View>
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <View style={styles.notificationRow}>
               <View style={styles.notificationText}>
-                <Text style={[styles.cardHeading, { color: theme.text }]}>Odliczanie zajęć</Text>
-                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
-                  Czas do końca zajęć. Na Androidzie aktualizowany co 5 minut przez FCM.
+                <Text style={[styles.cardHeading, { color: theme.text }]}>
+                  Odliczanie zajęć
+                </Text>
+                <Text
+                  style={[
+                    styles.cardSubheading,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  Czas do końca zajęć. Na Androidzie aktualizowany co 5 minut
                 </Text>
               </View>
               <Switch
                 accessibilityLabel="Odliczanie zajęć"
-                disabled={!notificationsReady || !notificationsSupported}
-                value={notificationsSupported && notificationPreferences.countdown}
-                onValueChange={(countdown) => void updateNotifications({ ...notificationPreferences, countdown })}
+                disabled={!notificationsReady || isWeb}
+                value={notificationPreferences.countdown}
+                onValueChange={(countdown) =>
+                  void updateNotifications({
+                    ...notificationPreferences,
+                    countdown,
+                  })
+                }
               />
             </View>
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <View style={styles.notificationRow}>
               <View style={styles.notificationText}>
-                <Text style={[styles.cardHeading, { color: theme.text }]}>Zmiany w planie</Text>
-                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>Powiadomienie push na Androidzie, gdy opublikowany plan zajęć się zmieni.</Text>
+                <Text style={[styles.cardHeading, { color: theme.text }]}>
+                  Zmiany w planie
+                </Text>
+                <Text
+                  style={[
+                    styles.cardSubheading,
+                    { color: theme.textSecondary },
+                  ]}
+                >
+                  Powiadomienie push na Androidzie, gdy opublikowany plan zajęć
+                  się zmieni.
+                </Text>
               </View>
               <Switch
                 accessibilityLabel="Powiadomienia o zmianach planu"
-                disabled={!notificationsReady || !notificationsSupported}
-                value={notificationsSupported && notificationPreferences.scheduleUpdates}
-                onValueChange={(scheduleUpdates) => void updateNotifications({ ...notificationPreferences, scheduleUpdates })}
+                disabled={!notificationsReady || isWeb}
+                value={notificationPreferences.scheduleUpdates}
+                onValueChange={(scheduleUpdates) =>
+                  void updateNotifications({
+                    ...notificationPreferences,
+                    scheduleUpdates,
+                  })
+                }
               />
             </View>
-            {!notificationsSupported && (
-              <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
-                Powiadomienia są niedostępne w Expo Go na Androidzie. Użyj zainstalowanej wersji aplikacji.
+            {isExpoGo && (
+              <Text
+                style={[styles.cardSubheading, { color: theme.textSecondary }]}
+              >
+                W Expo Go powiadomienia działają lokalnie. Powiadomienia push o zmianach planu wymagają zainstalowanej aplikacji.
+              </Text>
+            )}
+            {isWeb && (
+              <Text
+                style={[styles.cardSubheading, { color: theme.textSecondary }]}
+              >
+                Powiadomienia są niedostępne w przeglądarce.
               </Text>
             )}
             {notificationStatus && (
-              <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>{notificationStatus}</Text>
+              <Text
+                style={[styles.cardSubheading, { color: theme.textSecondary }]}
+              >
+                {notificationStatus}
+              </Text>
             )}
           </View>
         </View>
@@ -347,7 +455,8 @@ export default function SettingsScreen() {
               style={({ pressed }) => [
                 styles.addCustomLink,
                 { opacity: pressed ? 0.7 : 1 },
-              ]}>
+              ]}
+            >
               <Ionicons name="add" size={16} color={theme.accent} />
               <Text style={[styles.addCustomLinkText, { color: theme.accent }]}>
                 Dodaj
@@ -359,12 +468,15 @@ export default function SettingsScreen() {
             style={[
               styles.card,
               {
-                backgroundColor: isDark ? '#18181b' : '#ffffff',
+                backgroundColor: isDark ? "#18181b" : "#ffffff",
                 borderColor: theme.border,
               },
-            ]}>
+            ]}
+          >
             {(config.customBlocks || []).length === 0 ? (
-              <Text style={[styles.emptyCustomText, { color: theme.textSecondary }]}>
+              <Text
+                style={[styles.emptyCustomText, { color: theme.textSecondary }]}
+              >
                 Brak dodanych własnych zajęć.
               </Text>
             ) : (
@@ -375,17 +487,21 @@ export default function SettingsScreen() {
                     style={[
                       styles.customItemRow,
                       { borderBottomColor: theme.border },
-                    ]}>
+                    ]}
+                  >
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.customItemTitle, { color: theme.text }]}>
+                      <Text
+                        style={[styles.customItemTitle, { color: theme.text }]}
+                      >
                         {cb.subject}
                       </Text>
                       <Text
                         style={[
                           styles.customItemMeta,
                           { color: theme.textSecondary },
-                        ]}>
-                        {cb.day} · {cb.activity} · {cb.room || 'Brak sali'}
+                        ]}
+                      >
+                        {cb.day} · {cb.activity} · {cb.room || "Brak sali"}
                       </Text>
                     </View>
 
@@ -394,7 +510,8 @@ export default function SettingsScreen() {
                       style={({ pressed }) => [
                         styles.trashBtn,
                         { opacity: pressed ? 0.6 : 1 },
-                      ]}>
+                      ]}
+                    >
                       <Ionicons
                         name="trash-outline"
                         size={18}
@@ -418,13 +535,16 @@ export default function SettingsScreen() {
             style={[
               styles.card,
               {
-                backgroundColor: isDark ? '#18181b' : '#ffffff',
+                backgroundColor: isDark ? "#18181b" : "#ffffff",
                 borderColor: theme.border,
               },
-            ]}>
+            ]}
+          >
             {Boolean(lastUpdated) && (
               <View style={styles.syncRow}>
-                <Text style={[styles.syncLabel, { color: theme.textSecondary }]}>
+                <Text
+                  style={[styles.syncLabel, { color: theme.textSecondary }]}
+                >
                   Ostatnia aktualizacja:
                 </Text>
                 <Text style={[styles.syncValue, { color: theme.text }]}>
@@ -439,17 +559,14 @@ export default function SettingsScreen() {
               style={({ pressed }) => [
                 styles.syncBtn,
                 {
-                  backgroundColor: isDark ? '#27272a' : '#f1f5f9',
+                  backgroundColor: isDark ? "#27272a" : "#f1f5f9",
                   opacity: pressed ? 0.7 : 1,
                 },
-              ]}>
-              <Ionicons
-                name="reload"
-                size={16}
-                color={theme.text}
-              />
+              ]}
+            >
+              <Ionicons name="reload" size={16} color={theme.text} />
               <Text style={[styles.syncBtnText, { color: theme.text }]}>
-                {isLoading ? 'Pobieranie...' : 'Wymuś odświeżenie danych'}
+                {isLoading ? "Pobieranie..." : "Wymuś odświeżenie danych"}
               </Text>
             </Pressable>
 
@@ -460,11 +577,12 @@ export default function SettingsScreen() {
               style={({ pressed }) => [
                 styles.resetBtn,
                 {
-                  backgroundColor: isDark ? '#450a0a' : '#fee2e2',
+                  backgroundColor: isDark ? "#450a0a" : "#fee2e2",
                   borderColor: theme.destructive,
                   opacity: pressed ? 0.7 : 1,
                 },
-              ]}>
+              ]}
+            >
               <Ionicons
                 name="warning-outline"
                 size={16}
@@ -478,30 +596,54 @@ export default function SettingsScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>AKTUALIZACJA APLIKACJI</Text>
-          <View style={[styles.card, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderColor: theme.border }]}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
+            AKTUALIZACJA APLIKACJI
+          </Text>
+          <View
+            style={[
+              styles.card,
+              {
+                backgroundColor: isDark ? "#18181b" : "#ffffff",
+                borderColor: theme.border,
+              },
+            ]}
+          >
             <View style={styles.rowBetween}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.cardHeading, { color: theme.text }]}>
-                  {updateAvailable ? `Dostępna wersja ${latestVersion}` : `Wersja ${installedVersion}`}
+                  {updateAvailable
+                    ? `Dostępna wersja ${latestVersion}`
+                    : `Wersja ${installedVersion}`}
                 </Text>
-                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
+                <Text
+                  style={[
+                    styles.cardSubheading,
+                    { color: theme.textSecondary },
+                  ]}
+                >
                   {updateAvailable
                     ? downloadUrl
-                      ? 'Pobierz najnowszą wersję aplikacji.'
-                      : 'Nowa wersja jest dostępna. Link do pobrania nie został skonfigurowany.'
+                      ? "Pobierz najnowszą wersję aplikacji."
+                      : "Nowa wersja jest dostępna. Link do pobrania nie został skonfigurowany."
                     : isChecking
-                      ? 'Sprawdzanie aktualizacji...'
+                      ? "Sprawdzanie aktualizacji..."
                       : latestVersion
-                        ? 'Masz najnowszą wersję.'
-                        : 'Nie udało się sprawdzić wersji.'}
+                        ? "Masz najnowszą wersję."
+                        : "Nie udało się sprawdzić wersji."}
                 </Text>
               </View>
               {updateAvailable && downloadUrl && (
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => void openUpdate()}
-                  style={({ pressed }) => [styles.updateButton, { backgroundColor: theme.accent, opacity: pressed ? 0.75 : 1 }]}>
+                  style={({ pressed }) => [
+                    styles.updateButton,
+                    {
+                      backgroundColor: theme.accent,
+                      opacity: pressed ? 0.75 : 1,
+                    },
+                  ]}
+                >
                   <Text style={styles.updateButtonText}>Zaktualizuj</Text>
                 </Pressable>
               )}
@@ -574,7 +716,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   scrollContent: {
     padding: Spacing.three,
@@ -586,7 +728,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 11.5,
-    fontWeight: '700',
+    fontWeight: "700",
     letterSpacing: 0.6,
   },
   card: {
@@ -595,13 +737,13 @@ const styles = StyleSheet.create({
     padding: 14,
   },
   rowBetween: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   cardHeading: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   cardSubheading: {
     fontSize: 12.5,
@@ -614,7 +756,7 @@ const styles = StyleSheet.create({
   },
   changelogTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
     marginBottom: 4,
   },
   activeBadge: {
@@ -624,7 +766,7 @@ const styles = StyleSheet.create({
   },
   activeBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   divider: {
     height: 1,
@@ -634,23 +776,23 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   notificationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 12,
   },
   notificationText: {
     flex: 1,
   },
   menuBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 12,
     borderRadius: 10,
     gap: 10,
   },
   menuBtnText: {
     fontSize: 13.5,
-    fontWeight: '600',
+    fontWeight: "600",
     flex: 1,
   },
   updateButton: {
@@ -660,18 +802,18 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   updateButtonText: {
-    color: '#ffffff',
+    color: "#ffffff",
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   themeRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   themeOption: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
@@ -681,32 +823,32 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   addCustomLink: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 3,
   },
   addCustomLinkText: {
     fontSize: 12.5,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   emptyCustomText: {
     fontSize: 13,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: 12,
   },
   customList: {
     gap: 4,
   },
   customItemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
   },
   customItemTitle: {
     fontSize: 13.5,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   customItemMeta: {
     fontSize: 11.5,
@@ -716,9 +858,9 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   syncRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginBottom: 10,
   },
   syncLabel: {
@@ -726,24 +868,24 @@ const styles = StyleSheet.create({
   },
   syncValue: {
     fontSize: 12.5,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   syncBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingVertical: 10,
     borderRadius: 10,
   },
   syncBtnText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   resetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     paddingVertical: 10,
     borderRadius: 10,
@@ -751,11 +893,11 @@ const styles = StyleSheet.create({
   },
   resetBtnText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   footerContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingTop: 12,
   },
   footerText: {

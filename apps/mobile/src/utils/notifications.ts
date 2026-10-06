@@ -11,7 +11,14 @@ export interface NotificationPreferences {
   scheduleUpdates: boolean;
 }
 
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  reminders: true,
+  countdown: true,
+  scheduleUpdates: true,
+};
+
 const PREFERENCES_KEY = 'pk_planner_notification_preferences';
+const PREFERENCES_INITIALIZED_KEY = 'pk_planner_notification_preferences_initialized_v2';
 const INSTALLATION_KEY = 'pk_planner_notification_installation';
 const LOCAL_IDS_KEY = 'pk_planner_notification_ids';
 const COUNTDOWN_STATE_KEY = 'pk_planner_countdown_enabled';
@@ -36,21 +43,39 @@ function getNotifications(): Promise<NotificationsModule> {
   return notificationsPromise;
 }
 
+export async function requestNotificationPermission(): Promise<boolean> {
+  if (Platform.OS === 'web') return false;
+  try {
+    const Notifications = await getNotifications();
+    await createChannels();
+    const existing = await Notifications.getPermissionsAsync();
+    if (existing.granted) return true;
+    const requested = await Notifications.requestPermissionsAsync();
+    return requested.granted;
+  } catch {
+    return false;
+  }
+}
+
 export async function loadNotificationPreferences(): Promise<NotificationPreferences> {
   try {
+    const initialized = await AsyncStorage.getItem(PREFERENCES_INITIALIZED_KEY);
     const value = await AsyncStorage.getItem(PREFERENCES_KEY);
-    if (value) {
+    if (initialized === '1' && value) {
       const parsed = JSON.parse(value);
       return {
-        reminders: parsed.reminders === true,
-        countdown: parsed.countdown === true,
-        scheduleUpdates: parsed.scheduleUpdates === true,
+        reminders: typeof parsed.reminders === 'boolean' ? parsed.reminders : true,
+        countdown: typeof parsed.countdown === 'boolean' ? parsed.countdown : true,
+        scheduleUpdates: typeof parsed.scheduleUpdates === 'boolean' ? parsed.scheduleUpdates : true,
       };
     }
+    // Domyślnie wszystkie powiadomienia są włączone
+    await AsyncStorage.setItem(PREFERENCES_INITIALIZED_KEY, '1');
+    await AsyncStorage.setItem(PREFERENCES_KEY, JSON.stringify(DEFAULT_NOTIFICATION_PREFERENCES));
+    return { ...DEFAULT_NOTIFICATION_PREFERENCES };
   } catch {
-    // A missing or invalid preference means notifications are off.
+    return { ...DEFAULT_NOTIFICATION_PREFERENCES };
   }
-  return { reminders: false, countdown: false, scheduleUpdates: false };
 }
 
 export async function saveNotificationPreferences(value: NotificationPreferences): Promise<void> {
@@ -157,9 +182,8 @@ async function scheduleLocally(
 export async function syncNotifications(
   blocks: ScheduleBlock[],
   preferences: NotificationPreferences,
-): Promise<'off' | 'fcm' | 'local' | 'permission-denied' | 'unsupported'> {
+): Promise<'off' | 'fcm' | 'local' | 'permission-denied'> {
   if (Platform.OS === 'web') return 'off';
-  if (Platform.OS === 'android' && isRunningInExpoGo()) return 'unsupported';
   const Notifications = await getNotifications();
   const id = await installationId();
   await clearLocalNotifications();
@@ -181,7 +205,7 @@ export async function syncNotifications(
     return 'permission-denied';
   }
 
-  if (Platform.OS === 'android') {
+  if (Platform.OS === 'android' && !isRunningInExpoGo()) {
     try {
       const token = await Notifications.getDevicePushTokenAsync();
       const response = await fetch(`${API_URL}/notifications/${id}`, {

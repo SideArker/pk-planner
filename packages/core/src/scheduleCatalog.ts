@@ -246,6 +246,8 @@ export function getCohortHierarchy(state: ScheduleState): {
   return { fields, allNodes };
 }
 
+export type CohortHierarchy = ReturnType<typeof getCohortHierarchy>;
+
 /**
  * Checks if a block belongs to the selected cohort base.
  */

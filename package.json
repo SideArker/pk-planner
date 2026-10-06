@@ -12,6 +12,8 @@
     "dev:mobile": "pnpm --filter mobile start",
     "dev:worker": "pnpm --filter worker dev",
     "build:web": "pnpm --filter web build",
+    "build:mobile": "pnpm --filter mobile build",
+    "build:worker": "pnpm --filter worker build",
     "lint": "oxlint apps packages",
     "lint:fix": "oxlint apps packages --fix",
     "typecheck": "pnpm -r --if-present typecheck"

@@ -76,7 +76,7 @@ export default function App() {
         onToggleTheme={toggleTheme}
       />
 
-      <main className="flex-1 mx-auto max-w-7xl w-full p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 mx-auto w-full max-w-[92%] 2xl:max-w-[1750px] p-4 sm:p-6 lg:p-6">
         {/* Error notification banner */}
         {error && (
           <div className="mb-6 rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 p-4 text-xs sm:text-sm text-red-800 dark:text-red-300 flex items-center justify-between gap-3">

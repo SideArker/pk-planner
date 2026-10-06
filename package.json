@@ -13,7 +13,7 @@
     "dev:worker": "pnpm --filter worker dev",
     "build:web": "pnpm --filter web build",
     "build:mobile": "pnpm --filter mobile build",
-    "build:worker": "pnpm --filter worker deploy",
+    "deploy:worker": "pnpm --filter worker run deploy",
     "lint": "oxlint apps packages",
     "lint:fix": "oxlint apps packages --fix",
     "typecheck": "pnpm -r --if-present typecheck"

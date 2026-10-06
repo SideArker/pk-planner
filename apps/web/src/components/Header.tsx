@@ -31,9 +31,11 @@ export function Header({
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 shadow-sm">
-            <Calendar className="h-5 w-5" />
-          </div>
+          <img
+            src="/icon-192.png"
+            alt="PK Planner"
+            className="h-9 w-9 rounded-lg shadow-xs object-cover"
+          />
           <div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-zinc-900 dark:text-zinc-50 tracking-tight text-base sm:text-lg">

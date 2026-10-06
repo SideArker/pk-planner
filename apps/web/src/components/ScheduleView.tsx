@@ -8,7 +8,6 @@ import {
   detectScheduleCollisions,
   getTeachingWeekInfo,
   isBlockInWeekParity,
-  minutesToTime,
 } from '@pk-planner/core'
 import { AlertTriangle, Calendar, Columns, Filter, LayoutGrid, Plus, Sparkles } from 'lucide-react'
 import { BlockCard } from './BlockCard'
@@ -35,35 +34,105 @@ function getInitialToday(days: Day[]): Day {
   const current = map[dayIndex] || 'MON'
   return days.includes(current) ? current : (days[0] || 'MON')
 }
+const HOUR_HEIGHT = 80
 
-interface ScheduleSlot {
-  key: string
-  start: number
-  end: number
-  startTime: string
-  endTime: string
-  slotIndex?: number
+interface PositionedBlock {
+  block: ScheduleBlock
+  top: number
+  height: number
+  leftPercent: number
+  widthPercent: number
+  isNarrow: boolean
+  isShort: boolean
 }
 
-const STANDARD_PK_SLOTS = [
-  { index: 1, start: 450, duration: 90, startTime: '07:30', endTime: '09:00' },
-  { index: 2, start: 555, duration: 90, startTime: '09:15', endTime: '10:45' },
-  { index: 3, start: 660, duration: 90, startTime: '11:00', endTime: '12:30' },
-  { index: 4, start: 765, duration: 90, startTime: '12:45', endTime: '14:15' },
-  { index: 5, start: 870, duration: 90, startTime: '14:30', endTime: '16:00' },
-  { index: 6, start: 975, duration: 90, startTime: '16:15', endTime: '17:45' },
-  { index: 7, start: 1080, duration: 90, startTime: '18:00', endTime: '19:30' },
-  { index: 8, start: 1185, duration: 90, startTime: '19:45', endTime: '21:15' },
-]
+function computeDayBlockPositions(
+  dayBlocks: ScheduleBlock[],
+  startHour: number,
+  hourHeight: number,
+): PositionedBlock[] {
+  const valid = dayBlocks.filter(b => b.start != null)
+  if (valid.length === 0) return []
 
-function getSlotKeyForBlock(block: ScheduleBlock): string {
-  if (block.start == null) return ''
-  for (const s of STANDARD_PK_SLOTS) {
-    if (Math.abs(block.start - s.start) <= 35) {
-      return `slot-${s.start}`
+  const pxPerMinute = hourHeight / 60
+  const startMinute = startHour * 60
+
+  const sorted = [...valid].sort((a, b) => {
+    if (a.start! !== b.start!) return a.start! - b.start!
+    return (b.duration || 90) - (a.duration || 90)
+  })
+
+  const clusters: ScheduleBlock[][] = []
+  let currentCluster: ScheduleBlock[] = []
+  let clusterEnd = -1
+
+  for (const block of sorted) {
+    const bStart = block.start!
+    const bEnd = bStart + (block.duration || 90)
+
+    if (currentCluster.length === 0 || bStart < clusterEnd) {
+      currentCluster.push(block)
+      clusterEnd = Math.max(clusterEnd, bEnd)
+    } else {
+      clusters.push(currentCluster)
+      currentCluster = [block]
+      clusterEnd = bEnd
     }
   }
-  return `custom-${block.start}`
+  if (currentCluster.length > 0) {
+    clusters.push(currentCluster)
+  }
+
+  const result: PositionedBlock[] = []
+
+  for (const cluster of clusters) {
+    const colEnds: number[] = []
+    const blockCol = new Map<string, number>()
+
+    for (const block of cluster) {
+      const bStart = block.start!
+      const bEnd = bStart + (block.duration || 90)
+
+      let col = -1
+      for (let c = 0; c < colEnds.length; c++) {
+        if (colEnds[c] <= bStart) {
+          col = c
+          colEnds[c] = bEnd
+          break
+        }
+      }
+      if (col === -1) {
+        col = colEnds.length
+        colEnds.push(bEnd)
+      }
+      blockCol.set(block.id, col)
+    }
+
+    const numCols = colEnds.length
+
+    for (const block of cluster) {
+      const bStart = block.start!
+      const dur = block.duration || 90
+      const col = blockCol.get(block.id)!
+
+      const top = (bStart - startMinute) * pxPerMinute
+      const height = Math.max(38, dur * pxPerMinute - 3)
+      const widthPercent = 100 / numCols
+      const leftPercent = col * widthPercent
+
+      result.push({
+        block,
+        top,
+        height,
+        leftPercent,
+        widthPercent,
+        isNarrow: numCols > 1,
+        isShort: height < 85,
+      })
+    }
+  }
+
+  return result
 }
 
 export function ScheduleView({
@@ -132,38 +201,42 @@ export function ScheduleView({
     return map
   }, [filteredBlocks, days])
 
-  // Standard PK slots cover the full academic day 07:30 - 21:15 (bloki 1..8)
-  const activeSlots = useMemo<ScheduleSlot[]>(() => {
-    const standardSlots: ScheduleSlot[] = STANDARD_PK_SLOTS.map(s => ({
-      key: `slot-${s.start}`,
-      start: s.start,
-      end: s.start + s.duration,
-      startTime: s.startTime,
-      endTime: s.endTime,
-      slotIndex: s.index,
-    }))
-
+  // Dynamic hours range: covers full academic day 07:00 - 21:00 / 22:00
+  const { startHour, hours } = useMemo(() => {
     const valid = filteredBlocks.filter(b => b.start != null)
-    const customSlots: ScheduleSlot[] = []
-    const seenCustom = new Set<number>()
+    let minH = 7
+    let maxH = 22
 
-    for (const b of valid) {
-      const fitsStandard = STANDARD_PK_SLOTS.some(s => Math.abs(b.start! - s.start) <= 35)
-      if (!fitsStandard && !seenCustom.has(b.start!)) {
-        seenCustom.add(b.start!)
-        const dur = b.duration || 90
-        customSlots.push({
-          key: `custom-${b.start}`,
-          start: b.start!,
-          end: b.start! + dur,
-          startTime: minutesToTime(b.start!),
-          endTime: minutesToTime(b.start! + dur),
-        })
-      }
+    if (valid.length > 0) {
+      const starts = valid.map(b => b.start!)
+      const ends = valid.map(b => b.start! + (b.duration || 90))
+      minH = Math.min(7, Math.floor(Math.min(...starts) / 60))
+      maxH = Math.max(22, Math.ceil(Math.max(...ends) / 60))
     }
 
-    return [...standardSlots, ...customSlots].sort((a, b) => a.start - b.start)
+    const list: number[] = []
+    for (let h = minH; h < maxH; h++) {
+      list.push(h)
+    }
+    return { startHour: minH, hours: list }
   }, [filteredBlocks])
+
+  // Precompute positioned layout for each day in grid mode
+  const positionedBlocksByDay = useMemo(() => {
+    const map: Record<Day, PositionedBlock[]> = {
+      MON: [],
+      TUE: [],
+      WED: [],
+      THU: [],
+      FRI: [],
+      SAT: [],
+      SUN: [],
+    }
+    for (const day of days) {
+      map[day] = computeDayBlockPositions(blocksByDay[day], startHour, HOUR_HEIGHT)
+    }
+    return map
+  }, [days, blocksByDay, startHour])
 
   return (
     <div className="space-y-4">
@@ -225,7 +298,7 @@ export function ScheduleView({
             </button>
           </div>
 
-          {/* Desktop layout toggle: Karty vs Pełna siatka (7:30 - 21:00) */}
+          {/* Desktop layout toggle: Karty vs Siatka */}
           <div className="hidden sm:flex items-center rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800 text-xs">
             <button
               onClick={() => handleSetLayout('columns')}
@@ -246,10 +319,10 @@ export function ScheduleView({
                   ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
                   : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
-              title="Pełna siatka godzinowa 7:30 - 21:00"
+              title="Siatka godzinowa"
             >
               <LayoutGrid className="h-3.5 w-3.5" />
-              <span>Siatka (7:30 - 21:00)</span>
+              <span>Siatka</span>
             </button>
           </div>
 
@@ -388,11 +461,11 @@ export function ScheduleView({
           </button>
         </div>
       ) : desktopLayout === 'grid' ? (
-        /* Aligned Timetable Grid */
+        /* Hourly Timetable Grid with Dashed Lines */
         <div className="hidden lg:flex flex-col gap-2.5">
           {/* Header Row */}
           <div className="flex items-center gap-2.5 sticky top-2 z-20">
-            <div className="w-24 sm:w-28 shrink-0 p-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm flex items-center justify-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider shadow-xs">
+            <div className="w-20 shrink-0 p-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm flex items-center justify-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider shadow-xs">
               Godzina
             </div>
 
@@ -429,60 +502,78 @@ export function ScheduleView({
             })}
           </div>
 
-          {/* Time Slot Rows */}
-          <div className="space-y-2.5">
-            {activeSlots.map(slot => (
-              <div key={slot.key} className="flex items-stretch gap-2.5">
-                {/* Time Badge Cell */}
-                <div className="w-24 sm:w-28 shrink-0 flex flex-col items-center justify-center p-2 rounded-xl bg-zinc-50 dark:bg-zinc-900/80 border border-zinc-200/80 dark:border-zinc-800 text-center select-none min-h-[92px]">
-                  <span className="text-xs font-semibold font-mono text-zinc-800 dark:text-zinc-200">
-                    {slot.startTime}
+          {/* Timetable Body */}
+          <div className="flex items-stretch gap-2.5 bg-white dark:bg-zinc-900/50 rounded-2xl border border-zinc-200/80 dark:border-zinc-800 p-2.5 shadow-xs">
+            {/* Time Axis Column */}
+            <div className="w-20 shrink-0 flex flex-col select-none">
+              {hours.map(h => (
+                <div
+                  key={h}
+                  style={{ height: HOUR_HEIGHT }}
+                  className="relative border-b border-dashed border-zinc-200/90 dark:border-zinc-800/90 flex flex-col justify-between py-1 items-center"
+                >
+                  <span className="text-xs font-mono font-medium text-zinc-600 dark:text-zinc-400">
+                    {String(h).padStart(2, '0')}:00
                   </span>
-                  <span className="text-[10px] text-zinc-400 font-mono mt-0.5">
-                    {slot.endTime}
+                  <span className="text-[9px] font-mono text-zinc-300 dark:text-zinc-600">
+                    :30
                   </span>
-                  {slot.slotIndex && (
-                    <span className="mt-1 text-[9px] font-mono text-zinc-400 dark:text-zinc-500 bg-zinc-100 dark:bg-zinc-800 px-1.5 py-0.2 rounded">
-                      blok {slot.slotIndex}
-                    </span>
-                  )}
                 </div>
+              ))}
+            </div>
 
-                {/* Day Cells */}
-                {days.map(day => {
-                  const cellBlocks = filteredBlocks.filter(
-                    b => b.day === day && getSlotKeyForBlock(b) === slot.key,
-                  )
-                  const isToday = todayDay === day
+            {/* Day Columns */}
+            {days.map(day => {
+              const isToday = todayDay === day
+              const positioned = positionedBlocksByDay[day]
 
-                  return (
+              return (
+                <div
+                  key={day}
+                  className={`flex-1 min-w-0 relative rounded-xl transition-colors border-r border-zinc-100 dark:border-zinc-800/60 last:border-r-0 ${
+                    isToday ? 'bg-blue-50/15 dark:bg-blue-950/10' : ''
+                  }`}
+                >
+                  {/* Dashed Hour Lines Background */}
+                  {hours.map(h => (
                     <div
-                      key={day}
-                      className={`flex-1 min-w-0 rounded-xl transition-colors ${
-                        isToday ? 'bg-blue-50/15 dark:bg-blue-950/10' : ''
-                      }`}
+                      key={h}
+                      style={{ height: HOUR_HEIGHT }}
+                      className="relative border-b border-dashed border-zinc-200/90 dark:border-zinc-800/90"
                     >
-                      {cellBlocks.length === 0 ? (
-                        <div className="h-full min-h-[92px] rounded-xl border border-dashed border-zinc-200/60 dark:border-zinc-800/60 bg-zinc-50/20 dark:bg-zinc-900/10 hover:border-zinc-300 dark:hover:border-zinc-700/60 transition-colors" />
-                      ) : (
-                        <div className="flex flex-col gap-2">
-                          {cellBlocks.map(block => (
-                            <BlockCard
-                              key={block.id}
-                              block={block}
-                              collisionInfo={collisions.get(block.id)}
-                              currentParity={currentWeek.parityLabel}
-                              dimWhenNotCurrentWeek={parityFilter === 'all'}
-                              onClick={onSelectBlock}
-                            />
-                          ))}
-                        </div>
-                      )}
+                      <div className="absolute inset-x-0 top-1/2 border-b border-dotted border-zinc-100 dark:border-zinc-800/40 pointer-events-none" />
                     </div>
-                  )
-                })}
-              </div>
-            ))}
+                  ))}
+
+                  {/* Absolute Positioned Blocks */}
+                  <div className="absolute inset-0 pointer-events-none">
+                    {positioned.map(pos => (
+                      <div
+                        key={pos.block.id}
+                        className="absolute pointer-events-auto transition-all"
+                        style={{
+                          top: pos.top + 2,
+                          height: pos.height,
+                          left: `calc(${pos.leftPercent}% + 1.5px)`,
+                          width: `calc(${pos.widthPercent}% - 3px)`,
+                          zIndex: 10,
+                        }}
+                      >
+                        <BlockCard
+                          block={pos.block}
+                          collisionInfo={collisions.get(pos.block.id)}
+                          currentParity={currentWeek.parityLabel}
+                          dimWhenNotCurrentWeek={parityFilter === 'all'}
+                          isCompact={pos.isNarrow || pos.isShort}
+                          className="h-full flex flex-col justify-between overflow-hidden shadow-xs hover:z-30 hover:shadow-md"
+                          onClick={onSelectBlock}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
       ) : (

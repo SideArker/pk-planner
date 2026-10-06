@@ -16,6 +16,8 @@ interface BlockCardProps {
   collisionInfo?: BlockCollisionInfo[];
   currentParity?: "A" | "B";
   dimWhenNotCurrentWeek?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
 const ACTIVITY_STYLES: Record<
@@ -98,6 +100,8 @@ export function BlockCard({
   collisionInfo = [],
   currentParity,
   dimWhenNotCurrentWeek = false,
+  className = "",
+  style: styleProp,
 }: BlockCardProps) {
   const actKey = (block.activity || "").toLowerCase().trim();
   const style = ACTIVITY_STYLES[actKey] || DEFAULT_STYLE;
@@ -131,80 +135,83 @@ export function BlockCard({
   return (
     <button
       onClick={() => onClick(block)}
+      style={styleProp}
       className={`group relative w-full text-left rounded-xl border ${
         hasCollision
           ? "border-amber-400 dark:border-amber-600 ring-2 ring-amber-400/50 bg-amber-50/15 dark:bg-amber-950/20"
           : "border-zinc-200/90 dark:border-zinc-800/90 bg-white dark:bg-zinc-900/90"
-      } p-3 transition-all duration-150 hover:shadow-md border-l-4 ${style.border} ${style.bg} cursor-pointer ${isOtherWeek ? 'opacity-60 grayscale-[35%]' : ''}`}
+      } ${isCompact ? "p-2" : "p-3"} transition-all duration-150 hover:shadow-md border-l-4 ${style.border} ${style.bg} cursor-pointer ${isOtherWeek ? 'opacity-60 grayscale-[35%]' : ''} ${className}`}
     >
-      <div className="flex items-start justify-between gap-1.5 mb-1.5">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <Badge
-            variant="outline"
-            className={`text-[11px] font-semibold px-1.5 py-0.5 ${style.badge}`}
-          >
-            {formatActivityName(block.activity)}
-          </Badge>
-          {(block.isCustom || block.id.startsWith("custom-")) && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80">
-              Własne
-            </span>
-          )}
-          {parityLabel && (
-            <span
-              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] ${
-                isCurrentParity
-                  ? "font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80"
-                  : "font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
-              }`}
+      <div>
+        <div className="flex items-start justify-between gap-1.5 mb-1">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge
+              variant="outline"
+              className={`text-[11px] font-semibold px-1.5 py-0.5 ${style.badge}`}
             >
-              {isCurrentParity && (
-                <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
-              )}
-              <span>
-                {parityLabel}
-                {isCurrentParity ? " (bieżący)" : ""}
+              {formatActivityName(block.activity)}
+            </Badge>
+            {(block.isCustom || block.id.startsWith("custom-")) && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80">
+                Własne
               </span>
-            </span>
-          )}
-          {hasCollision && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60">
-              <AlertTriangle className="h-2.5 w-2.5" />
-              <span>Kolizja</span>
-            </span>
-          )}
+            )}
+            {parityLabel && (
+              <span
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] ${
+                  isCurrentParity
+                    ? "font-semibold bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800/80"
+                    : "font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                }`}
+              >
+                {isCurrentParity && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+                )}
+                <span>
+                  {parityLabel}
+                  {isCurrentParity ? " (bieżący)" : ""}
+                </span>
+              </span>
+            )}
+            {hasCollision && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800/60">
+                <AlertTriangle className="h-2.5 w-2.5" />
+                <span>Kolizja</span>
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
+              <Clock className="h-3 w-3" />
+              <span>
+                {startTime} - {endTime}
+              </span>
+            </div>
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+              <MoreVertical className="h-3.5 w-3.5" />
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className="flex items-center gap-1 text-[11px] font-mono text-zinc-500 dark:text-zinc-400">
-            <Clock className="h-3 w-3" />
-            <span>
-              {startTime} - {endTime}
-            </span>
+        <h3 className={`font-semibold ${isCompact ? "text-xs" : "text-sm"} text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug group-hover:text-zinc-700 dark:group-hover:text-zinc-200`}>
+          {block.subject}
+        </h3>
+
+        {hasCollision && !isCompact && (
+          <div className="mt-2 rounded-lg bg-amber-100/70 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 p-1.5 px-2 flex items-start gap-1.5 text-[11px] text-amber-900 dark:text-amber-200">
+            <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="line-clamp-2">
+              <span className="font-semibold">Nakłada się z:</span>{" "}
+              {collisionInfo
+                .map((c) => `${c.conflictingSubject} (${c.conflictingTime})`)
+                .join(", ")}
+            </div>
           </div>
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
-            <MoreVertical className="h-3.5 w-3.5" />
-          </div>
-        </div>
+        )}
       </div>
 
-      <h3 className="font-semibold text-sm text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug group-hover:text-zinc-700 dark:group-hover:text-zinc-200">
-        {block.subject}
-      </h3>
-
-      {hasCollision && !isCompact && (
-        <div className="mt-2 rounded-lg bg-amber-100/70 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 p-1.5 px-2 flex items-start gap-1.5 text-[11px] text-amber-900 dark:text-amber-200">
-          <AlertTriangle className="h-3 w-3 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-          <div className="line-clamp-2">
-            <span className="font-semibold">Nakłada się z:</span>{" "}
-            {collisionInfo
-              .map((c) => `${c.conflictingSubject} (${c.conflictingTime})`)
-              .join(", ")}
-          </div>
-        </div>
-      )}
-
-      <div className="mt-2 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
+      <div className="mt-auto pt-1.5 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
         {teacher ? (
           <div className="flex items-center gap-1 truncate max-w-[65%]">
             <User className="h-3 w-3 shrink-0 text-zinc-400" />

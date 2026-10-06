@@ -4,8 +4,8 @@
   "description": "Plan zajęć Politechniki Krakowskiej",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a1128",
-  "theme_color": "#0a1128",
+  "background_color": "#090a0d",
+  "theme_color": "#090a0d",
   "icons": [
     {
       "src": "/favicon-16x16.png",

@@ -96,10 +96,10 @@ export function BlockDetailModal({
   const endTime = minutesToTime((block.start ?? 0) + (block.duration || 90))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="relative w-full max-w-lg rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4">
+      <div className="relative w-full max-w-lg max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="border-b border-zinc-100 dark:border-zinc-800/80 px-6 py-4 flex items-start justify-between">
+        <div className="shrink-0 border-b border-zinc-100 dark:border-zinc-800/80 px-6 py-4 flex items-start justify-between">
           <div className="space-y-1 pr-6">
             <div className="flex items-center gap-2">
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700">
@@ -118,17 +118,17 @@ export function BlockDetailModal({
 
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg"
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Tab selection */}
-        <div className="flex border-b border-zinc-200 dark:border-zinc-800 px-6 bg-zinc-50 dark:bg-zinc-950/60 text-xs font-medium">
+        <div className="shrink-0 flex border-b border-zinc-200 dark:border-zinc-800 px-6 bg-zinc-50 dark:bg-zinc-950/60 text-xs font-medium">
           <button
             onClick={() => setActiveTab('details')}
-            className={`py-2.5 px-3 border-b-2 transition-colors ${
+            className={`py-2.5 px-3 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'details'
                 ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
                 : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
@@ -138,7 +138,7 @@ export function BlockDetailModal({
           </button>
           <button
             onClick={() => setActiveTab('switchGroup')}
-            className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 transition-colors ${
+            className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'switchGroup'
                 ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
                 : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
@@ -149,7 +149,7 @@ export function BlockDetailModal({
           </button>
           <button
             onClick={() => setActiveTab('custom')}
-            className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 transition-colors ${
+            className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'custom'
                 ? 'border-zinc-900 text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
                 : 'border-transparent text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300'
@@ -161,7 +161,7 @@ export function BlockDetailModal({
         </div>
 
         {/* Tab content */}
-        <div className="p-6 max-h-[60vh] overflow-y-auto">
+        <div className="flex-1 p-6 overflow-y-auto">
           {activeTab === 'details' && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">

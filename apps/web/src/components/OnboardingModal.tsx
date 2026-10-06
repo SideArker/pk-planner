@@ -143,19 +143,19 @@ export function OnboardingModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4">
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
         {/* Modal Header */}
-        <div className="border-b border-zinc-100 dark:border-zinc-800/80 px-6 py-4 flex items-center justify-between">
+        <div className="shrink-0 border-b border-zinc-100 dark:border-zinc-800/80 px-5 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 shrink-0">
               {step === 1 ? <GraduationCap className="h-5 w-5" /> : <Layers className="h-5 w-5" />}
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                 {step === 1 ? 'Wybierz swój kierunek i rocznik' : 'Dostosuj swoje przedmioty i grupy'}
               </h2>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 truncate">
                 {step === 1
                   ? 'Krok 1 z 2 - Wybierz kierunek, stopień i rok studiów'
                   : `Krok 2 z 2 - ${selectedCohort.replace(/[—–]/g, '-')}`}
@@ -166,7 +166,7 @@ export function OnboardingModal({
           {isClosable && onClose && (
             <button
               onClick={onClose}
-              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-lg text-sm cursor-pointer"
+              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1.5 rounded-lg text-sm cursor-pointer shrink-0"
             >
               Zamknij
             </button>
@@ -174,7 +174,7 @@ export function OnboardingModal({
         </div>
 
         {/* Modal Body */}
-        <div className="max-h-[68vh] overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-5 min-w-0">
           {step === 1 ? (
             <div className="space-y-6">
               {/* 1. Wybór kierunku (Informatyka vs Cyberpsychologia) */}
@@ -396,22 +396,22 @@ export function OnboardingModal({
                     return (
                       <div
                         key={item.subject}
-                        className={`rounded-2xl border p-4 transition-all ${
+                        className={`rounded-2xl border p-3.5 sm:p-4 transition-all min-w-0 ${
                           isEnabled
                             ? 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-xs'
                             : 'border-zinc-200/60 dark:border-zinc-800/60 opacity-60 bg-zinc-50/40 dark:bg-zinc-950/40'
                         }`}
                       >
                         {/* Subject header & custom toggle switch */}
-                        <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-zinc-100 dark:border-zinc-800/60">
+                        <div className="flex items-center justify-between gap-2.5 sm:gap-3 mb-3 pb-2 border-b border-zinc-100 dark:border-zinc-800/60 min-w-0">
                           <button
                             type="button"
                             onClick={() => toggleSubject(item.subject)}
-                            className="flex items-center gap-3 text-left cursor-pointer group"
+                            className="flex items-center gap-2.5 sm:gap-3 text-left cursor-pointer group min-w-0 flex-1"
                           >
                             {/* Stylizowany przełącznik zamiast HTML checkboxa */}
                             <div
-                              className={`h-5 w-9 rounded-full transition-colors relative flex items-center p-0.5 cursor-pointer ${
+                              className={`h-5 w-9 shrink-0 rounded-full transition-colors relative flex items-center p-0.5 cursor-pointer ${
                                 isEnabled
                                   ? 'bg-zinc-900 dark:bg-zinc-100'
                                   : 'bg-zinc-300 dark:bg-zinc-700'
@@ -424,18 +424,18 @@ export function OnboardingModal({
                               />
                             </div>
 
-                            <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors">
+                            <span className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors line-clamp-2">
                               {item.subject}
                             </span>
                           </button>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                             {!isEnabled && (
-                              <Badge variant="outline" className="text-[11px] text-zinc-400">
+                              <Badge variant="outline" className="text-[10px] sm:text-[11px] text-zinc-400 shrink-0">
                                 &lt;NIE DOTYCZY&gt;
                               </Badge>
                             )}
-                            <span className="text-xs text-zinc-400">
+                            <span className="text-[11px] sm:text-xs text-zinc-400 shrink-0">
                               {item.activities.length}{' '}
                               {item.activities.length === 1 ? 'forma' : 'formy'}
                             </span>
@@ -444,7 +444,7 @@ export function OnboardingModal({
 
                         {/* Activities rows */}
                         {isEnabled && item.activities.length > 0 && (
-                          <div className="space-y-2.5 pl-2 sm:pl-4">
+                          <div className="space-y-2.5">
                             {item.activities.map(act => {
                               const selectionKey = `${item.subject}:${act.activity}`
                               const selectedOptionId = selectedGroups[selectionKey]
@@ -455,30 +455,30 @@ export function OnboardingModal({
                               return (
                                 <div
                                   key={act.activity}
-                                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl p-3 border transition-all text-xs ${
+                                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 rounded-xl p-3 border transition-all text-xs min-w-0 ${
                                     isActivityNotApplicable
                                       ? 'bg-zinc-100/70 dark:bg-zinc-950/60 border-dashed border-zinc-300 dark:border-zinc-800 opacity-70'
                                       : 'bg-zinc-50/70 dark:bg-zinc-950/40 border-zinc-200 dark:border-zinc-800'
                                   }`}
                                 >
-                                  <div className="flex items-center gap-2 min-w-[110px]">
-                                    <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                                  <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0 sm:w-28">
+                                    <span className="font-semibold text-zinc-800 dark:text-zinc-200 truncate">
                                       {act.activityLabel}:
                                     </span>
                                     {isActivityNotApplicable && (
-                                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium shrink-0">
                                         Pomijane
                                       </span>
                                     )}
                                   </div>
 
-                                  <div className="flex-1 flex items-center gap-2 max-w-md w-full">
+                                  <div className="flex items-center gap-2 min-w-0 w-full sm:flex-1">
                                     <select
                                       value={selectedOptionId || act.options[0]?.id || ''}
                                       onChange={e =>
                                         setGroupForActivity(item.subject, act.activity, e.target.value)
                                       }
-                                      className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-800 cursor-pointer"
+                                      className="flex-1 min-w-0 w-full truncate rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-800 cursor-pointer"
                                     >
                                       {act.options.map(opt => (
                                         <option key={opt.id} value={opt.id}>
@@ -486,7 +486,7 @@ export function OnboardingModal({
                                           {opt.room ? `s. ${opt.room}` : ''})
                                         </option>
                                       ))}
-                                      {/* Opcja NIE DOTYCZY pod każdymi zajęciami */}
+                                      {/* Opcja NIE DOTYCZY pod kazdymi zajeciami */}
                                       <option value={NOT_APPLICABLE_VALUE}>
                                         {NOT_APPLICABLE_LABEL} (Nie uczestniczę)
                                       </option>
@@ -503,9 +503,9 @@ export function OnboardingModal({
                                         setGroupForActivity(item.subject, act.activity, nextValue)
                                       }}
                                       title="Oznacz tę formę zajęć jako nie dotyczy"
-                                      className="shrink-0 text-[11px] h-7 px-2 cursor-pointer"
+                                      className="shrink-0 whitespace-nowrap text-[11px] h-7 px-2.5 cursor-pointer"
                                     >
-                                      <EyeOff className="h-3 w-3 mr-1" />
+                                      <EyeOff className="h-3 w-3 mr-1 shrink-0" />
                                       <span>
                                         {isActivityNotApplicable ? 'Przywróć' : 'Nie dotyczy'}
                                       </span>
@@ -526,7 +526,7 @@ export function OnboardingModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="border-t border-zinc-100 dark:border-zinc-800 px-6 py-4 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-950/50">
+        <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-800 px-5 sm:px-6 py-3.5 flex items-center justify-between bg-zinc-50/50 dark:bg-zinc-950/50">
           {step === 2 ? (
             <Button
               type="button"

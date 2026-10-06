@@ -53,21 +53,21 @@ export function SettingsModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="relative w-full max-w-md rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden my-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4">
+      <div className="relative w-full max-w-md max-h-[90vh] flex flex-col rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="border-b border-zinc-100 dark:border-zinc-800/80 px-6 py-4 flex items-center justify-between">
+        <div className="shrink-0 border-b border-zinc-100 dark:border-zinc-800/80 px-6 py-4 flex items-center justify-between">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Ustawienia</h2>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg"
+            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-1 rounded-lg cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6 text-xs sm:text-sm">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 text-xs sm:text-sm">
           {/* Section: Rocznik / Kierunek */}
           <div className="space-y-2">
             <h3 className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">

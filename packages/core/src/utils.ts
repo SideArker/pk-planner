@@ -78,6 +78,37 @@ export function isBlockInWeekParity(
   return true;
 }
 
+export const DAY_INDEX_TO_DAY: Record<number, Day> = {
+  1: "MON",
+  2: "TUE",
+  3: "WED",
+  4: "THU",
+  5: "FRI",
+  6: "SAT",
+  0: "SUN",
+};
+
+export function isBlockActiveNow(
+  block: ScheduleBlock,
+  now: Date = new Date(),
+  parityLabel?: "A" | "B",
+): boolean {
+  if (!block.day || block.start == null) return false;
+
+  const currentDay = DAY_INDEX_TO_DAY[now.getDay()];
+  if (!currentDay || block.day !== currentDay) return false;
+
+  const currentParity = parityLabel ?? getTeachingWeekInfo(now).parityLabel;
+  if (!isBlockInWeekParity(block, currentParity)) return false;
+
+  const currentMinute = now.getHours() * 60 + now.getMinutes();
+  const start = block.start;
+  const duration = block.duration || 90;
+  const end = start + duration;
+
+  return currentMinute >= start && currentMinute < end;
+}
+
 export function plain(value: unknown): string {
   return String(value ?? "")
     .replaceAll("ł", "l")

@@ -1,17 +1,17 @@
-import { Calendar, Moon, RefreshCw, Search, Settings, Sun } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import type { Theme } from '../hooks/useTheme'
+import { Calendar, Moon, RefreshCw, Search, Settings, Sun } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { Theme } from "../hooks/useTheme";
 
 interface HeaderProps {
-  currentView: 'schedule' | 'search'
-  onViewChange: (view: 'schedule' | 'search') => void
-  onOpenSettings: () => void
-  onRefresh: () => void
-  isLoading: boolean
-  lastUpdated: string | null
-  cohort: string
-  theme: Theme
-  onToggleTheme: () => void
+  currentView: "schedule" | "search";
+  onViewChange: (view: "schedule" | "search") => void;
+  onOpenSettings: () => void;
+  onRefresh: () => void;
+  isLoading: boolean;
+  lastUpdated: string | null;
+  cohort: string;
+  theme: Theme;
+  onToggleTheme: () => void;
 }
 
 export function Header({
@@ -44,7 +44,7 @@ export function Header({
               )}
             </div>
             <p className="text-[11px] text-zinc-500 dark:text-zinc-400 sm:block hidden">
-              Politechnika Krakowska · Plan zajęć
+              Plan zajęć
             </p>
           </div>
         </div>
@@ -52,22 +52,22 @@ export function Header({
         {/* View Switcher Tabs */}
         <nav className="flex items-center rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm font-medium">
           <button
-            onClick={() => onViewChange('schedule')}
+            onClick={() => onViewChange("schedule")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all ${
-              currentView === 'schedule'
-                ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-50'
-                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              currentView === "schedule"
+                ? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-50"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
             }`}
           >
             <Calendar className="h-4 w-4" />
             <span>Mój plan</span>
           </button>
           <button
-            onClick={() => onViewChange('search')}
+            onClick={() => onViewChange("search")}
             className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all ${
-              currentView === 'search'
-                ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-50'
-                : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              currentView === "search"
+                ? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-50"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
             }`}
           >
             <Search className="h-4 w-4" />
@@ -84,16 +84,24 @@ export function Header({
             disabled={isLoading}
             title="Odśwież plan zajęć"
           >
-            <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw
+              className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+            />
           </Button>
 
           <Button
             variant="outline"
             size="icon"
             onClick={onToggleTheme}
-            title={theme === 'dark' ? 'Włącz jasny motyw' : 'Włącz ciemny motyw'}
+            title={
+              theme === "dark" ? "Włącz jasny motyw" : "Włącz ciemny motyw"
+            }
           >
-            {theme === 'dark' ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4" />}
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4 text-amber-400" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
           </Button>
 
           <Button
@@ -108,5 +116,5 @@ export function Header({
         </div>
       </div>
     </header>
-  )
+  );
 }

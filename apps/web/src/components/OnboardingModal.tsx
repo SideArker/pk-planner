@@ -3,6 +3,8 @@ import {
   buildSubjectCatalog,
   getCohortHierarchy,
   prefillScheduleSelections,
+  DAY_INFO,
+  minutesToTime,
   NOT_APPLICABLE_LABEL,
   NOT_APPLICABLE_VALUE,
   type CohortHierarchyNode,
@@ -10,19 +12,72 @@ import {
   type FieldOfStudy,
   type PlanType,
   type ScheduleState,
+  type SubjectActivityOption,
 } from '@pk-planner/core'
 import {
   ArrowLeft,
   ArrowRight,
   Brain,
   CheckCircle2,
+  Clock,
   Code2,
   EyeOff,
   GraduationCap,
   Layers,
+  Users,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+
+const DAY_ORDER: Record<string, number> = {
+  MON: 1,
+  TUE: 2,
+  WED: 3,
+  THU: 4,
+  FRI: 5,
+  SAT: 6,
+  SUN: 7,
+}
+
+function formatOptionLabel(
+  opt: SubjectActivityOption,
+  mode: 'group' | 'time',
+  activity?: string,
+): string {
+  const dayStr = opt.day && DAY_INFO[opt.day] ? DAY_INFO[opt.day][1] : opt.day || ''
+  const timeStr =
+    opt.start != null
+      ? `${minutesToTime(opt.start)}-${minutesToTime(opt.start + (opt.duration || 90))}`
+      : ''
+  const roomStr = opt.room ? `s. ${opt.room}` : ''
+  const parityStr = opt.parity != null ? (opt.parity === 1 ? 'Tydz. A' : 'Tydz. B') : ''
+
+  const actKey = (activity || '').toLowerCase().trim()
+  const isLab = ['l', 'lab', 'p', 'proj'].includes(actKey)
+  const isEx = ['c', 'cw', 'cwiczenia', 'ćw'].includes(actKey)
+
+  const grMatch = opt.cohort?.match(/\/ gr\.?\s*(\d+)/i) || opt.group?.match(/(\d+)/)
+  const grNum = grMatch ? Number(grMatch[1]) : null
+
+  let displayGroup = opt.group
+  if (grNum !== null) {
+    if (isLab) {
+      displayGroup = `Grupa GL ${grNum}`
+    } else if (isEx) {
+      displayGroup = `Grupa C${grNum} (GL ${2 * grNum - 1}+${2 * grNum})`
+    }
+  }
+
+  if (mode === 'time') {
+    const timeParts = [dayStr, timeStr].filter(Boolean).join(' ')
+    const details = [opt.teacher, roomStr, parityStr].filter(Boolean).join(', ')
+    return `${timeParts ? `${timeParts} - ` : ''}${displayGroup}${details ? ` (${details})` : ''}`
+  } else {
+    const timeParts = [dayStr, timeStr].filter(Boolean).join(' ')
+    const extra = [timeParts, roomStr, parityStr].filter(Boolean).join(', ')
+    return `${displayGroup} - ${opt.teacher}${extra ? ` (${extra})` : ''}`
+  }
+}
 
 interface OnboardingModalProps {
   state: ScheduleState | null
@@ -53,6 +108,7 @@ export function OnboardingModal({
   isClosable = false,
 }: OnboardingModalProps) {
   const [step, setStep] = useState<1 | 2>(initialCohort ? 2 : 1)
+  const [selectionViewMode, setSelectionViewMode] = useState<'group' | 'time'>('group')
 
   // Hierarchy state
   const [selectedField, setSelectedField] = useState<FieldOfStudy>('Informatyka')
@@ -125,10 +181,49 @@ export function OnboardingModal({
 
   const setGroupForActivity = (subjectName: string, activity: string, optionId: string) => {
     const key = `${subjectName}:${activity}`
-    setSelectedGroups(prev => ({
-      ...prev,
-      [key]: optionId,
-    }))
+    setSelectedGroups(prev => {
+      const next = {
+        ...prev,
+        [key]: optionId,
+      }
+
+      // If user selected a laboratory/project group, automatically select the corresponding exercise group
+      const actKey = activity.toLowerCase().trim()
+      const isLabOrProj = ['l', 'lab', 'p', 'proj'].includes(actKey)
+
+      if (isLabOrProj && optionId !== NOT_APPLICABLE_VALUE) {
+        const subjectItem = subjectCatalog.find(s => s.subject === subjectName)
+        const labAct = subjectItem?.activities.find(a => a.activity.toLowerCase().trim() === actKey)
+        const selectedLabOpt = labAct?.options.find(o => o.id === optionId)
+
+        if (selectedLabOpt) {
+          const match =
+            selectedLabOpt.cohort?.match(/\/ gr\.?\s*(\d+)/i) || selectedLabOpt.group?.match(/(\d+)/)
+          const labNum = match ? Number(match[1]) : null
+
+          if (labNum !== null) {
+            const targetExNum = Math.ceil(labNum / 2)
+            const exAct = subjectItem?.activities.find(a =>
+              ['c', 'cw', 'cwiczenia', 'ćw'].includes(a.activity.toLowerCase().trim()),
+            )
+
+            if (exAct) {
+              const matchingExOpt = exAct.options.find(o => {
+                const exM = o.cohort?.match(/\/ gr\.?\s*(\d+)/i) || o.group?.match(/(\d+)/)
+                return exM ? Number(exM[1]) === targetExNum : false
+              })
+
+              if (matchingExOpt) {
+                const exKey = `${subjectName}:${exAct.activity}`
+                next[exKey] = matchingExOpt.id
+              }
+            }
+          }
+        }
+      }
+
+      return next
+    })
   }
 
   const handleFinish = () => {
@@ -324,9 +419,14 @@ export function OnboardingModal({
 
               {/* 4. Dostępne grupy / specjalności w tym roczniku */}
               <div className="space-y-2.5 pt-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  4. Wybierz grupę główną / specjalność
-                </label>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                    4. Wybierz grupę laboratoryjną / specjalność
+                  </label>
+                  <span className="text-[11px] text-zinc-400">
+                    Grupa ćwiczeniowa dobierana automatycznie
+                  </span>
+                </div>
 
                 {currentCohorts.length === 0 ? (
                   <div className="py-6 text-center text-xs text-zinc-400 border border-dashed rounded-xl">
@@ -370,12 +470,41 @@ export function OnboardingModal({
             </div>
           ) : (
             /* Krok 2: Dostosowanie przedmiotów */
-            <div className="space-y-5">
-              <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-950 text-xs text-zinc-600 dark:text-zinc-400">
-                <p>
-                  Dla każdej formy zajęć (wykład, ćwiczenia, laby) wybierz swoją grupę lub wybierz opcję{' '}
-                  <strong className="text-zinc-900 dark:text-zinc-100">&lt;NIE DOTYCZY&gt;</strong> jeśli nie uczestniczysz w tych zajęciach (np. zwolnienie z WF, inny tok).
-                </p>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950">
+                <div className="text-xs text-zinc-600 dark:text-zinc-400">
+                  <p>
+                    Wybierz swoją grupę lub oznacz jako{' '}
+                    <strong className="text-zinc-900 dark:text-zinc-100">&lt;NIE DOTYCZY&gt;</strong> jeśli nie uczestniczysz w tych zajęciach.
+                  </p>
+                </div>
+
+                <div className="flex items-center rounded-lg bg-zinc-200/70 dark:bg-zinc-800 p-0.5 text-xs shrink-0 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setSelectionViewMode('group')}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-all cursor-pointer font-medium ${
+                      selectionViewMode === 'group'
+                        ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
+                        : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <Users className="h-3.5 w-3.5" />
+                    <span>Według grup</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectionViewMode('time')}
+                    className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md transition-all cursor-pointer font-medium ${
+                      selectionViewMode === 'time'
+                        ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
+                        : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                    }`}
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Według terminu</span>
+                  </button>
+                </div>
               </div>
 
               {subjectCatalog.length === 0 ? (
@@ -446,6 +575,19 @@ export function OnboardingModal({
                                 selectedOptionId === NOT_APPLICABLE_VALUE ||
                                 selectedOptionId === NOT_APPLICABLE_LABEL
 
+                              const sortedOptions = [...act.options].sort((a, b) => {
+                                if (selectionViewMode === 'time') {
+                                  const dayA = a.day ? (DAY_ORDER[a.day] ?? 99) : 99
+                                  const dayB = b.day ? (DAY_ORDER[b.day] ?? 99) : 99
+                                  if (dayA !== dayB) return dayA - dayB
+                                  const startA = a.start ?? 9999
+                                  const startB = b.start ?? 9999
+                                  if (startA !== startB) return startA - startB
+                                  return a.group.localeCompare(b.group, 'pl', { numeric: true })
+                                }
+                                return a.group.localeCompare(b.group, 'pl', { numeric: true })
+                              })
+
                               return (
                                 <div
                                   key={act.activity}
@@ -474,10 +616,9 @@ export function OnboardingModal({
                                       }
                                       className="flex-1 min-w-0 w-full truncate rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-1 focus:ring-zinc-800 cursor-pointer"
                                     >
-                                      {act.options.map(opt => (
+                                      {sortedOptions.map(opt => (
                                         <option key={opt.id} value={opt.id}>
-                                          {opt.group} - {opt.teacher} ({opt.day || ''}{' '}
-                                          {opt.room ? `s. ${opt.room}` : ''})
+                                          {formatOptionLabel(opt, selectionViewMode, act.activity)}
                                         </option>
                                       ))}
                                       {/* Opcja NIE DOTYCZY pod kazdymi zajeciami */}

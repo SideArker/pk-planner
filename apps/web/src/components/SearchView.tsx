@@ -8,7 +8,7 @@ import {
   roomCampus,
   roomLabel,
 } from '@pk-planner/core'
-import { Building2, Calendar, Search, User } from 'lucide-react'
+import { Building2, Calendar, Search, User, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { BlockCard } from './BlockCard'
 
@@ -161,45 +161,80 @@ export function SearchView({ state, onSelectBlock }: SearchViewProps) {
           </div>
         </div>
 
-        {/* Input & Selector */}
-        <div className="flex flex-col sm:flex-row gap-2.5">
-          <div className="relative flex-1">
+        {/* Input & Autocomplete */}
+        <div className="relative">
+          <div className="relative flex items-center">
             <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-zinc-400 z-10" />
             <Input
               type="text"
               placeholder={
                 searchMode === 'teacher'
-                  ? 'Filtruj wykładowcę np. Szabat, Drożdż...'
-                  : 'Filtruj salę np. L1, P1, 152...'
+                  ? 'Wpisz nazwisko wykładowcy np. Biskup, Szabat, Drożdż...'
+                  : 'Wpisz numer sali np. L1, P1, 152, Seminaryjna...'
               }
               value={query}
-              onChange={e => setQuery(e.target.value)}
-              className="pl-10"
+              onChange={e => {
+                setQuery(e.target.value)
+                if (!e.target.value) {
+                  setSelectedEntity('')
+                }
+              }}
+              onFocus={() => {
+                if (!selectedEntity && !query) {
+                  // show suggestions on focus
+                }
+              }}
+              className="pl-10 pr-10"
             />
+            {(query || selectedEntity) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery('')
+                  setSelectedEntity('')
+                }}
+                className="absolute right-3 top-2.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 cursor-pointer p-0.5"
+                title="Wyczyść wyszukiwanie"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
 
-          <div className="sm:max-w-xs w-full">
-            <select
-              value={selectedEntity}
-              onChange={e => setSelectedEntity(e.target.value)}
-              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 px-3 py-2 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 focus:outline-hidden focus:ring-2 focus:ring-zinc-800"
-            >
-              <option value="">
-                {searchMode === 'teacher' ? '-- Wybierz wykładowcę --' : '-- Wybierz salę --'}
-              </option>
-              {searchMode === 'teacher'
-                ? (filteredList as string[]).map(t => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))
-                : (filteredList as Array<{ code: string; label: string; campus: string | null }>).map(r => (
-                    <option key={r.code} value={r.code}>
-                      s. {r.label} {r.campus ? `(${r.campus})` : ''}
-                    </option>
-                  ))}
-            </select>
-          </div>
+          {/* Autocomplete Suggestions Popup */}
+          {query.trim().length > 0 && !selectedEntity && (
+            <div className="absolute top-full left-0 right-0 mt-1.5 max-h-64 overflow-y-auto rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl z-50 p-1.5">
+              {filteredList.length === 0 ? (
+                <div className="p-3 text-center text-xs text-zinc-400">
+                  Brak wyników dla "{query}"
+                </div>
+              ) : (
+                filteredList.slice(0, 15).map(item => {
+                  const isTeacher = typeof item === 'string'
+                  const id = isTeacher ? item : item.code
+                  const label = isTeacher ? item : `s. ${item.label}`
+                  const sublabel = isTeacher ? null : item.campus ? `(${item.campus})` : null
+
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedEntity(id)
+                        setQuery(label)
+                      }}
+                      className="w-full text-left px-3 py-2 rounded-xl text-xs hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center justify-between transition-colors cursor-pointer"
+                    >
+                      <span className="font-medium text-zinc-900 dark:text-zinc-100">{label}</span>
+                      {sublabel && (
+                        <span className="text-[10px] text-zinc-400 font-mono">{sublabel}</span>
+                      )}
+                    </button>
+                  )
+                })
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -208,10 +243,10 @@ export function SearchView({ state, onSelectBlock }: SearchViewProps) {
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 py-16 px-4 text-center">
           <Calendar className="h-10 w-10 text-zinc-300 dark:text-zinc-600 mb-2" />
           <h3 className="font-semibold text-sm text-zinc-800 dark:text-zinc-200">
-            Wybierz {searchMode === 'teacher' ? 'wykładowcę' : 'salę'} z listy powyżej
+            Wpisz {searchMode === 'teacher' ? 'nazwisko wykładowcy' : 'numer sali'} powyżej
           </h3>
           <p className="text-xs text-zinc-400 mt-1 max-w-sm">
-            Zobaczysz pełny tygodniowy grafik zajęć z podziałem na dni tygodnia i godziny.
+            Podpowiedzi pojawią się w trakcie pisania. Wybierz pozycję, aby zobaczyć grafik.
           </p>
         </div>
       ) : matchingBlocks.length === 0 ? (
@@ -231,7 +266,7 @@ export function SearchView({ state, onSelectBlock }: SearchViewProps) {
             <span>{matchingBlocks.length} zaplanowanych terminów</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 items-start">
             {visibleDays.map(day => (
               <div
                 key={day}

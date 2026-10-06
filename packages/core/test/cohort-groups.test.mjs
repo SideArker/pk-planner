@@ -23,13 +23,18 @@ const block = (semester, group, activity, id) => ({
 test('offers only real GL/GK groups when exercise groups include language classes', () => {
   const blocks = [
     ...Array.from({ length: 6 }, (_, i) => block(3, i + 1, 'L', `lab-${i + 1}`)),
-    ...Array.from({ length: 5 }, (_, i) => block(3, i + 1, 'C', `language-${i + 1}`)),
+    ...Array.from({ length: 5 }, (_, i) => ({
+      ...block(3, i + 1, 'C', `language-${i + 1}`),
+      subject: 'Język obcy',
+    })),
   ]
 
   const nodes = getCohortHierarchy({ blocks, rooms: [] }).fields.Informatyka['I stopień'][2]
 
   assert.deepEqual(nodes.map(node => node.groupNumber), [1, 2, 3, 4, 5, 6])
   assert.equal(nodes[0].value, 'I stopień stac sem. 3 / GL 1')
+  const catalog = buildSubjectCatalog({ blocks, rooms: [] }, cohort(3))
+  assert.equal(prefillScheduleSelections(catalog, 6).selectedGroups['Język obcy:c'], 'language-1')
 })
 
 test('does not invent GL/GK groups for an exercise-only semester', () => {

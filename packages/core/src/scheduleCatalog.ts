@@ -334,7 +334,9 @@ export function prefillScheduleSelections(
     selectedSubjects[item.subject] = true
     for (const act of item.activities) {
       if (act.options.length === 0) continue
-      const chosen = pickBestOptionForGroup(act.options, act.activity, groupNumber, isPaired)
+      // Language groups are independent of the laboratory/computer group.
+      const chosenGroup = /^język obcy/i.test(item.subject) ? undefined : groupNumber
+      const chosen = pickBestOptionForGroup(act.options, act.activity, chosenGroup, isPaired)
       if (chosen) {
         const key = `${item.subject}:${act.activity}`
         selectedGroups[key] = chosen.id

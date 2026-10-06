@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import {
   buildSubjectCatalog,
+  detectIsPairedCohort,
   exerciseGroupForLab,
   getCohortHierarchy,
   labGroupsForExercise,
@@ -45,6 +46,8 @@ function formatOptionLabel(
   opt: SubjectActivityOption,
   mode: 'group' | 'time',
   activity?: string,
+  subject?: string,
+  isPaired?: boolean,
 ): string {
   const dayStr = opt.day && DAY_INFO[opt.day] ? DAY_INFO[opt.day][1] : opt.day || ''
   const timeStr =
@@ -65,9 +68,13 @@ function formatOptionLabel(
   if (grNum !== null) {
     if (isLab) {
       displayGroup = `Grupa GL ${grNum}`
-    } else if (isEx) {
+    } else if (isEx && /^język obcy/i.test(subject || '')) {
+      displayGroup = `Grupa językowa ${grNum}`
+    } else if (isEx && isPaired) {
       const [firstLab, secondLab] = labGroupsForExercise(opt.cohort, grNum)
       displayGroup = `Grupa C${grNum} (GL ${firstLab}+${secondLab})`
+    } else if (isEx) {
+      displayGroup = `Grupa C${grNum}`
     }
   }
 
@@ -152,6 +159,7 @@ export function OnboardingModal({
     if (!state || !selectedCohort) return []
     return buildSubjectCatalog(state, selectedCohort)
   }, [state, selectedCohort])
+  const isPairedCohort = useMemo(() => detectIsPairedCohort(subjectCatalog), [subjectCatalog])
 
   if (!isOpen) return null
 
@@ -621,7 +629,7 @@ export function OnboardingModal({
                                     >
                                       {sortedOptions.map(opt => (
                                         <option key={opt.id} value={opt.id}>
-                                          {formatOptionLabel(opt, selectionViewMode, act.activity)}
+                                          {formatOptionLabel(opt, selectionViewMode, act.activity, item.subject, isPairedCohort)}
                                         </option>
                                       ))}
                                       {/* Opcja NIE DOTYCZY pod kazdymi zajeciami */}

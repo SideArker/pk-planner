@@ -11,6 +11,8 @@
       "icon": "./assets/images/icon.png"
     },
     "android": {
+      "package": "com.sidearker.pkplanner",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#090a0d",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

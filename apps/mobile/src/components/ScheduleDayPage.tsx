@@ -4,6 +4,7 @@ import {
   type Day,
   type ScheduleBlock,
   detectScheduleCollisions,
+  getTeachingWeekInfo,
   isBlockInWeekParity,
 } from '@pk-planner/core';
 
@@ -41,6 +42,8 @@ export function ScheduleDayPage({
   onSelectBlock,
   onVerticalScroll,
 }: ScheduleDayPageProps) {
+  const weekInfo = useMemo(() => getTeachingWeekInfo(), []);
+
   const dayBlocks = useMemo(() => blocks
     .filter(block => block.day === day && (parity === 'ALL' || isBlockInWeekParity(block, parity)))
     .sort((a, b) => (a.start ?? 0) - (b.start ?? 0)), [blocks, day, parity]);
@@ -59,7 +62,8 @@ export function ScheduleDayPage({
           block={item}
           onPress={onSelectBlock}
           collisionInfo={collisions.get(item.id) || []}
-          currentParity={parity === 'ALL' ? undefined : parity}
+          currentParity={weekInfo.parityLabel}
+          dimWhenNotCurrentWeek={parity === 'ALL'}
         />
       )}
       ListEmptyComponent={

@@ -67,16 +67,28 @@ export function BlockCard({
     block.room?.trim().toUpperCase() === 'ONLINE' ||
     block.campus?.trim().toLowerCase() === 'zdalnie';
 
+  const isDark = resolvedTheme === 'dark';
+
   return (
     <Pressable
       onPress={() => onPress(block)}
       style={({ pressed }) => [
         styles.card,
         {
-          backgroundColor: resolvedTheme === 'dark' ? '#18181b' : '#ffffff',
-          borderColor: hasCollision ? theme.destructive : theme.cardBorder,
-          borderLeftColor: hasCollision ? theme.destructive : actStyle.border,
-          opacity: isOtherWeek ? 0.45 : pressed ? 0.85 : 1,
+          backgroundColor: isOtherWeek
+            ? isDark ? '#121214' : '#f8fafc'
+            : isDark ? '#18181b' : '#ffffff',
+          borderColor: hasCollision
+            ? theme.destructive
+            : isOtherWeek
+              ? isDark ? '#27272a' : '#e2e8f0'
+              : theme.cardBorder,
+          borderLeftColor: hasCollision
+            ? theme.destructive
+            : isOtherWeek
+              ? isDark ? '#3f3f46' : '#94a3b8'
+              : actStyle.border,
+          opacity: isOtherWeek ? 0.5 : pressed ? 0.85 : 1,
           transform: [{ scale: pressed ? 0.99 : 1 }],
         },
       ]}>
@@ -86,16 +98,24 @@ export function BlockCard({
           {/* Activity badge */}
           <Badge
             label={formatActivityName(block.activity) || 'Zajęcia'}
-            backgroundColor={actStyle.badgeBg}
-            textColor={actStyle.badgeText}
+            backgroundColor={isOtherWeek ? (isDark ? '#27272a' : '#e2e8f0') : actStyle.badgeBg}
+            textColor={isOtherWeek ? (isDark ? '#a1a1aa' : '#64748b') : actStyle.badgeText}
           />
 
           {/* Parity badge */}
           {Boolean(parityLabel) && (
             <Badge
-              label={parityLabel!}
-              backgroundColor={resolvedTheme === 'dark' ? '#27272a' : '#f1f5f9'}
-              textColor={resolvedTheme === 'dark' ? '#d4d4d8' : '#475569'}
+              label={`${parityLabel}${isOtherWeek ? ' (inny tydzień)' : isCurrentParity ? ' (bieżący)' : ''}`}
+              backgroundColor={
+                isCurrentParity
+                  ? isDark ? '#1e3a5f' : '#dbeafe'
+                  : isDark ? '#27272a' : '#f1f5f9'
+              }
+              textColor={
+                isCurrentParity
+                  ? isDark ? '#93c5fd' : '#1d4ed8'
+                  : isDark ? '#d4d4d8' : '#475569'
+              }
             />
           )}
 
@@ -103,8 +123,8 @@ export function BlockCard({
           {block.isCustom && (
             <Badge
               label="Własne"
-              backgroundColor={resolvedTheme === 'dark' ? '#451a03' : '#fef3c7'}
-              textColor={resolvedTheme === 'dark' ? '#fde68a' : '#b45309'}
+              backgroundColor={isDark ? '#451a03' : '#fef3c7'}
+              textColor={isDark ? '#fde68a' : '#b45309'}
             />
           )}
         </View>
@@ -113,7 +133,7 @@ export function BlockCard({
         {hasCollision && (
           <Badge
             label="Kolizja"
-            backgroundColor={resolvedTheme === 'dark' ? '#450a0a' : '#fee2e2'}
+            backgroundColor={isDark ? '#450a0a' : '#fee2e2'}
             textColor={theme.destructive}
             borderColor={theme.destructive}
             icon={<Ionicons name="alert-circle" size={12} color={theme.destructive} />}
@@ -125,79 +145,158 @@ export function BlockCard({
       <Text
         style={[
           styles.subjectTitle,
-          { color: theme.text },
+          { color: isOtherWeek ? theme.textSecondary : theme.text },
         ]}>
         {block.subject}
       </Text>
 
-      {/* Meta info grid */}
-      <View style={styles.metaContainer}>
-        {/* Time */}
-        <View style={styles.metaRow}>
+      {/* Wyróżniona godzina i sala */}
+      <View style={styles.keyInfoRow}>
+        {/* Wyróżniona Godzina */}
+        <View
+          style={[
+            styles.timeBadge,
+            {
+              backgroundColor: isOtherWeek
+                ? isDark ? '#1f1f23' : '#f1f5f9'
+                : isDark ? '#27272a' : '#f8fafc',
+              borderColor: isOtherWeek
+                ? isDark ? '#27272a' : '#e2e8f0'
+                : isDark ? '#3f3f46' : '#e2e8f0',
+            },
+          ]}>
           <Ionicons
-            name="time-outline"
+            name="time"
             size={14}
-            color={theme.textSecondary}
-          />
-          <Text style={[styles.metaText, { color: theme.textSecondary }]}>
-            {startTime && endTime ? `${startTime} – ${endTime}` : 'Czas n/d'}
-            {block.duration ? ` (${block.duration} min)` : ''}
-          </Text>
-        </View>
-
-        {/* Room */}
-        <View style={styles.metaRow}>
-          <Ionicons
-            name="location-outline"
-            size={14}
-            color={isOnline ? '#0ea5e9' : theme.textSecondary}
+            color={isOtherWeek ? theme.textSecondary : theme.accent}
           />
           <Text
             style={[
-              styles.metaText,
-              {
-                color: isOnline
-                  ? '#0ea5e9'
-                  : theme.textSecondary,
-                fontWeight: isOnline ? '600' : '400',
-              },
+              styles.timeText,
+              { color: isOtherWeek ? theme.textSecondary : theme.text },
             ]}>
-            {isOnline ? 'Zdalnie (online)' : room ? `Sala ${room}` : 'Sala nieznana'}
+            {startTime && endTime ? `${startTime} – ${endTime}` : 'Czas n/d'}
           </Text>
+          {Boolean(block.duration) && (
+            <Text style={[styles.durationText, { color: theme.textSecondary }]}>
+              {block.duration}m
+            </Text>
+          )}
         </View>
 
-        {/* Teacher */}
-        {Boolean(teacher) && (
-          <View style={styles.metaRow}>
-            <Ionicons
-              name="person-outline"
-              size={14}
-              color={theme.textSecondary}
-            />
-            <Text
-              style={[styles.metaText, { color: theme.textSecondary }]}
-              numberOfLines={1}>
-              {teacher}
-            </Text>
-          </View>
-        )}
-
-        {/* Group / Cohort if present */}
-        {Boolean(block.group || block.cohort) && (
-          <View style={styles.metaRow}>
-            <Ionicons
-              name="people-outline"
-              size={14}
-              color={theme.textSecondary}
-            />
-            <Text
-              style={[styles.metaText, { color: theme.textSecondary }]}
-              numberOfLines={1}>
-              {String(block.group || block.cohort || '')}
-            </Text>
-          </View>
-        )}
+        {/* Wyróżniona Sala */}
+        <View
+          style={[
+            styles.roomBadge,
+            {
+              backgroundColor: isOnline
+                ? isDark ? '#082f49' : '#e0f2fe'
+                : isOtherWeek
+                  ? isDark ? '#18181b' : '#f1f5f9'
+                  : isDark ? '#1e1b4b' : '#ede9fe',
+              borderColor: isOnline
+                ? isDark ? '#0284c7' : '#7dd3fc'
+                : isOtherWeek
+                  ? isDark ? '#27272a' : '#cbd5e1'
+                  : isDark ? '#4338ca' : '#c7d2fe',
+            },
+          ]}>
+          <Ionicons
+            name={isOnline ? 'globe-outline' : 'location'}
+            size={14}
+            color={
+              isOnline
+                ? isDark ? '#38bdf8' : '#0284c7'
+                : isOtherWeek
+                  ? theme.textSecondary
+                  : isDark ? '#a5b4fc' : '#6366f1'
+            }
+          />
+          <Text
+            style={[
+              styles.roomText,
+              {
+                color: isOnline
+                  ? isDark ? '#7dd3fc' : '#0369a1'
+                  : isOtherWeek
+                    ? theme.textSecondary
+                    : isDark ? '#c7d2fe' : '#4f46e5',
+              },
+            ]}
+            numberOfLines={1}>
+            {isOnline ? 'Zdalnie (online)' : room ? `Sala ${room}` : 'Bez sali'}
+          </Text>
+        </View>
       </View>
+
+      {/* Meta info row: Prowadzący i grupa */}
+      {(Boolean(teacher) || Boolean(block.group || block.cohort)) && (
+        <View style={styles.metaContainer}>
+          {Boolean(teacher) && (
+            <View style={styles.metaRow}>
+              <Ionicons
+                name="person-outline"
+                size={13}
+                color={theme.textSecondary}
+              />
+              <Text
+                style={[styles.metaText, { color: theme.textSecondary }]}
+                numberOfLines={1}>
+                {teacher}
+              </Text>
+            </View>
+          )}
+
+          {Boolean(block.group || block.cohort) && (
+            <View style={styles.metaRow}>
+              <Ionicons
+                name="people-outline"
+                size={13}
+                color={theme.textSecondary}
+              />
+              <Text
+                style={[styles.metaText, { color: theme.textSecondary }]}
+                numberOfLines={1}>
+                {String(block.group || block.cohort || '')}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
+
+      {/* Baner kolizji w tej samej godzinie */}
+      {hasCollision && (
+        <View
+          style={[
+            styles.collisionBanner,
+            {
+              backgroundColor: isDark ? '#451a03' : '#fffbeb',
+              borderColor: isDark ? '#92400e' : '#fcd34d',
+            },
+          ]}>
+          <Ionicons
+            name="warning"
+            size={14}
+            color={isDark ? '#fbbf24' : '#d97706'}
+          />
+          <View style={{ flex: 1 }}>
+            <Text
+              style={[
+                styles.collisionTitle,
+                { color: isDark ? '#fde68a' : '#b45309' },
+              ]}>
+              Kolizja w tej samej godzinie!
+            </Text>
+            <Text
+              style={[
+                styles.collisionDesc,
+                { color: isDark ? '#fde68a' : '#92400e' },
+              ]}>
+              Nakłada się z: {collisionInfo.map((c) => `${c.conflictingSubject} (${c.conflictingTime})`).join(', ')}
+            </Text>
+          </View>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -257,6 +356,64 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 20,
     marginBottom: 8,
+  },
+  keyInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  timeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  timeText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  durationText: {
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  roomBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    maxWidth: '55%',
+  },
+  roomText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  collisionBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    padding: 9,
+    borderRadius: 8,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  collisionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  collisionDesc: {
+    fontSize: 11.5,
+    lineHeight: 16,
   },
   metaContainer: {
     gap: 5,

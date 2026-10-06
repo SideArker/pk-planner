@@ -4,6 +4,7 @@ import {
   type ScheduleBlock,
   type ScheduleState,
   DAY_INFO,
+  detectScheduleCollisions,
   reservationTeachers,
   roomCampus,
   roomLabel,
@@ -105,6 +106,10 @@ export function SearchView({ state, onSelectBlock }: SearchViewProps) {
     }
 
     return map
+  }, [matchingBlocks])
+
+  const collisions = useMemo(() => {
+    return detectScheduleCollisions(matchingBlocks)
   }, [matchingBlocks])
 
   const visibleDays = useMemo(() => {
@@ -281,7 +286,12 @@ export function SearchView({ state, onSelectBlock }: SearchViewProps) {
 
                 <div className="space-y-2">
                   {blocksByDay[day].map(block => (
-                    <BlockCard key={block.id} block={block} onClick={onSelectBlock} />
+                    <BlockCard
+                      key={block.id}
+                      block={block}
+                      collisionInfo={collisions.get(block.id)}
+                      onClick={onSelectBlock}
+                    />
                   ))}
                 </div>
               </div>

@@ -5,11 +5,12 @@ import {
   type ScheduleBlock,
   availableDays,
   DAY_INFO,
+  detectScheduleCollisions,
   getTeachingWeekInfo,
   isBlockInWeekParity,
   minutesToTime,
 } from '@pk-planner/core'
-import { Calendar, Columns, Filter, LayoutGrid, Sparkles } from 'lucide-react'
+import { AlertTriangle, Calendar, Columns, Filter, LayoutGrid, Sparkles } from 'lucide-react'
 import { BlockCard } from './BlockCard'
 
 interface ScheduleViewProps {
@@ -75,7 +76,15 @@ export function ScheduleView({
   const [activeMobileDay, setActiveMobileDay] = useState<Day>(() =>
     getInitialToday(availableDays(planType)),
   )
-  const [desktopLayout, setDesktopLayout] = useState<'grid' | 'columns'>('grid')
+  const [desktopLayout, setDesktopLayout] = useState<'columns' | 'grid'>(() => {
+    const saved = localStorage.getItem('pk_planner_desktop_layout')
+    return saved === 'grid' ? 'grid' : 'columns'
+  })
+
+  const handleSetLayout = (newLayout: 'columns' | 'grid') => {
+    setDesktopLayout(newLayout)
+    localStorage.setItem('pk_planner_desktop_layout', newLayout)
+  }
 
   const currentWeek = useMemo(() => getTeachingWeekInfo(), [])
   const [parityFilter, setParityFilter] = useState<'current' | 'A' | 'B' | 'all'>('current')
@@ -88,6 +97,12 @@ export function ScheduleView({
       return isBlockInWeekParity(b, targetParity)
     })
   }, [blocks, parityFilter, currentWeek])
+
+  // Collisions detection (overlapping blocks on same day & parity)
+  const collisions = useMemo(() => {
+    return detectScheduleCollisions(filteredBlocks)
+  }, [filteredBlocks])
+  const hasAnyCollisions = collisions.size > 0
 
   // Group blocks by day
   const blocksByDay = useMemo(() => {
@@ -115,32 +130,18 @@ export function ScheduleView({
     return map
   }, [filteredBlocks, days])
 
-  // Compute active time slots for aligned timetable grid
+  // Standard PK slots cover the full academic day 07:30 - 21:15 (bloki 1..8)
   const activeSlots = useMemo<ScheduleSlot[]>(() => {
+    const standardSlots: ScheduleSlot[] = STANDARD_PK_SLOTS.map(s => ({
+      key: `slot-${s.start}`,
+      start: s.start,
+      end: s.start + s.duration,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      slotIndex: s.index,
+    }))
+
     const valid = filteredBlocks.filter(b => b.start != null)
-    if (valid.length === 0) return []
-
-    const starts = valid.map(b => b.start!)
-    const minStart = Math.min(...starts)
-    const maxStart = Math.max(...starts)
-
-    // Standard slots: include any that has a block or is between min and max
-    const standardSlots: ScheduleSlot[] = STANDARD_PK_SLOTS
-      .filter(s => {
-        const hasBlock = valid.some(b => Math.abs(b.start! - s.start) <= 35)
-        const isInRange = s.start >= minStart - 35 && s.start <= maxStart + 35
-        return hasBlock || isInRange
-      })
-      .map(s => ({
-        key: `slot-${s.start}`,
-        start: s.start,
-        end: s.start + s.duration,
-        startTime: s.startTime,
-        endTime: s.endTime,
-        slotIndex: s.index,
-      }))
-
-    // Non-standard slots: any block starting far from standard slots
     const customSlots: ScheduleSlot[] = []
     const seenCustom = new Set<number>()
 
@@ -222,31 +223,31 @@ export function ScheduleView({
             </button>
           </div>
 
-          {/* Desktop layout toggle */}
+          {/* Desktop layout toggle: Karty vs Pełna siatka (7:30 - 21:00) */}
           <div className="hidden sm:flex items-center rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800 text-xs">
             <button
-              onClick={() => setDesktopLayout('grid')}
-              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
-                desktopLayout === 'grid'
-                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-              }`}
-              title="Wyrównany grafik godzinowy"
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              <span>Siatka</span>
-            </button>
-            <button
-              onClick={() => setDesktopLayout('columns')}
+              onClick={() => handleSetLayout('columns')}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
                 desktopLayout === 'columns'
                   ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
                   : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
-              title="Zwarte kolumny"
+              title="Widok kart"
             >
               <Columns className="h-3.5 w-3.5" />
-              <span>Kolumny</span>
+              <span>Karty</span>
+            </button>
+            <button
+              onClick={() => handleSetLayout('grid')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                desktopLayout === 'grid'
+                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              }`}
+              title="Pełna siatka godzinowa 7:30 - 21:00"
+            >
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span>Siatka (7:30 - 21:00)</span>
             </button>
           </div>
 
@@ -259,6 +260,29 @@ export function ScheduleView({
           </button>
         </div>
       </div>
+
+      {/* Collision Warning Banner */}
+      {hasAnyCollisions && (
+        <div className="rounded-2xl border border-amber-300 dark:border-amber-900/80 bg-amber-50/90 dark:bg-amber-950/40 p-3.5 px-4 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <div>
+              <span className="font-semibold">
+                Wykryto kolizję terminów ({collisions.size} {collisions.size === 1 ? 'zajęcia' : 'zajęć'} nachodzi na siebie)!
+              </span>{' '}
+              <span className="text-amber-800 dark:text-amber-300">
+                Kafelki z żółtym obramowaniem kolidują w czasie. Sprawdź swój plan lub zmień grupę w filtrach.
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={onOpenCustomize}
+            className="shrink-0 px-2.5 py-1 rounded-lg bg-amber-200/80 hover:bg-amber-200 text-amber-950 dark:bg-amber-900/60 dark:hover:bg-amber-900 dark:text-amber-100 font-semibold text-[11px] transition-colors cursor-pointer"
+          >
+            Filtruj grupy
+          </button>
+        </div>
+      )}
 
       {/* Mobile Day Switcher Tabs */}
       <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
@@ -314,7 +338,12 @@ export function ScheduleView({
         ) : (
           <div className="space-y-3">
             {blocksByDay[activeMobileDay].map(block => (
-              <BlockCard key={block.id} block={block} onClick={onSelectBlock} />
+              <BlockCard
+                key={block.id}
+                block={block}
+                collisionInfo={collisions.get(block.id)}
+                onClick={onSelectBlock}
+              />
             ))}
           </div>
         )}
@@ -411,7 +440,12 @@ export function ScheduleView({
                       ) : (
                         <div className="flex flex-col gap-2">
                           {cellBlocks.map(block => (
-                            <BlockCard key={block.id} block={block} onClick={onSelectBlock} />
+                            <BlockCard
+                              key={block.id}
+                              block={block}
+                              collisionInfo={collisions.get(block.id)}
+                              onClick={onSelectBlock}
+                            />
                           ))}
                         </div>
                       )}
@@ -468,7 +502,12 @@ export function ScheduleView({
                 ) : (
                   <div className="space-y-2.5">
                     {dayBlocks.map(block => (
-                      <BlockCard key={block.id} block={block} onClick={onSelectBlock} />
+                      <BlockCard
+                        key={block.id}
+                        block={block}
+                        collisionInfo={collisions.get(block.id)}
+                        onClick={onSelectBlock}
+                      />
                     ))}
                   </div>
                 )}

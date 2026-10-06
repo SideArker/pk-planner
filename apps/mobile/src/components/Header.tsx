@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Animated,
   Easing,
@@ -27,7 +27,7 @@ export function Header({
   title = 'PK Planner',
 }: HeaderProps) {
   const { theme, resolvedTheme, toggleTheme } = useAppTheme();
-  const spinValue = useRef(new Animated.Value(0)).current;
+  const [spinValue] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     if (isLoading) {

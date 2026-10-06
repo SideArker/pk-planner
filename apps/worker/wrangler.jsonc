@@ -1,0 +1,10 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "pk-planner-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-06",
+  "vars": {
+    // Ustaw publiczny URL tutaj dla wdrożonego Workera.
+    "UPSTREAM_URL": ""
+  }
+}

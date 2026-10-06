@@ -9,6 +9,7 @@ import {
   roomLabel,
 } from '@pk-planner/core'
 import { Building2, Calendar, Search, User } from 'lucide-react'
+import { Input } from '@/components/ui/input'
 import { BlockCard } from './BlockCard'
 
 interface SearchViewProps {
@@ -163,8 +164,8 @@ export function SearchView({ state, onSelectBlock }: SearchViewProps) {
         {/* Input & Selector */}
         <div className="flex flex-col sm:flex-row gap-2.5">
           <div className="relative flex-1">
-            <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-zinc-400" />
-            <input
+            <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-zinc-400 z-10" />
+            <Input
               type="text"
               placeholder={
                 searchMode === 'teacher'
@@ -173,7 +174,7 @@ export function SearchView({ state, onSelectBlock }: SearchViewProps) {
               }
               value={query}
               onChange={e => setQuery(e.target.value)}
-              className="w-full rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 px-10 py-2 text-xs sm:text-sm text-zinc-900 dark:text-zinc-100 placeholder:text-zinc-400 focus:outline-hidden focus:ring-2 focus:ring-zinc-800"
+              className="pl-10"
             />
           </div>
 

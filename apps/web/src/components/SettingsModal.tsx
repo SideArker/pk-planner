@@ -10,6 +10,7 @@ import {
   Sun,
   X,
 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import type { Theme } from '../hooks/useTheme'
 
 interface SettingsModalProps {
@@ -78,15 +79,16 @@ export function SettingsModal({
                 <p className="font-medium text-zinc-900 dark:text-zinc-100">{cohort || 'Brak'}</p>
                 <p className="text-[11px] text-zinc-500">{planType}</p>
               </div>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => {
                   onClose()
                   onChangeCohort()
                 }}
-                className="rounded-lg border border-zinc-300 dark:border-zinc-700 px-2.5 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
               >
                 Zmień
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -121,13 +123,13 @@ export function SettingsModal({
               <Calendar className="h-4 w-4" />
               <span>Eksport całego semestru</span>
             </h3>
-            <button
+            <Button
               onClick={handleExportAllIcs}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 p-2.5 font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-xs"
+              className="w-full"
             >
               <Download className="h-4 w-4" />
               <span>Pobierz plik .ics (Google/Apple/Outlook)</span>
-            </button>
+            </Button>
           </div>
 
           {/* Section: Motyw */}

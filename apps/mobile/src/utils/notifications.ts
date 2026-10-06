@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { isRunningInExpoGo } from 'expo';
 import * as Crypto from 'expo-crypto';
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { ScheduleBlock } from '@pk-planner/core';
 import { nextClassOccurrences } from './notificationSchedule';
@@ -18,14 +18,23 @@ const COUNTDOWN_STATE_KEY = 'pk_planner_countdown_enabled';
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ||
   'https://pk-planner.rsowa126.workers.dev/api/schedule').replace(/\/schedule\/?$/, '');
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+type NotificationsModule = typeof import('expo-notifications');
+let notificationsPromise: Promise<NotificationsModule> | null = null;
+
+function getNotifications(): Promise<NotificationsModule> {
+  notificationsPromise ??= import('expo-notifications').then((Notifications) => {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+    return Notifications;
+  });
+  return notificationsPromise;
+}
 
 export async function loadNotificationPreferences(): Promise<NotificationPreferences> {
   try {
@@ -57,6 +66,7 @@ async function installationId(): Promise<string> {
 }
 
 async function clearLocalNotifications(): Promise<void> {
+  const Notifications = await getNotifications();
   const saved = await AsyncStorage.getItem(LOCAL_IDS_KEY);
   let ids: string[] = [];
   try {
@@ -71,6 +81,7 @@ async function clearLocalNotifications(): Promise<void> {
 
 async function createChannels(): Promise<void> {
   if (Platform.OS !== 'android') return;
+  const Notifications = await getNotifications();
   await Notifications.setNotificationChannelAsync('classes', {
     name: 'Zajęcia',
     importance: Notifications.AndroidImportance.HIGH,
@@ -89,6 +100,7 @@ async function scheduleLocally(
   blocks: ScheduleBlock[],
   preferences: NotificationPreferences,
 ): Promise<void> {
+  const Notifications = await getNotifications();
   const now = new Date();
   const requests: Array<{
     date: Date;
@@ -145,8 +157,10 @@ async function scheduleLocally(
 export async function syncNotifications(
   blocks: ScheduleBlock[],
   preferences: NotificationPreferences,
-): Promise<'off' | 'fcm' | 'local' | 'permission-denied'> {
+): Promise<'off' | 'fcm' | 'local' | 'permission-denied' | 'unsupported'> {
   if (Platform.OS === 'web') return 'off';
+  if (Platform.OS === 'android' && isRunningInExpoGo()) return 'unsupported';
+  const Notifications = await getNotifications();
   const id = await installationId();
   await clearLocalNotifications();
   const previousCountdown = await AsyncStorage.getItem(COUNTDOWN_STATE_KEY) === '1';

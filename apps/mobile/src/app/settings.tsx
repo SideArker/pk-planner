@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
+import { isRunningInExpoGo } from 'expo';
 import {
   Alert,
+  Platform,
   Pressable,
   ScrollView,
   Switch,
@@ -27,6 +29,7 @@ import {
 } from '@/utils/notifications';
 
 export default function SettingsScreen() {
+  const notificationsSupported = !(Platform.OS === 'android' && isRunningInExpoGo());
   const { theme, resolvedTheme, mode, setThemeMode } = useAppTheme();
   const isDark = resolvedTheme === 'dark';
 
@@ -63,7 +66,9 @@ export default function SettingsScreen() {
     if (!state) return;
     try {
       const result = await syncNotifications(resolveUserBlocks(state, config), next);
-      setNotificationStatus(result === 'permission-denied'
+      setNotificationStatus(result === 'unsupported'
+        ? 'Powiadomienia są niedostępne w Expo Go na Androidzie.'
+        : result === 'permission-denied'
         ? 'Włącz powiadomienia w ustawieniach telefonu.'
         : result === 'fcm'
           ? 'Aktywne przez FCM.'
@@ -286,8 +291,8 @@ export default function SettingsScreen() {
               </View>
               <Switch
                 accessibilityLabel="Przypomnienia o zajęciach"
-                disabled={!notificationsReady}
-                value={notificationPreferences.reminders}
+                disabled={!notificationsReady || !notificationsSupported}
+                value={notificationsSupported && notificationPreferences.reminders}
                 onValueChange={(reminders) => void updateNotifications({ ...notificationPreferences, reminders })}
               />
             </View>
@@ -301,8 +306,8 @@ export default function SettingsScreen() {
               </View>
               <Switch
                 accessibilityLabel="Odliczanie zajęć"
-                disabled={!notificationsReady}
-                value={notificationPreferences.countdown}
+                disabled={!notificationsReady || !notificationsSupported}
+                value={notificationsSupported && notificationPreferences.countdown}
                 onValueChange={(countdown) => void updateNotifications({ ...notificationPreferences, countdown })}
               />
             </View>
@@ -314,11 +319,16 @@ export default function SettingsScreen() {
               </View>
               <Switch
                 accessibilityLabel="Powiadomienia o zmianach planu"
-                disabled={!notificationsReady}
-                value={notificationPreferences.scheduleUpdates}
+                disabled={!notificationsReady || !notificationsSupported}
+                value={notificationsSupported && notificationPreferences.scheduleUpdates}
                 onValueChange={(scheduleUpdates) => void updateNotifications({ ...notificationPreferences, scheduleUpdates })}
               />
             </View>
+            {!notificationsSupported && (
+              <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
+                Powiadomienia są niedostępne w Expo Go na Androidzie. Użyj zainstalowanej wersji aplikacji.
+              </Text>
+            )}
             {notificationStatus && (
               <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>{notificationStatus}</Text>
             )}

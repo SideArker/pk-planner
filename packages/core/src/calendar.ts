@@ -136,9 +136,14 @@ export function generateIcs(
     const endDateUtc = formatIcsDateTime(endDate)
 
     const summary = `${block.subject || 'Zajęcia'}${block.activity ? ` (${block.activity})` : ''}`
-    const location = block.room
-      ? `Sala ${roomLabel(block.room)} (${block.campus || ''})`
-      : block.modality === 'online' ? 'Online' : ''
+    const isOnline =
+      String(block.room || '').trim().toUpperCase() === 'ONLINE' ||
+      block.modality === 'online'
+    const location = isOnline
+      ? 'Online'
+      : block.room
+        ? `Sala ${roomLabel(block.room)}${block.campus ? ` (${block.campus})` : ''}`
+        : ''
     const description = [
       `Prowadzący: ${teacherDisplay(block) || 'brak'}`,
       `Grupa: ${block.cohort || 'brak'}`,

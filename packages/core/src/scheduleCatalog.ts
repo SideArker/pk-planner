@@ -410,9 +410,13 @@ export function buildSubjectCatalog(
       actMap.set(activityKey, []);
     }
 
-    const { group } = cohortParts(block.cohort);
+    const { group, base: cBase } = cohortParts(block.cohort);
     const groupLabel =
-      group !== null ? `Grupa ${group}` : block.cohort || "Wszyscy";
+      group !== null
+        ? `Grupa ${group}`
+        : block.cohort && cBase.toLowerCase() !== cohortBase.toLowerCase()
+          ? block.cohort
+          : "Wszyscy";
     const teacher = teacherDisplay(block) || "Nieprzypisany";
     const campus = roomCampus(block, state.rooms);
 
@@ -505,13 +509,14 @@ export function resolveUserBlocks(
       if (chosenGroupOrId) {
         const { group } = cohortParts(block.cohort);
         const groupString =
-          group !== null ? `Grupa ${group}` : block.cohort || "Wszyscy";
+          group !== null ? `Grupa ${group}` : "Wszyscy";
 
         // Matches either direct block ID or group label
         const isSelected =
           block.id === chosenGroupOrId ||
           groupString === chosenGroupOrId ||
-          String(group) === chosenGroupOrId;
+          String(group) === chosenGroupOrId ||
+          block.cohort === chosenGroupOrId;
 
         if (!isSelected) {
           continue;
@@ -614,9 +619,13 @@ export function findAlternativeGroups(
   const options: SubjectActivityOption[] = [];
 
   for (const b of sameSubjects) {
-    const { group } = cohortParts(b.cohort);
+    const { group, base: cBase } = cohortParts(b.cohort);
     const groupLabel =
-      group !== null ? `Grupa ${group}` : b.cohort || "Wszyscy";
+      group !== null
+        ? `Grupa ${group}`
+        : b.cohort && cBase.toLowerCase() !== base.toLowerCase()
+          ? b.cohort
+          : "Wszyscy";
     const key = `${groupLabel}-${b.day}-${b.start}-${b.room}`;
     if (!seen.has(key)) {
       seen.add(key);
@@ -664,7 +673,7 @@ export function detectScheduleCollisions(
       if (b1.start == null || b2.start == null) continue;
 
       // Check parity compatibility:
-      // If one is strictly week A (1) and other is week B (0), they alternate weeks and do not collide.
+      // If one is strictly week A (0) and other is week B (1), they alternate weeks and do not collide.
       const p1 = b1.teachingWeekParity;
       const p2 = b2.teachingWeekParity;
       if (p1 != null && p2 != null && p1 !== p2) {

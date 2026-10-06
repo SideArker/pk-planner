@@ -357,11 +357,13 @@ export function blockPlacementText(block: ScheduleBlock): string {
   if (!block.day || block.start == null)
     return "Parking - bez ustalonego terminu";
   const day = block.date || DAY_INFO[block.day]?.[0] || block.day;
-  const place =
-    block.modality === "online"
-      ? "ONLINE"
-      : block.room
-        ? `s. ${roomLabel(block.room)}`
-        : "bez sali";
+  const isOnline =
+    block.modality === "online" ||
+    String(block.room || "").trim().toUpperCase() === "ONLINE";
+  const place = isOnline
+    ? "ONLINE"
+    : block.room
+      ? `s. ${roomLabel(block.room)}`
+      : "bez sali";
   return `${day} ${minutesToTime(block.start)}-${minutesToTime(block.start + (block.duration || 90))} · ${place}`;
 }

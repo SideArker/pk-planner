@@ -14,6 +14,7 @@ export interface Registration {
   token: string;
   reminders: boolean;
   countdown: boolean;
+  scheduleUpdates: boolean;
   blocks: RegisteredBlock[];
   registeredAt: number;
   lastMinute?: string;
@@ -23,7 +24,7 @@ export interface NotificationEvent {
   title: string;
   body: string;
   tag: string;
-  channelId: 'classes' | 'countdown';
+  channelId: 'classes' | 'countdown' | 'updates';
   sticky: boolean;
 }
 

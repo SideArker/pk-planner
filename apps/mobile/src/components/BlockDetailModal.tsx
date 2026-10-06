@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import {
+  type BlockCollisionInfo,
   type BlockOverride,
   type ScheduleBlock,
   type ScheduleState,
@@ -31,6 +32,7 @@ interface BlockDetailModalProps {
   onSwitchGroup: (subject: string, activity: string, chosenOptionId: string) => void;
   onSaveOverride: (blockId: string, override: BlockOverride) => void;
   onRemoveCustomBlock?: (blockId: string) => void;
+  collisionInfo?: BlockCollisionInfo[];
 }
 
 export function BlockDetailModal({
@@ -41,6 +43,7 @@ export function BlockDetailModal({
   onSwitchGroup,
   onSaveOverride,
   onRemoveCustomBlock,
+  collisionInfo,
 }: BlockDetailModalProps) {
   const { theme, resolvedTheme } = useAppTheme();
   const isDark = resolvedTheme === 'dark';
@@ -257,6 +260,51 @@ export function BlockDetailModal({
             contentContainerStyle={styles.contentBody}>
             {activeTab === 'details' && (
               <View style={styles.detailsList}>
+                {Boolean(collisionInfo && collisionInfo.length > 0) && (
+                  <View
+                    style={[
+                      styles.collisionNotice,
+                      {
+                        backgroundColor: isDark ? '#451a03' : '#fffbeb',
+                        borderColor: isDark ? '#92400e' : '#fcd34d',
+                      },
+                    ]}>
+                    <Ionicons
+                      name="warning"
+                      size={20}
+                      color={isDark ? '#fbbf24' : '#d97706'}
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={[
+                          styles.collisionNoticeTitle,
+                          { color: isDark ? '#fde68a' : '#b45309' },
+                        ]}>
+                        Wykryto kolizję w tej samej godzinie!
+                      </Text>
+                      <Text
+                        style={[
+                          styles.collisionNoticeText,
+                          { color: isDark ? '#fde68a' : '#92400e' },
+                        ]}>
+                        Te zajęcia nakładają się z: {collisionInfo!.map((c) => `${c.conflictingSubject} (${c.conflictingTime})`).join(', ')}.
+                      </Text>
+                      {!isCustomBlock && alternativeGroups.length > 0 && (
+                        <Pressable
+                          onPress={() => setActiveTab('switchGroup')}
+                          style={({ pressed }) => [
+                            styles.collisionActionBtn,
+                            { opacity: pressed ? 0.8 : 1 },
+                          ]}>
+                          <Text style={styles.collisionActionBtnText}>
+                            Zmień grupę, aby rozwiązać kolizję →
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
+                )}
+
                 {/* Time & Day */}
                 <View style={styles.detailItem}>
                   <Ionicons name="time-outline" size={18} color={theme.textSecondary} />
@@ -697,6 +745,37 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontSize: 14,
+    fontWeight: '700',
+  },
+  collisionNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  collisionNoticeTitle: {
+    fontSize: 13.5,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  collisionNoticeText: {
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  collisionActionBtn: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    backgroundColor: '#d97706',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  collisionActionBtnText: {
+    color: '#ffffff',
+    fontSize: 11.5,
     fontWeight: '700',
   },
 });

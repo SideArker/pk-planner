@@ -87,7 +87,7 @@ export function ScheduleView({
   }
 
   const currentWeek = useMemo(() => getTeachingWeekInfo(), [])
-  const [parityFilter, setParityFilter] = useState<'current' | 'A' | 'B' | 'all'>('current')
+  const [parityFilter, setParityFilter] = useState<'all' | 'current' | 'A' | 'B'>('all')
 
   // Filter blocks by parity
   const filteredBlocks = useMemo(() => {
@@ -179,13 +179,23 @@ export function ScheduleView({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Parity filter */}
+          {/* Parity filter: Wszystkie (domyślne) | Bieżący | Tydzień A | Tydzień B */}
           <div className="flex items-center rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800 text-xs">
+            <button
+              onClick={() => setParityFilter('all')}
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                parityFilter === 'all'
+                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+              }`}
+            >
+              Wszystkie
+            </button>
             <button
               onClick={() => setParityFilter('current')}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                 parityFilter === 'current'
-                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
+                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
                   : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
@@ -195,7 +205,7 @@ export function ScheduleView({
               onClick={() => setParityFilter('A')}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                 parityFilter === 'A'
-                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
+                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
                   : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
@@ -205,21 +215,11 @@ export function ScheduleView({
               onClick={() => setParityFilter('B')}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
                 parityFilter === 'B'
-                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
+                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
                   : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
               Tydzień B
-            </button>
-            <button
-              onClick={() => setParityFilter('all')}
-              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
-                parityFilter === 'all'
-                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-medium'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-              }`}
-            >
-              Wszystkie
             </button>
           </div>
 
@@ -342,6 +342,7 @@ export function ScheduleView({
                 key={block.id}
                 block={block}
                 collisionInfo={collisions.get(block.id)}
+                currentParity={currentWeek.parityLabel}
                 onClick={onSelectBlock}
               />
             ))}
@@ -444,6 +445,7 @@ export function ScheduleView({
                               key={block.id}
                               block={block}
                               collisionInfo={collisions.get(block.id)}
+                              currentParity={currentWeek.parityLabel}
                               onClick={onSelectBlock}
                             />
                           ))}
@@ -506,6 +508,7 @@ export function ScheduleView({
                         key={block.id}
                         block={block}
                         collisionInfo={collisions.get(block.id)}
+                        currentParity={currentWeek.parityLabel}
                         onClick={onSelectBlock}
                       />
                     ))}

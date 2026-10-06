@@ -1,99 +1,443 @@
-import { APP_NAME } from '@pk-planner/core';
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import {
+  type BlockOverride,
+  type Day,
+  type PlanType,
+  type ScheduleBlock,
+  availableDays,
+  detectScheduleCollisions,
+  isBlockInWeekParity,
+  resolveUserBlocks,
+} from '@pk-planner/core';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { AddCustomBlockModal } from '@/components/AddCustomBlockModal';
+import { BlockCard } from '@/components/BlockCard';
+import { BlockDetailModal } from '@/components/BlockDetailModal';
+import { DaySelector } from '@/components/DaySelector';
+import { Header } from '@/components/Header';
+import { OnboardingModal } from '@/components/OnboardingModal';
+import { WeekParityFilter, WeekParitySelector } from '@/components/WeekParitySelector';
+import { Spacing } from '@/constants/theme';
+import { useAppTheme } from '@/context/ThemeContext';
+import { useScheduleData } from '@/hooks/useScheduleData';
+import { useUserSchedule } from '@/hooks/useUserSchedule';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
+function getInitialToday(days: Day[]): Day {
+  const dayIndex = new Date().getDay();
+  const map: Record<number, Day> = {
+    1: 'MON',
+    2: 'TUE',
+    3: 'WED',
+    4: 'THU',
+    5: 'FRI',
+    6: 'SAT',
+    0: 'SUN',
+  };
+  const current = map[dayIndex] || 'MON';
+  return days.includes(current) ? current : days[0] || 'MON';
 }
 
-export default function HomeScreen() {
+export default function ScheduleScreen() {
+  const { theme, resolvedTheme } = useAppTheme();
+  const isDark = resolvedTheme === 'dark';
+
+  const { state, isLoading, error, refresh } = useScheduleData();
+  const {
+    config,
+    isConfigured,
+    saveAllConfig,
+    setSubjectGroup,
+    setBlockOverride,
+    addCustomBlock,
+    removeCustomBlock,
+  } = useUserSchedule();
+
+  const days: Day[] = useMemo(
+    () => availableDays(config.planType || 'stacjonarne'),
+    [config.planType],
+  );
+
+  const [selectedDay, setSelectedDay] = useState<Day>(() => getInitialToday(days));
+  const [selectedParity, setSelectedParity] = useState<WeekParityFilter>('ALL');
+
+  const [selectedBlock, setSelectedBlock] = useState<ScheduleBlock | null>(null);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
+
+  // Resolve user's blocks from state & config
+  const userBlocks = useMemo(() => {
+    if (!state) return [];
+    return resolveUserBlocks(state, config);
+  }, [state, config]);
+
+  // Collisions detection
+  const collisions = useMemo(() => {
+    return detectScheduleCollisions(userBlocks);
+  }, [userBlocks]);
+
+  // Counts of classes per day
+  const dayCounts = useMemo(() => {
+    const counts: Partial<Record<Day, number>> = {};
+    for (const b of userBlocks) {
+      if (!b.day) continue;
+      // Filter by parity if A or B selected
+      if (selectedParity !== 'ALL' && !isBlockInWeekParity(b, selectedParity)) {
+        continue;
+      }
+      counts[b.day] = (counts[b.day] || 0) + 1;
+    }
+    return counts;
+  }, [userBlocks, selectedParity]);
+
+  // Filtered blocks for selected day
+  const dayBlocks = useMemo(() => {
+    const filtered = userBlocks.filter((b) => {
+      if (b.day !== selectedDay) return false;
+      if (selectedParity !== 'ALL' && !isBlockInWeekParity(b, selectedParity)) {
+        return false;
+      }
+      return true;
+    });
+
+    return filtered.sort((a, b) => (a.start ?? 0) - (b.start ?? 0));
+  }, [userBlocks, selectedDay, selectedParity]);
+
+  const handleSaveOnboarding = (
+    cohort: string,
+    planType: PlanType,
+    selectedSubjects: Record<string, boolean>,
+    selectedGroups: Record<string, string>,
+  ) => {
+    saveAllConfig(cohort, planType, selectedSubjects, selectedGroups);
+    setIsOnboardingOpen(false);
+  };
+
+  const handleSaveOverride = (blockId: string, override: BlockOverride) => {
+    setBlockOverride(blockId, override);
+  };
+
+  const showInitialOnboarding = !isConfigured && !isLoading && Boolean(state);
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            {APP_NAME}
-          </ThemedText>
-        </ThemedView>
+    <SafeAreaView
+      edges={['top']}
+      style={[
+        styles.safeArea,
+        { backgroundColor: isDark ? '#09090b' : '#f8fafc' },
+      ]}>
+      {/* Header */}
+      <Header
+        cohort={config.cohort}
+        isLoading={isLoading}
+        onRefresh={refresh}
+      />
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+      {/* Main Content */}
+      {isLoading && !state ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.accent} />
+          <Text style={[styles.loadingText, { color: theme.textSecondary }]}>
+            Pobieranie aktualnego planu zajęć...
+          </Text>
+        </View>
+      ) : !isConfigured ? (
+        <View style={styles.centerContainer}>
+          <View
+            style={[
+              styles.welcomeIconBox,
+              {
+                backgroundColor: isDark ? '#18181b' : '#ffffff',
+                borderColor: theme.border,
+              },
+            ]}>
+            <Ionicons
+              name="calendar"
+              size={36}
+              color={theme.accent}
+            />
+          </View>
+          <Text style={[styles.welcomeTitle, { color: theme.text }]}>
+            Witaj w PK Planer!
+          </Text>
+          <Text style={[styles.welcomeSubtitle, { color: theme.textSecondary }]}>
+            Wybierz swój kierunek, semestr i grupy, aby wyświetlić przejrzysty plan zajęć.
+          </Text>
+          <Pressable
+            onPress={() => setIsOnboardingOpen(true)}
+            style={({ pressed }) => [
+              styles.primaryBtn,
+              {
+                backgroundColor: isDark ? '#fafafa' : '#18181b',
+                opacity: pressed ? 0.8 : 1,
+              },
+            ]}>
+            <Text
+              style={[
+                styles.primaryBtnText,
+                { color: isDark ? '#09090b' : '#ffffff' },
+              ]}>
+              Wybierz swój rocznik
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.flexOne}>
+          {/* Collisions Alert Banner if collisions exist */}
+          {collisions.size > 0 && (
+            <View
+              style={[
+                styles.collisionAlert,
+                {
+                  backgroundColor: isDark ? '#450a0a' : '#fee2e2',
+                  borderColor: theme.destructive,
+                },
+              ]}>
+              <Ionicons
+                name="warning-outline"
+                size={18}
+                color={theme.destructive}
+              />
+              <Text style={[styles.collisionAlertText, { color: theme.destructive }]}>
+                Wykryto kolizje w planie ({collisions.size})
+              </Text>
+            </View>
+          )}
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
+          {/* Week Parity Selector */}
+          <WeekParitySelector
+            selectedParity={selectedParity}
+            onSelectParity={setSelectedParity}
           />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">pnpm --filter mobile reset-project</ThemedText>}
-          />
-        </ThemedView>
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+          {/* Day Selector */}
+          <DaySelector
+            days={days}
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+            dayCounts={dayCounts}
+          />
+
+          {/* Quick Actions Bar */}
+          <View style={styles.quickBar}>
+            <Pressable
+              onPress={() => setIsOnboardingOpen(true)}
+              style={({ pressed }) => [
+                styles.quickBtn,
+                {
+                  backgroundColor: isDark ? '#18181b' : '#ffffff',
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}>
+              <Ionicons name="options-outline" size={15} color={theme.text} />
+              <Text style={[styles.quickBtnText, { color: theme.text }]}>
+                Dostosuj grupy
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => setIsAddCustomOpen(true)}
+              style={({ pressed }) => [
+                styles.quickBtn,
+                {
+                  backgroundColor: isDark ? '#18181b' : '#ffffff',
+                  borderColor: theme.border,
+                  opacity: pressed ? 0.7 : 1,
+                },
+              ]}>
+              <Ionicons name="add" size={16} color={theme.text} />
+              <Text style={[styles.quickBtnText, { color: theme.text }]}>
+                Dodaj własne
+              </Text>
+            </Pressable>
+          </View>
+
+          {/* Schedule List */}
+          <FlatList
+            data={dayBlocks}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={isLoading}
+                onRefresh={refresh}
+                tintColor={theme.accent}
+              />
+            }
+            renderItem={({ item }) => {
+              const itemCollisions = collisions.get(item.id) || [];
+              return (
+                <BlockCard
+                  block={item}
+                  onPress={setSelectedBlock}
+                  collisionInfo={itemCollisions}
+                  currentParity={selectedParity === 'ALL' ? undefined : selectedParity}
+                />
+              );
+            }}
+            ListEmptyComponent={
+              <View style={styles.emptyDayContainer}>
+                <Ionicons
+                  name="sunny-outline"
+                  size={42}
+                  color={theme.textSecondary}
+                />
+                <Text style={[styles.emptyDayTitle, { color: theme.text }]}>
+                  Brak zajęć w tym dniu
+                </Text>
+                <Text style={[styles.emptyDaySub, { color: theme.textSecondary }]}>
+                  Dzień wolny lub brak zaplanowanych zajęć
+                </Text>
+              </View>
+            }
+          />
+        </View>
+      )}
+
+      {/* Onboarding Modal */}
+      <OnboardingModal
+        state={state}
+        isOpen={isOnboardingOpen || showInitialOnboarding}
+        initialCohort={config.cohort}
+        initialPlanType={config.planType}
+        initialSelectedSubjects={config.selectedSubjects}
+        initialSelectedGroups={config.selectedGroups}
+        onSave={handleSaveOnboarding}
+        onClose={() => setIsOnboardingOpen(false)}
+        isClosable={isConfigured}
+      />
+
+      {/* Add Custom Block Modal */}
+      <AddCustomBlockModal
+        isOpen={isAddCustomOpen}
+        onClose={() => setIsAddCustomOpen(false)}
+        onAddBlock={addCustomBlock}
+        planType={config.planType}
+        defaultDay={selectedDay}
+      />
+
+      {/* Block Detail Modal */}
+      <BlockDetailModal
+        block={selectedBlock}
+        state={state}
+        isOpen={Boolean(selectedBlock)}
+        onClose={() => setSelectedBlock(null)}
+        onSwitchGroup={setSubjectGroup}
+        onSaveOverride={handleSaveOverride}
+        onRemoveCustomBlock={removeCustomBlock}
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
   },
-  heroSection: {
+  flexOne: {
+    flex: 1,
+  },
+  centerContainer: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+    padding: Spacing.four,
+    gap: 12,
   },
-  title: {
+  loadingText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  welcomeIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  welcomeTitle: {
+    fontSize: 22,
+    fontWeight: '700',
     textAlign: 'center',
   },
-  code: {
-    textTransform: 'uppercase',
+  welcomeSubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    maxWidth: 300,
+    lineHeight: 20,
+    marginBottom: 12,
   },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
+  primaryBtn: {
+    paddingHorizontal: 22,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  primaryBtnText: {
+    fontSize: 14.5,
+    fontWeight: '700',
+  },
+  collisionAlert: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginHorizontal: Spacing.three,
+    marginTop: 6,
+    marginBottom: 6,
+    padding: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  collisionAlertText: {
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  quickBar: {
+    flexDirection: 'row',
+    gap: 8,
     paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+    paddingBottom: 8,
+  },
+  quickBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 11,
+    paddingVertical: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  quickBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  listContent: {
+    paddingHorizontal: Spacing.three,
+    paddingBottom: 24,
+  },
+  emptyDayContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    gap: 8,
+  },
+  emptyDayTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  emptyDaySub: {
+    fontSize: 13,
   },
 });

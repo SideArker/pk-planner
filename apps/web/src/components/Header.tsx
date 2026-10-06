@@ -11,6 +11,7 @@ interface HeaderProps {
   lastUpdated: string | null;
   cohort: string;
   theme: Theme;
+  resolvedTheme?: "light" | "dark";
   onToggleTheme: () => void;
 }
 
@@ -22,6 +23,7 @@ export function Header({
   isLoading,
   cohort,
   theme,
+  resolvedTheme,
   onToggleTheme,
 }: HeaderProps) {
   return (
@@ -89,20 +91,23 @@ export function Header({
             />
           </Button>
 
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onToggleTheme}
-            title={
-              theme === "dark" ? "Włącz jasny motyw" : "Włącz ciemny motyw"
-            }
-          >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4 text-amber-400" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
-          </Button>
+          {(() => {
+            const isDark = (resolvedTheme ?? (theme === "dark" ? "dark" : "light")) === "dark";
+            return (
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={onToggleTheme}
+                title={isDark ? "Włącz jasny motyw" : "Włącz ciemny motyw"}
+              >
+                {isDark ? (
+                  <Sun className="h-4 w-4 text-amber-400" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </Button>
+            );
+          })()}
 
           <Button
             variant="outline"

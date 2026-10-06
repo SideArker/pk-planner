@@ -6,7 +6,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { type Day, DAY_INFO } from '@pk-planner/core';
+import { type Day, DAY_INFO, DAY_SHORT_LABELS } from '@pk-planner/core';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
 
@@ -16,16 +16,6 @@ interface DaySelectorProps {
   onSelectDay: (day: Day) => void;
   dayCounts?: Partial<Record<Day, number>>;
 }
-
-const SHORT_NAMES: Record<Day, string> = {
-  MON: 'Pn',
-  TUE: 'Wt',
-  WED: 'Śr',
-  THU: 'Czw',
-  FRI: 'Pt',
-  SAT: 'Sb',
-  SUN: 'Nd',
-};
 
 export function DaySelector({
   days,
@@ -45,7 +35,7 @@ export function DaySelector({
         {days.map((day) => {
           const isSelected = day === selectedDay;
           const count = dayCounts[day] ?? 0;
-          const shortName = SHORT_NAMES[day] || day;
+          const shortName = DAY_SHORT_LABELS[day] || day;
           const fullName = DAY_INFO[day]?.[1] || day;
 
           return (

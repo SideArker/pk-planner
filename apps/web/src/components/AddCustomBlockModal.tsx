@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import {
+  STANDARD_PK_SLOTS,
   type Day,
   type PlanType,
   type ScheduleBlock,
@@ -29,17 +30,6 @@ const ACTIVITY_OPTIONS = [
   { value: 'Lektorat', label: 'Lektorat', color: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300' },
   { value: 'WF', label: 'WF', color: 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300' },
   { value: 'Inne', label: 'Inne', color: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300' },
-]
-
-const STANDARD_PK_SLOTS = [
-  { index: 1, start: 450, duration: 90, label: '07:30 - 09:00 (Blok 1)' },
-  { index: 2, start: 555, duration: 90, label: '09:15 - 10:45 (Blok 2)' },
-  { index: 3, start: 660, duration: 90, label: '11:00 - 12:30 (Blok 3)' },
-  { index: 4, start: 765, duration: 90, label: '12:45 - 14:15 (Blok 4)' },
-  { index: 5, start: 870, duration: 90, label: '14:30 - 16:00 (Blok 5)' },
-  { index: 6, start: 975, duration: 90, label: '16:15 - 17:45 (Blok 6)' },
-  { index: 7, start: 1080, duration: 90, label: '18:00 - 19:30 (Blok 7)' },
-  { index: 8, start: 1185, duration: 90, label: '19:45 - 21:15 (Blok 8)' },
 ]
 
 export function AddCustomBlockModal({

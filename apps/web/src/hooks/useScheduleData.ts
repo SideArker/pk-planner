@@ -3,7 +3,6 @@ import { parseSchedulePayload, type SchedulePayload } from '@pk-planner/core'
 
 const CACHE_KEY = 'pk_planner_cached_payload'
 const CACHE_TIME_KEY = 'pk_planner_cached_time'
-const FALLBACK_URL = 'https://example.com/api/schedule-snapshot.php'
 
 export function useScheduleData() {
   const [payload, setPayload] = useState<SchedulePayload | null>(() => {
@@ -31,15 +30,8 @@ export function useScheduleData() {
     const apiUrl = import.meta.env.VITE_API_URL || '/api/schedule'
 
     try {
-      let res: Response
-      try {
-        res = await fetch(apiUrl, { cache: force ? 'reload' : 'default' })
-        if (!res.ok) throw new Error(`Worker HTTP ${res.status}`)
-      } catch (workerErr) {
-        // Fallback directly to public university snapshot if worker not running
-        res = await fetch(FALLBACK_URL)
-        if (!res.ok) throw workerErr
-      }
+      const res = await fetch(apiUrl, { cache: force ? 'reload' : 'default' })
+      if (!res.ok) throw new Error(`Worker HTTP ${res.status}`)
 
       const json = await res.json()
       const parsed = parseSchedulePayload(json)

@@ -23,6 +23,7 @@ import {
   prefillScheduleSelections,
   detectScheduleCollisions,
   blockPlacementText,
+  isBlockActiveNow,
 } from "../src/index.ts";
 
 const block = {
@@ -556,5 +557,63 @@ test("catalog simplifies lecture group to Wszyscy and handles online room format
 
   const ics = generateIcs([testState.blocks[0]]);
   assert.match(ics, /LOCATION:Online/);
+});
+
+test("isBlockActiveNow correctly detects active blocks based on time, day, and parity", () => {
+  // 2026-10-06 is Tuesday (TUE), Week 2 (B)
+  const testNow = new Date(2026, 9, 6, 16, 30); // 16:30 = 990 min
+
+  const activeBlockB = {
+    id: "act-1",
+    subject: "Programowanie",
+    day: "TUE",
+    start: 960, // 16:00
+    duration: 90, // ends at 17:30 (1050)
+    teachingWeekParity: 1, // Week B
+    planType: "stacjonarne",
+  };
+
+  const activeWeeklyBlock = {
+    ...activeBlockB,
+    id: "act-2",
+    teachingWeekParity: null,
+  };
+
+  const wrongParityBlockA = {
+    ...activeBlockB,
+    id: "act-3",
+    teachingWeekParity: 0, // Week A
+  };
+
+  const wrongDayBlock = {
+    ...activeBlockB,
+    id: "act-4",
+    day: "MON",
+  };
+
+  const futureBlock = {
+    ...activeBlockB,
+    id: "act-5",
+    start: 1080, // 18:00
+  };
+
+  const pastBlock = {
+    ...activeBlockB,
+    id: "act-6",
+    start: 840, // 14:00 - 15:30
+  };
+
+  assert.equal(isBlockActiveNow(activeBlockB, testNow), true);
+  assert.equal(isBlockActiveNow(activeWeeklyBlock, testNow), true);
+  assert.equal(isBlockActiveNow(wrongParityBlockA, testNow), false);
+  assert.equal(isBlockActiveNow(wrongDayBlock, testNow), false);
+  assert.equal(isBlockActiveNow(futureBlock, testNow), false);
+  assert.equal(isBlockActiveNow(pastBlock, testNow), false);
+
+  // Exact boundaries
+  const exactStart = new Date(2026, 9, 6, 16, 0); // 16:00
+  const exactEnd = new Date(2026, 9, 6, 17, 30); // 17:30
+  assert.equal(isBlockActiveNow(activeBlockB, exactStart), true);
+  assert.equal(isBlockActiveNow(activeBlockB, exactEnd), false);
 });
 

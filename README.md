@@ -64,7 +64,7 @@ Lokalnie wpisz adres JSON do głównego `.env`; `pnpm dev:worker` ładuje ten pl
 
 ## Powiadomienia mobilne
 
-W ustawieniach aplikacji można osobno włączyć przypomnienia 30 minut przed zajęciami i na ich początku oraz odliczanie czasu zajęć. Android używa FCM HTTP v1 i Workera, który co minutę sprawdza zapisane plany urządzeń. iOS używa lokalnych powiadomień; Android też przechodzi na nie, jeśli FCM nie jest skonfigurowany lub Worker jest niedostępny. Lokalny harmonogram obejmuje najbliższe 14 dni i odnawia się po otwarciu planu. Na iOS odliczanie pokazuje czas przy rozpoczęciu zajęć, bez aktualizacji w tle.
+W ustawieniach aplikacji można osobno włączyć powiadomienia o zmianie opublikowanego planu, przypomnienia 30 minut przed zajęciami i na ich początku oraz odliczanie czasu zajęć. Android używa FCM HTTP v1 i Workera, który co minutę sprawdza zapisane plany urządzeń oraz odcisk planu źródłowego. Powiadomienia o zmianie planu są obecnie dostępne na Androidzie. iOS używa lokalnych powiadomień; Android też przechodzi na nie, jeśli FCM nie jest skonfigurowany lub Worker jest niedostępny. Lokalny harmonogram obejmuje najbliższe 14 dni i odnawia się po otwarciu planu. Na iOS odliczanie pokazuje czas przy rozpoczęciu zajęć, bez aktualizacji w tle.
 
 Aby uruchomić FCM na Androidzie:
 

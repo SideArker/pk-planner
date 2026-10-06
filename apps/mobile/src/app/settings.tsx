@@ -45,6 +45,7 @@ export default function SettingsScreen() {
   const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>({
     reminders: false,
     countdown: false,
+    scheduleUpdates: false,
   });
   const [notificationsReady, setNotificationsReady] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState<string | null>(null);
@@ -276,7 +277,7 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>POWIADOMIENIA</Text>
           <View style={[styles.card, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderColor: theme.border }]}>
-            <View style={styles.notificationRow}>
+          <View style={styles.notificationRow}>
               <View style={styles.notificationText}>
                 <Text style={[styles.cardHeading, { color: theme.text }]}>Przypomnienia</Text>
                 <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
@@ -303,6 +304,19 @@ export default function SettingsScreen() {
                 disabled={!notificationsReady}
                 value={notificationPreferences.countdown}
                 onValueChange={(countdown) => void updateNotifications({ ...notificationPreferences, countdown })}
+              />
+            </View>
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <View style={styles.notificationRow}>
+              <View style={styles.notificationText}>
+                <Text style={[styles.cardHeading, { color: theme.text }]}>Zmiany w planie</Text>
+                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>Powiadomienie push na Androidzie, gdy opublikowany plan zajęć się zmieni.</Text>
+              </View>
+              <Switch
+                accessibilityLabel="Powiadomienia o zmianach planu"
+                disabled={!notificationsReady}
+                value={notificationPreferences.scheduleUpdates}
+                onValueChange={(scheduleUpdates) => void updateNotifications({ ...notificationPreferences, scheduleUpdates })}
               />
             </View>
             {notificationStatus && (

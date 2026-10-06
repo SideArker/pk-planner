@@ -8,6 +8,7 @@ import { nextClassOccurrences } from './notificationSchedule';
 export interface NotificationPreferences {
   reminders: boolean;
   countdown: boolean;
+  scheduleUpdates: boolean;
 }
 
 const PREFERENCES_KEY = 'pk_planner_notification_preferences';
@@ -31,12 +32,16 @@ export async function loadNotificationPreferences(): Promise<NotificationPrefere
     const value = await AsyncStorage.getItem(PREFERENCES_KEY);
     if (value) {
       const parsed = JSON.parse(value);
-      return { reminders: parsed.reminders === true, countdown: parsed.countdown === true };
+      return {
+        reminders: parsed.reminders === true,
+        countdown: parsed.countdown === true,
+        scheduleUpdates: parsed.scheduleUpdates === true,
+      };
     }
   } catch {
     // A missing or invalid preference means notifications are off.
   }
-  return { reminders: false, countdown: false };
+  return { reminders: false, countdown: false, scheduleUpdates: false };
 }
 
 export async function saveNotificationPreferences(value: NotificationPreferences): Promise<void> {
@@ -73,6 +78,10 @@ async function createChannels(): Promise<void> {
   await Notifications.setNotificationChannelAsync('countdown', {
     name: 'Odliczanie zajęć',
     importance: Notifications.AndroidImportance.LOW,
+  });
+  await Notifications.setNotificationChannelAsync('updates', {
+    name: 'Aktualizacje planu',
+    importance: Notifications.AndroidImportance.HIGH,
   });
 }
 
@@ -145,7 +154,7 @@ export async function syncNotifications(
     await Notifications.dismissAllNotificationsAsync().catch(() => {});
   }
   await AsyncStorage.setItem(COUNTDOWN_STATE_KEY, preferences.countdown ? '1' : '0');
-  if (!preferences.reminders && !preferences.countdown) {
+  if (!preferences.reminders && !preferences.countdown && !preferences.scheduleUpdates) {
     await fetch(`${API_URL}/notifications/${id}`, { method: 'DELETE' }).catch(() => {});
     return 'off';
   }

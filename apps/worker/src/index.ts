@@ -1,6 +1,10 @@
+import mobileAppConfig from "../../mobile/app.json" with { type: "json" };
+
 interface Env {
   UPSTREAM_URL: string;
 }
+
+const mobileAppVersion = mobileAppConfig.expo.version;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,6 +17,7 @@ function json(data: unknown, status = 200): Response {
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
       ...corsHeaders,
     },
   });
@@ -38,6 +43,10 @@ export default {
       pathname === "/api/health" ||
       (isApiHost && pathname === "/health");
 
+    const isVersionEndpoint =
+      pathname === "/api/version" ||
+      (isApiHost && (pathname === "/version" || pathname === "/version/"));
+
     const isScheduleEndpoint =
       pathname === "/api/schedule" ||
       (isApiHost && (pathname === "/schedule" || pathname === "/schedule/"));
@@ -53,6 +62,7 @@ export default {
         name: "pk-planner-api",
         endpoints: {
           schedule: isApiHost ? "/schedule" : "/api/schedule",
+          version: isApiHost ? "/version" : "/api/version",
           health: isApiHost ? "/health" : "/api/health",
         },
       });
@@ -60,6 +70,10 @@ export default {
 
     if (isHealthEndpoint) {
       return json({ ok: true });
+    }
+
+    if (isVersionEndpoint) {
+      return json({ version: mobileAppVersion });
     }
 
     if (isScheduleEndpoint) {

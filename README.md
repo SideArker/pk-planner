@@ -23,6 +23,14 @@ pnpm dev:mobile
 pnpm dev:worker
 ```
 
+Jeśli telefon nie może otworzyć adresu LAN z Expo Go (np. gdy Expo działa w WSL2), uruchom zamiast `pnpm dev:mobile`:
+
+```bash
+pnpm dev:mobile:remote
+```
+
+Komenda tworzy tymczasowy tunel Cloudflare przez zainstalowany w repozytorium Wrangler i wyświetla kod QR `exps://` dla Expo Go. Nie wymaga konta Cloudflare; publiczny adres zmienia się po każdym uruchomieniu. Zatrzymaj tunel klawiszami Ctrl+C. Na fizycznym iPhonie Expo CLI i Expo Go muszą być zalogowane na to samo konto Expo.
+
 Każdy serwer uruchom w osobnym terminalu. Kontrole i build:
 
 ```bash

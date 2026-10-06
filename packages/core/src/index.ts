@@ -4,4 +4,5 @@ export * from './filters.ts'
 export * from './utils.ts'
 export * from './scheduleCatalog.ts'
 export * from './calendar.ts'
-
+export * from './theme.ts'
+export * from './userConfig.ts'

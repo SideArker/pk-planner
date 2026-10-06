@@ -27,6 +27,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/with-android-release-signing.cjs",
       [
         "expo-splash-screen",
         {

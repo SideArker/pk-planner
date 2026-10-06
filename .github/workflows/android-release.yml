@@ -39,6 +39,25 @@ jobs:
           node -e 'const fs=require("fs"); const p="apps/mobile/app.json"; const c=JSON.parse(fs.readFileSync(p,"utf8")); const v=process.env.GITHUB_REF_NAME.slice(1); if(!/^\d+\.\d+\.\d+$/.test(v)) throw new Error("Tag must match vMAJOR.MINOR.PATCH"); c.expo.version=v; c.expo.android.versionCode=Number(process.env.VERSION_CODE); fs.writeFileSync(p,JSON.stringify(c,null,2)+"\n")'
           pnpm --filter mobile exec expo prebuild --platform android --no-install --clean
 
+      - name: Configure release keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" || { echo "Missing ANDROID_KEYSTORE_BASE64 secret"; exit 1; }
+          test -n "$ANDROID_KEYSTORE_PASSWORD" || { echo "Missing ANDROID_KEYSTORE_PASSWORD secret"; exit 1; }
+          test -n "$ANDROID_KEY_ALIAS" || { echo "Missing ANDROID_KEY_ALIAS secret"; exit 1; }
+          test -n "$ANDROID_KEY_PASSWORD" || { echo "Missing ANDROID_KEY_PASSWORD secret"; exit 1; }
+          KEYSTORE_PATH="$RUNNER_TEMP/pk-planner-release.keystore"
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
+          GRADLE_PROPERTIES=apps/mobile/android/gradle.properties
+          printf 'MYAPP_UPLOAD_STORE_FILE=%s\n' "$KEYSTORE_PATH" >> "$GRADLE_PROPERTIES"
+          printf 'MYAPP_UPLOAD_STORE_PASSWORD=%s\n' "$ANDROID_KEYSTORE_PASSWORD" >> "$GRADLE_PROPERTIES"
+          printf 'MYAPP_UPLOAD_KEY_ALIAS=%s\n' "$ANDROID_KEY_ALIAS" >> "$GRADLE_PROPERTIES"
+          printf 'MYAPP_UPLOAD_KEY_PASSWORD=%s\n' "$ANDROID_KEY_PASSWORD" >> "$GRADLE_PROPERTIES"
+
       - name: Build signed APK
         working-directory: apps/mobile/android
         run: ./gradlew assembleRelease

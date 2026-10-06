@@ -1,4 +1,5 @@
 import mobileAppConfig from "../../mobile/app.json" with { type: "json" };
+import mobileReleaseNotes from "../../mobile/release-notes.json" with { type: "json" };
 import { parseRegistration, NotificationStore } from './notificationStore.ts';
 
 export { NotificationStore };
@@ -130,7 +131,9 @@ export default {
             return json({
               version,
               apkUrl: apk?.browser_download_url,
-              changelog: typeof data.body === 'string' ? data.body : '',
+              changelog: typeof data.body === 'string' && data.body.trim()
+                ? data.body
+                : version === mobileAppVersion ? mobileReleaseNotes.changelog : '',
             });
           }
         }
@@ -138,7 +141,7 @@ export default {
         // Fall back to the version built into this Worker.
       }
 
-      return json({ version: mobileAppVersion, changelog: '' });
+      return json({ version: mobileAppVersion, changelog: mobileReleaseNotes.changelog });
     }
 
     if (isScheduleEndpoint) {

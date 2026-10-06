@@ -34,6 +34,7 @@ import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useScheduleData } from '@/hooks/useScheduleData';
 import { useUserSchedule } from '@/hooks/useUserSchedule';
+import { loadNotificationPreferences, syncNotifications } from '@/utils/notifications';
 
 function getInitialToday(days: Day[]): Day {
   const dayIndex = new Date().getDay();
@@ -57,6 +58,7 @@ export default function ScheduleScreen() {
   const { state, isLoading, error, refresh } = useScheduleData();
   const {
     config,
+    isLoaded,
     isConfigured,
     saveAllConfig,
     setSubjectGroup,
@@ -87,6 +89,15 @@ export default function ScheduleScreen() {
     if (!state) return [];
     return resolveUserBlocks(state, config);
   }, [state, config]);
+
+  useFocusEffect(useCallback(() => {
+    if (!isLoaded || !state) return;
+    let active = true;
+    void loadNotificationPreferences().then((preferences) => {
+      if (active) void syncNotifications(userBlocks, preferences).catch(() => {});
+    });
+    return () => { active = false; };
+  }, [isLoaded, state, userBlocks]));
 
   // Collisions detection
   const collisions = useMemo(() => {

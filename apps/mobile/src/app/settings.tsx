@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Pressable,
   ScrollView,
+  Switch,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { type PlanType } from '@pk-planner/core';
+import { resolveUserBlocks, type PlanType } from '@pk-planner/core';
 
 import { AddCustomBlockModal } from '@/components/AddCustomBlockModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
@@ -18,6 +19,12 @@ import { ThemeMode, useAppTheme } from '@/context/ThemeContext';
 import { useScheduleData } from '@/hooks/useScheduleData';
 import { useUserSchedule } from '@/hooks/useUserSchedule';
 import { useAppVersion } from '@/hooks/useAppVersion';
+import {
+  loadNotificationPreferences,
+  saveNotificationPreferences,
+  syncNotifications,
+  type NotificationPreferences,
+} from '@/utils/notifications';
 
 export default function SettingsScreen() {
   const { theme, resolvedTheme, mode, setThemeMode } = useAppTheme();
@@ -35,6 +42,37 @@ export default function SettingsScreen() {
 
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>({
+    reminders: false,
+    countdown: false,
+  });
+  const [notificationsReady, setNotificationsReady] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    void loadNotificationPreferences().then((value) => {
+      setNotificationPreferences(value);
+      setNotificationsReady(true);
+    });
+  }, []);
+
+  const updateNotifications = async (next: NotificationPreferences) => {
+    setNotificationPreferences(next);
+    await saveNotificationPreferences(next);
+    if (!state) return;
+    try {
+      const result = await syncNotifications(resolveUserBlocks(state, config), next);
+      setNotificationStatus(result === 'permission-denied'
+        ? 'Włącz powiadomienia w ustawieniach telefonu.'
+        : result === 'fcm'
+          ? 'Aktywne przez FCM.'
+          : result === 'local'
+            ? 'Aktywne lokalnie na urządzeniu.'
+            : null);
+    } catch {
+      setNotificationStatus('Nie udało się skonfigurować powiadomień. Spróbuj ponownie.');
+    }
+  };
 
   const handleSaveOnboarding = (
     cohort: string,
@@ -232,6 +270,44 @@ export default function SettingsScreen() {
                 );
               })}
             </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>POWIADOMIENIA</Text>
+          <View style={[styles.card, { backgroundColor: isDark ? '#18181b' : '#ffffff', borderColor: theme.border }]}>
+            <View style={styles.notificationRow}>
+              <View style={styles.notificationText}>
+                <Text style={[styles.cardHeading, { color: theme.text }]}>Przypomnienia</Text>
+                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
+                  30 minut przed zajęciami i przy ich rozpoczęciu.
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel="Przypomnienia o zajęciach"
+                disabled={!notificationsReady}
+                value={notificationPreferences.reminders}
+                onValueChange={(reminders) => void updateNotifications({ ...notificationPreferences, reminders })}
+              />
+            </View>
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <View style={styles.notificationRow}>
+              <View style={styles.notificationText}>
+                <Text style={[styles.cardHeading, { color: theme.text }]}>Odliczanie zajęć</Text>
+                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
+                  Czas do końca zajęć. Na Androidzie aktualizowany co 5 minut przez FCM.
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel="Odliczanie zajęć"
+                disabled={!notificationsReady}
+                value={notificationPreferences.countdown}
+                onValueChange={(countdown) => void updateNotifications({ ...notificationPreferences, countdown })}
+              />
+            </View>
+            {notificationStatus && (
+              <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>{notificationStatus}</Text>
+            )}
           </View>
         </View>
 
@@ -499,6 +575,14 @@ const styles = StyleSheet.create({
   },
   buttonCol: {
     gap: 8,
+  },
+  notificationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  notificationText: {
+    flex: 1,
   },
   menuBtn: {
     flexDirection: 'row',

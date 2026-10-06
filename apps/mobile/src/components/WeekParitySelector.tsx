@@ -72,11 +72,11 @@ export function WeekParitySelector({
           );
         })}
         </View>
-        {weekInfo?.parity && (
+        {weekInfo && (
           <View
-            accessibilityLabel={`Aktualny tydzień ${weekInfo.parity}${weekInfo.weekNumber ? `, numer ${weekInfo.weekNumber}` : ''}`}
+            accessibilityLabel={`Aktualny tydzień ${weekInfo.parityLabel}, numer ${weekInfo.weekNumber}`}
             style={[styles.weekBadge, { backgroundColor: isDark ? '#27272a' : '#e2e8f0' }]}>
-            <Text style={[styles.weekBadgeText, { color: theme.text }]}>Teraz {weekInfo.parity}</Text>
+            <Text style={[styles.weekBadgeText, { color: theme.text }]}>Teraz {weekInfo.parityLabel}</Text>
           </View>
         )}
       </View>

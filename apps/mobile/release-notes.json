@@ -1,4 +1,4 @@
 {
-  "version": "1.0.11",
-  "changelog": "## Wersja stabilna (Stable)\n\n- Oficjalne wydanie stabilne (Stable release).\n- Wersja bazująca na v1.0.10 bez dodatkowych zmian funkcjonalnych."
+  "version": "1.1.0",
+  "changelog": "## PK Planner 1.1.0\n\n- Dodano informację o prywatności, dostępną z ustawień aplikacji.\n- Opisano dane przetwarzane przy powiadomieniach Androida oraz sposób usuwania rejestracji.\n- Projekt udostępniono na licencji MIT."
 }

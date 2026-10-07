@@ -6,7 +6,7 @@ import {
   roomLabel,
   teacherDisplay,
 } from "@pk-planner/core";
-import { AlertTriangle, Clock, MapPin, MoreVertical, User } from "lucide-react";
+import { AlertTriangle, Clock, Globe, MapPin, MoreVertical, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface BlockCardProps {
@@ -114,6 +114,7 @@ export function BlockCard({
   const endTime = minutesToTime((block.start ?? 0) + (block.duration || 90));
   const teacher = teacherDisplay(block);
   const room = roomLabel(block.room);
+  const isOnline = String(block.room || "").trim().toUpperCase() === "ONLINE" || block.modality === "online";
   const hasCollision = Boolean(collisionInfo && collisionInfo.length > 0);
 
   const currentMinutes = currentTime
@@ -209,30 +210,25 @@ export function BlockCard({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div
-              className={`flex items-center gap-1 text-[11px] font-mono ${
-                isCurrent
-                  ? "text-emerald-700 dark:text-emerald-300 font-bold"
-                  : "text-zinc-500 dark:text-zinc-400"
-              }`}
-            >
-              <Clock
-                className={`h-3 w-3 ${isCurrent ? "text-emerald-600 dark:text-emerald-400" : ""}`}
-              />
-              <span>
-                {startTime} - {endTime}
-              </span>
-            </div>
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
-              <MoreVertical className="h-3.5 w-3.5" />
-            </div>
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+            <MoreVertical className="h-3.5 w-3.5" />
           </div>
         </div>
 
         <h3 className={`font-semibold ${isCompact ? "text-xs" : "text-sm"} text-zinc-900 dark:text-zinc-100 line-clamp-2 leading-snug group-hover:text-zinc-700 dark:group-hover:text-zinc-200`}>
           {block.subject}
         </h3>
+
+        <div className={`mt-2 flex flex-wrap gap-1.5 ${isCompact ? "text-[10px]" : "text-xs"}`}>
+          <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 font-semibold tabular-nums ${isCurrent ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200" : "border-zinc-200 bg-slate-50 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"}`}>
+            <Clock className="h-3.5 w-3.5 shrink-0 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+            {startTime} – {endTime}
+          </span>
+          <span className={`inline-flex min-w-0 items-center gap-1 rounded-md border px-2 py-1 font-semibold ${isOnline ? "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200" : "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-200"}`}>
+            {isOnline ? <Globe className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> : <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />}
+            <span className="truncate">{isOnline ? "Zdalnie (online)" : room ? `Sala ${room}` : "Bez sali"}</span>
+          </span>
+        </div>
 
         {isCurrent && !isCompact && progressPercent != null && (
           <div className="mt-2 pt-1 border-t border-emerald-200/60 dark:border-emerald-800/40 space-y-1">
@@ -265,28 +261,14 @@ export function BlockCard({
         )}
       </div>
 
-      <div className="mt-auto pt-1.5 flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400">
-        {teacher ? (
-          <div className="flex items-center gap-1 truncate max-w-[65%]">
+      {teacher && (
+        <div className="mt-auto pt-1.5 flex items-center text-xs text-zinc-600 dark:text-zinc-400">
+          <div className="flex items-center gap-1 truncate">
             <User className="h-3 w-3 shrink-0 text-zinc-400" />
             <span className="truncate">{teacher}</span>
           </div>
-        ) : (
-          <span />
-        )}
-
-        <div className="flex items-center gap-1 shrink-0 font-medium text-zinc-700 dark:text-zinc-300">
-          <MapPin className="h-3 w-3 text-zinc-400" />
-          <span>
-            {String(block.room || "").trim().toUpperCase() === "ONLINE" ||
-            block.modality === "online"
-              ? "Zdalnie"
-              : room
-                ? `s. ${room}`
-                : "Bez sali"}
-          </span>
         </div>
-      </div>
+      )}
 
       {block.notes && !isCompact && (
         <p className="mt-1.5 text-[11px] text-zinc-400 dark:text-zinc-500 line-clamp-1 italic">

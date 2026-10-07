@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 import {
   type Day,
@@ -42,15 +42,30 @@ export function ScheduleDayPage({
   onSelectBlock,
   onVerticalScroll,
 }: ScheduleDayPageProps) {
-  const weekInfo = useMemo(() => getTeachingWeekInfo(), []);
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    const scheduleNextMinute = () => {
+      const current = new Date();
+      timer = setTimeout(() => {
+        setNow(new Date());
+        scheduleNextMinute();
+      }, 60_000 - current.getSeconds() * 1000 - current.getMilliseconds());
+    };
+    scheduleNextMinute();
+    return () => clearTimeout(timer);
+  }, []);
+  const currentParity = getTeachingWeekInfo(now).parityLabel;
+  const effectiveParity = parity === 'CURRENT' ? currentParity : parity;
 
   const dayBlocks = useMemo(() => blocks
-    .filter(block => block.day === day && (parity === 'ALL' || isBlockInWeekParity(block, parity)))
-    .sort((a, b) => (a.start ?? 0) - (b.start ?? 0)), [blocks, day, parity]);
+    .filter(block => block.day === day && (effectiveParity === 'ALL' || isBlockInWeekParity(block, effectiveParity)))
+    .sort((a, b) => (a.start ?? 0) - (b.start ?? 0)), [blocks, day, effectiveParity]);
 
   return (
     <FlatList
       data={dayBlocks}
+      extraData={now}
       keyExtractor={item => item.id}
       contentContainerStyle={styles.listContent}
       bounces={false}
@@ -62,8 +77,9 @@ export function ScheduleDayPage({
           block={item}
           onPress={onSelectBlock}
           collisionInfo={collisions.get(item.id) || []}
-          currentParity={weekInfo.parityLabel}
+          currentParity={currentParity}
           dimWhenNotCurrentWeek={parity === 'ALL'}
+          now={now}
         />
       )}
       ListEmptyComponent={

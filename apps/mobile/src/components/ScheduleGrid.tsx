@@ -15,7 +15,6 @@ import {
   minutesToTime,
   roomLabel,
 } from '@pk-planner/core';
-import { getActivityStyle } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
 
 const HOUR_HEIGHT = 72;
@@ -103,7 +102,7 @@ export function ScheduleGrid({
   onSelectBlock,
   onVerticalScroll,
 }: ScheduleGridProps) {
-  const { theme, resolvedTheme } = useAppTheme();
+  const { theme } = useAppTheme();
   const [tickTime, setTickTime] = useState(() => new Date());
   useEffect(() => {
     if (currentTime) return;
@@ -121,7 +120,6 @@ export function ScheduleGrid({
   const now = currentTime ?? tickTime;
   const currentParity = getTeachingWeekInfo(now).parityLabel;
   const today = DAY_INDEX_TO_DAY[now.getDay()];
-  const isDark = resolvedTheme === 'dark';
 
   const layout = useMemo(() => {
     const days = availableDays(planType);
@@ -218,7 +216,7 @@ export function ScheduleGrid({
                 <Animated.View
                   pointerEvents="none"
                   style={[styles.currentTimeBadge, {
-                    backgroundColor: theme.destructive,
+                    backgroundColor: theme.accent,
                     transform: [{ translateY: indicatorY }],
                   }]}>
                   <Text style={styles.currentTimeText}>{minutesToTime(nowMinute)}</Text>
@@ -236,13 +234,11 @@ export function ScheduleGrid({
                 <View style={[
                   styles.dayHeader,
                   {
-                    backgroundColor: isToday
-                      ? isDark ? '#172554' : '#dbeafe'
-                      : theme.card,
-                    borderColor: isToday ? theme.accent : theme.border,
+                    backgroundColor: isToday ? theme.backgroundElement : theme.card,
+                    borderColor: theme.border,
                   },
                 ]}>
-                  <Text style={[styles.dayName, { color: isToday ? theme.accent : theme.text }]}>
+                  <Text style={[styles.dayName, { color: theme.text }]}>
                     {DAY_INFO[day][0]}
                   </Text>
                   <Text style={[styles.dayCount, { color: theme.textSecondary }]}>
@@ -254,9 +250,7 @@ export function ScheduleGrid({
                   styles.dayColumn,
                   {
                     height: layout.hours.length * HOUR_HEIGHT,
-                    backgroundColor: isToday
-                      ? isDark ? '#0c1832' : '#f4f8ff'
-                      : theme.card,
+                    backgroundColor: theme.card,
                     borderColor: theme.border,
                   },
                 ]}>
@@ -267,7 +261,6 @@ export function ScheduleGrid({
                   ))}
 
                   {layout.positioned.get(day)?.map(({ block, top, height, left, width }) => {
-                    const activity = getActivityStyle(block.activity, resolvedTheme);
                     const hasCollision = layout.collisions.has(block.id);
                     const isOtherWeek = parityFilter === 'ALL' &&
                       block.teachingWeekParity != null &&
@@ -295,13 +288,14 @@ export function ScheduleGrid({
                             left,
                             width,
                             backgroundColor: theme.card,
-                            borderColor: hasCollision ? theme.warning : isCurrent ? theme.success : theme.cardBorder,
-                            borderLeftColor: hasCollision ? theme.warning : isCurrent ? theme.success : activity.border,
+                            borderColor: theme.cardBorder,
+                            borderLeftColor: isCurrent ? theme.accent : theme.cardBorder,
+                            borderLeftWidth: isCurrent ? 3 : 1,
                             opacity: pressed ? 0.75 : isOtherWeek ? 0.48 : 1,
                           },
                         ]}>
                         {height >= 48 && (
-                          <Text numberOfLines={1} style={[styles.blockMeta, { color: activity.badgeText }]}>
+                          <Text numberOfLines={1} style={[styles.blockMeta, { color: theme.textSecondary }]}>
                             {formatActivityName(block.activity) || 'Zajęcia'}{period}
                             {hasCollision ? ' · Kolizja' : isCurrent ? ' · Teraz' : ''}
                           </Text>
@@ -323,13 +317,13 @@ export function ScheduleGrid({
                     <Animated.View
                       pointerEvents="none"
                       style={[styles.currentTimeLine, { transform: [{ translateY: indicatorY }] }]}>
-                      {isToday && <View style={[styles.currentTimeDot, { backgroundColor: theme.destructive }]} />}
+                      {isToday && <View style={[styles.currentTimeDot, { backgroundColor: theme.accent }]} />}
                       <View style={[
                         styles.currentTimeStroke,
                         {
-                          backgroundColor: isToday ? theme.destructive : 'transparent',
-                          borderColor: theme.destructive,
-                          opacity: isToday ? 1 : 0.4,
+                          backgroundColor: isToday ? theme.accent : 'transparent',
+                          borderColor: isToday ? theme.accent : theme.border,
+                          opacity: isToday ? 1 : 0.5,
                         },
                       ]} />
                     </Animated.View>
@@ -389,8 +383,8 @@ const styles = StyleSheet.create({
   block: {
     position: 'absolute',
     borderWidth: 1,
-    borderLeftWidth: 4,
-    borderRadius: 8,
+    borderLeftWidth: 1,
+    borderRadius: 5,
     paddingHorizontal: 5,
     paddingVertical: 4,
     overflow: 'hidden',

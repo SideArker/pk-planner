@@ -15,6 +15,8 @@ export function ScheduleDayPager({
   onSelectBlock,
   onVerticalScroll,
   onSelectedDayScroll,
+  onPullMove,
+  onPullEnd,
 }: ScheduleDayPagerProps) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const pressBlockedUntil = useRef(0);
@@ -58,6 +60,8 @@ export function ScheduleDayPager({
         parity={parity}
         collisions={collisions}
         onSelectBlock={handleSelectBlock}
+        onPullMove={onPullMove}
+        onPullEnd={onPullEnd}
         onVerticalScroll={offset => onVerticalScroll(selectedDay, offset)}
       />
     </View>

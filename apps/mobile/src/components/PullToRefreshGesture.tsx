@@ -1,6 +1,9 @@
 import React, { useMemo, useRef } from 'react';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
+// Gesture callbacks read refs when touch events arrive, after render.
+// oxlint-disable react/refs
+
 interface PullToRefreshGestureProps {
   children: React.ReactElement;
   scrollOffset: React.RefObject<number>;
@@ -39,3 +42,4 @@ export function PullToRefreshGesture({
 
   return <GestureDetector gesture={gesture}>{children}</GestureDetector>;
 }
+// oxlint-enable react/refs

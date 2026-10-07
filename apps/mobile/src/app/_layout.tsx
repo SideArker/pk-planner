@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect } from 'react';
 import { AppState, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { ThemeProvider, useAppTheme } from '@/context/ThemeContext';
@@ -101,8 +102,10 @@ function RootTabsLayout() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <RootTabsLayout />
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <RootTabsLayout />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

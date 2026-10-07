@@ -1,3 +1,4 @@
 {
+  "version": "1.0.9",
   "changelog": "## Co nowego\n\n- Zajęcia tej samej grupy odbywające się kilka razy są wybierane razem.\n- Poprawiono wybór tygodnia oraz wygląd paska dni tygodnia.\n- Usprawniono odświeżanie planu przeciągnięciem w dół na liście i siatce. Gest wymaga teraz dłuższego przeciągnięcia.\n- Usunięto przycisk odświeżania z nagłówka."
 }

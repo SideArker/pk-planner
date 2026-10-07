@@ -73,15 +73,15 @@ export function BlockCard({
     <button
       onClick={() => onClick(block)}
       style={styleProp}
-      className={`group relative w-full overflow-hidden rounded-md border border-zinc-200/90 bg-white text-left transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/80 ${
+      className={`group relative w-full rounded-md border border-zinc-200/90 bg-white text-left transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/80 ${
         isCurrent ? "border-l-[3px] border-l-emerald-500 dark:border-l-emerald-400" : ""
-      } ${isCompact ? "p-2" : "p-3"} ${isOtherWeek ? "opacity-55" : ""} ${className}`}
+      } ${isCompact ? "overflow-x-hidden overflow-y-auto p-1.5 [&>*]:shrink-0" : "overflow-hidden p-3"} ${isOtherWeek ? "opacity-55" : ""} ${className}`}
     >
-      <h3 className={`font-semibold leading-snug text-zinc-900 dark:text-zinc-100 ${isCompact ? "line-clamp-1 text-xs" : "line-clamp-2 text-sm"}`}>
+      <h3 className={`font-semibold text-zinc-900 dark:text-zinc-100 ${isCompact ? "break-words text-[10px] leading-tight" : "line-clamp-2 text-sm leading-snug"}`}>
         {block.subject}
       </h3>
 
-      <div className={`mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-zinc-500 dark:text-zinc-400 ${isCompact ? "text-[10px]" : "text-[11px]"}`}>
+      <div className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-zinc-500 dark:text-zinc-400 ${isCompact ? "mt-0.5 text-[9px] leading-tight" : "mt-1 text-[11px]"}`}>
         <span className="inline-flex items-center gap-1">
           <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-500" aria-hidden="true" />
           {formatActivityName(block.activity)}
@@ -103,7 +103,7 @@ export function BlockCard({
         )}
       </div>
 
-      <div className={`mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-zinc-700 dark:text-zinc-300 ${isCompact ? "text-[10px]" : "text-xs"}`}>
+      <div className={`flex flex-wrap items-center gap-x-1.5 text-zinc-700 dark:text-zinc-300 ${isCompact ? "mt-1 gap-y-0.5 text-[9px] leading-tight" : "mt-2 gap-y-1 text-xs"}`}>
         <span className="inline-flex items-center gap-1 whitespace-nowrap tabular-nums">
           <Clock3 className="h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
           {startTime}–{endTime}
@@ -123,7 +123,7 @@ export function BlockCard({
       </div>
 
       {teacher && (
-        <div className={`mt-2 truncate text-zinc-400 dark:text-zinc-500 ${isCompact ? "text-[10px]" : "text-xs"}`}>
+        <div className={`text-zinc-400 dark:text-zinc-500 ${isCompact ? "mt-1 break-words text-[9px] leading-tight" : "mt-2 truncate text-xs"}`}>
           {teacher}
         </div>
       )}

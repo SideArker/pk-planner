@@ -6,7 +6,7 @@ import {
 } from '@pk-planner/core'
 import { BlockCard } from '../BlockCard'
 
-export const HOUR_HEIGHT = 80
+export const HOUR_HEIGHT = 96
 
 export interface PositionedBlock {
   block: ScheduleBlock
@@ -249,7 +249,7 @@ export function HourlyTimelineView({
                       isCompact={pos.isNarrow || pos.isShort}
                       isCurrent={activeBlockIds?.has(pos.block.id)}
                       currentTime={now}
-                      className="flex h-full flex-col justify-between overflow-hidden hover:z-30"
+                      className="flex h-full flex-col hover:z-30"
                       onClick={onSelectBlock}
                     />
                   </div>

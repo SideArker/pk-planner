@@ -1,5 +1,5 @@
 import type { PlanType, TeachingWeekInfo } from '@pk-planner/core'
-import { Calendar, Columns, Filter, LayoutGrid, Plus } from 'lucide-react'
+import { Columns, Filter, LayoutGrid, Plus } from 'lucide-react'
 
 export type ParityFilterType = 'all' | 'current' | 'A' | 'B'
 
@@ -27,35 +27,35 @@ export function ScheduleControls({
   onOpenAddCustom,
 }: ScheduleControlsProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-3 px-4 shadow-xs">
-      <div className="flex items-center gap-2 flex-wrap">
-        <Calendar className="h-4 w-4 text-zinc-500" />
-        <span className="text-xs sm:text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+    <div className="flex flex-col gap-3 border-b border-zinc-200 pb-3 dark:border-zinc-800 lg:flex-row lg:items-center lg:justify-between">
+      <div className="min-w-0 text-xs text-zinc-500 dark:text-zinc-400">
+        <span className="font-medium text-zinc-700 dark:text-zinc-300">
           {planType === 'stacjonarne' ? 'Plan stacjonarny' : 'Zjazdy niestacjonarne'}
         </span>
-        <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 font-medium text-zinc-700 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/60">
-          Bieżący: Tydzień {currentWeek.parityLabel} ({currentWeek.dateRangeLabel})
-        </span>
-        <span className="text-xs text-zinc-400">· {blocksCount} zajęć</span>
+        <span className="mx-2 text-zinc-300 dark:text-zinc-600">·</span>
+        <span>Tydzień {currentWeek.parityLabel} ({currentWeek.dateRangeLabel})</span>
+        <span className="mx-2 text-zinc-300 dark:text-zinc-600">·</span>
+        <span>{blocksCount} zajęć</span>
       </div>
 
-      <div className="flex items-center gap-2">
-        {/* Parity filter */}
-        <div className="flex items-center rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800 text-xs">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <div className="flex max-w-full items-center overflow-x-auto rounded-md border border-zinc-200 bg-zinc-100 p-0.5 text-xs dark:border-zinc-700 dark:bg-zinc-800" role="group" aria-label="Filtr tygodnia">
           {(
             [
               { id: 'all', label: 'Wszystkie' },
-              { id: 'current', label: `Bieżący (${currentWeek.parityLabel})` },
+              { id: 'current', label: 'Bieżący' },
               { id: 'A', label: 'Tydzień A' },
               { id: 'B', label: 'Tydzień B' },
             ] as const
           ).map(tab => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => onParityFilterChange(tab.id)}
-              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+              aria-pressed={parityFilter === tab.id}
+              className={`shrink-0 rounded-sm px-2.5 py-1.5 transition-colors cursor-pointer ${
                 parityFilter === tab.id
-                  ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
+                  ? 'bg-white font-semibold text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100'
                   : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
               }`}
             >
@@ -64,45 +64,51 @@ export function ScheduleControls({
           ))}
         </div>
 
-        {/* Desktop layout toggle: Karty vs Siatka */}
-        <div className="hidden sm:flex items-center rounded-lg bg-zinc-100 p-0.5 dark:bg-zinc-800 text-xs">
+        <div className="hidden items-center rounded-md border border-zinc-200 p-0.5 dark:border-zinc-700 sm:flex" role="group" aria-label="Widok planu">
           <button
+            type="button"
             onClick={() => onLayoutChange('columns')}
-            className={`px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
-              desktopLayout === 'columns'
-                ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
-                : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-            }`}
+            aria-label="Widok kart"
+            aria-pressed={desktopLayout === 'columns'}
             title="Widok kart"
+            className={`rounded-sm p-1.5 transition-colors cursor-pointer ${
+              desktopLayout === 'columns'
+                ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
+                : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+            }`}
           >
-            <Columns className="h-3.5 w-3.5" />
-            <span>Karty</span>
+            <Columns className="h-4 w-4" />
           </button>
           <button
+            type="button"
             onClick={() => onLayoutChange('grid')}
-            className={`px-2.5 py-1 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
-              desktopLayout === 'grid'
-                ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
-                : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
-            }`}
+            aria-label="Siatka godzinowa"
+            aria-pressed={desktopLayout === 'grid'}
             title="Siatka godzinowa"
+            className={`rounded-sm p-1.5 transition-colors cursor-pointer ${
+              desktopLayout === 'grid'
+                ? 'bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100'
+                : 'text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200'
+            }`}
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
-            <span>Siatka</span>
+            <LayoutGrid className="h-4 w-4" />
           </button>
         </div>
 
         <button
+          type="button"
           onClick={onOpenCustomize}
-          className="hidden sm:flex items-center gap-1.5 rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-sm px-2 py-1.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 cursor-pointer"
+          title="Filtruj grupy"
         >
           <Filter className="h-3.5 w-3.5" />
-          <span>Filtruj grupy</span>
+          <span className="hidden sm:inline">Filtruj grupy</span>
         </button>
 
         <button
+          type="button"
           onClick={onOpenAddCustom}
-          className="flex items-center gap-1.5 rounded-lg border border-purple-200 dark:border-purple-800/80 bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/40 dark:hover:bg-purple-900/60 text-purple-700 dark:text-purple-300 px-3 py-1 text-xs font-medium transition-colors cursor-pointer shadow-2xs"
+          className="inline-flex items-center gap-1.5 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300 cursor-pointer"
           title="Dodaj własne zajęcia do planu"
         >
           <Plus className="h-3.5 w-3.5" />

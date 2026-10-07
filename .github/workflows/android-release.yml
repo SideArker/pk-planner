@@ -60,7 +60,7 @@ jobs:
           KEYSTORE_PATH="$RUNNER_TEMP/pk-planner-release.keystore"
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$KEYSTORE_PATH"
           GRADLE_PROPERTIES=apps/mobile/android/gradle.properties
-          printf 'MYAPP_UPLOAD_STORE_FILE=%s\n' "$KEYSTORE_PATH" >> "$GRADLE_PROPERTIES"
+          printf '\nMYAPP_UPLOAD_STORE_FILE=%s\n' "$KEYSTORE_PATH" >> "$GRADLE_PROPERTIES"
           printf 'MYAPP_UPLOAD_STORE_PASSWORD=%s\n' "$ANDROID_KEYSTORE_PASSWORD" >> "$GRADLE_PROPERTIES"
           printf 'MYAPP_UPLOAD_KEY_ALIAS=%s\n' "$ANDROID_KEY_ALIAS" >> "$GRADLE_PROPERTIES"
           printf 'MYAPP_UPLOAD_KEY_PASSWORD=%s\n' "$ANDROID_KEY_PASSWORD" >> "$GRADLE_PROPERTIES"

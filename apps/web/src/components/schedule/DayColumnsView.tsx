@@ -41,30 +41,18 @@ export function DayColumnsView({
         return (
           <div
             key={day}
-            className={`rounded-2xl border transition-all ${
-              isToday
-                ? 'border-blue-300 dark:border-blue-900/80 bg-blue-50/20 dark:bg-blue-950/10'
-                : 'border-zinc-200 dark:border-zinc-800/80 bg-zinc-50/40 dark:bg-zinc-900/40'
-            } p-3 flex flex-col gap-3 min-h-[480px]`}
+            className="flex min-h-[480px] flex-col gap-3 rounded-md border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/40"
           >
-            <div className="flex items-center justify-between pb-2 border-b border-zinc-200/60 dark:border-zinc-800">
+            <div className="flex items-center justify-between border-b border-zinc-200/60 pb-2 dark:border-zinc-800">
               <div className="flex items-center gap-1.5">
-                <span
-                  className={`font-semibold text-sm ${
-                    isToday
-                      ? 'text-blue-600 dark:text-blue-400 font-bold'
-                      : 'text-zinc-900 dark:text-zinc-100'
-                  }`}
-                >
+                <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                   {DAY_INFO[day][0]}
                 </span>
                 {isToday && (
-                  <span className="text-[10px] bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 px-1.5 py-0.2 rounded font-medium">
-                    Dziś
-                  </span>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" title="Dziś" aria-label="Dziś" />
                 )}
               </div>
-              <span className="text-xs text-zinc-400">{dayBlocks.length}</span>
+              <span className="text-xs text-zinc-400" aria-label={`${dayBlocks.length} zajęć`}>{dayBlocks.length}</span>
             </div>
 
             {dayBlocks.length === 0 ? (

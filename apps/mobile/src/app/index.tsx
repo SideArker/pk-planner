@@ -99,6 +99,7 @@ export default function ScheduleScreen() {
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const [pullReady, setPullReady] = useState(false);
   const weekInfo = getTeachingWeekInfo();
+  const effectiveParity = selectedParity === 'CURRENT' ? weekInfo.parityLabel : selectedParity;
 
   useEffect(() => {
     isLoadingRef.current = isLoading;
@@ -225,13 +226,13 @@ export default function ScheduleScreen() {
     for (const b of userBlocks) {
       if (!b.day) continue;
       // Filter by parity if A or B selected
-      if (selectedParity !== 'ALL' && !isBlockInWeekParity(b, selectedParity)) {
+      if (effectiveParity !== 'ALL' && !isBlockInWeekParity(b, effectiveParity)) {
         continue;
       }
       counts[b.day] = (counts[b.day] || 0) + 1;
     }
     return counts;
-  }, [userBlocks, selectedParity]);
+  }, [userBlocks, effectiveParity]);
 
   const handleSaveOnboarding = (
     cohort: string,
@@ -425,7 +426,7 @@ export default function ScheduleScreen() {
 
           <View style={styles.viewRow}>
           <View
-            style={[styles.viewToggle, { backgroundColor: isDark ? '#18181b' : '#e2e8f0' }]}
+            style={[styles.viewToggle, { backgroundColor: isDark ? '#18181b' : '#e9edf2' }]}
             accessibilityRole="tablist">
             {([
               { id: 'list', label: 'Lista', icon: 'list-outline' as const },
@@ -437,6 +438,7 @@ export default function ScheduleScreen() {
                   key={option.id}
                   accessibilityRole="tab"
                   accessibilityState={{ selected }}
+                  accessibilityLabel={option.label}
                   onPress={() => {
                     scrollOffset.current = 0;
                     setScheduleView(option.id);
@@ -450,19 +452,13 @@ export default function ScheduleScreen() {
                       opacity: pressed ? 0.75 : 1,
                     },
                   ]}>
-                  <Ionicons name={option.icon} size={15} color={selected ? theme.text : theme.textSecondary} />
-                  <Text style={[styles.viewToggleText, {
-                    color: selected ? theme.text : theme.textSecondary,
-                    fontWeight: selected ? '700' : '500',
-                  }]}>{option.label}</Text>
+                  <Ionicons name={option.icon} size={18} color={selected ? theme.text : theme.textSecondary} />
                 </Pressable>
               );
             })}
           </View>
-          <View
-            accessibilityLabel={`Aktualny tydzień ${weekInfo.parityLabel}, numer ${weekInfo.weekNumber}`}
-            style={[styles.weekBadge, { backgroundColor: isDark ? '#27272a' : '#e2e8f0' }]}>
-            <Text style={[styles.weekBadgeText, { color: theme.text }]}>
+          <View accessibilityLabel={`Aktualny tydzień ${weekInfo.parityLabel}, numer ${weekInfo.weekNumber}`}>
+            <Text style={[styles.weekBadgeText, { color: theme.textSecondary }]}>
               Tydzień {weekInfo.parityLabel}
             </Text>
           </View>
@@ -473,7 +469,7 @@ export default function ScheduleScreen() {
               <ScheduleGrid
                 blocks={userBlocks}
                 planType={config.planType}
-                parityFilter={selectedParity}
+                parityFilter={effectiveParity}
                 onSelectBlock={setSelectedBlock}
                 onVerticalScroll={(offset) => { scrollOffset.current = Math.max(0, offset); }}
               />
@@ -629,36 +625,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+    justifyContent: 'space-between',
     marginHorizontal: Spacing.three,
     marginBottom: 4,
   },
   viewToggle: {
     flexDirection: 'row',
     padding: 3,
-    borderRadius: 10,
+    borderRadius: 7,
     backgroundColor: '#e2e8f0',
   },
   viewToggleButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
-    minWidth: 76,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  viewToggleText: {
-    fontSize: 12,
-  },
-  weekBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 9,
+    width: 38,
+    height: 34,
+    borderRadius: 5,
   },
   weekBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '500',
   },
   gridContainer: {
     flex: 1,

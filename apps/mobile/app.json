@@ -41,6 +41,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "02fc0bc9-13c0-4b70-bc99-35854fc614ae"
+      }
+    },
+    "owner": "sidearker"
   }
 }

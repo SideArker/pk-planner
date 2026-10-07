@@ -10,6 +10,7 @@ coverage/
 .turbo/
 apps/mobile/ios/
 apps/mobile/android/
+apps/mobile/google-services.json
 .kotlin/
 .metro-health-check*
 expo-env.d.ts

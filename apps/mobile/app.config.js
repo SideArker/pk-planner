@@ -9,6 +9,13 @@ function googleServicesPath() {
     const match = fs.readFileSync(envFile, 'utf8').match(/^GOOGLE_SERVICES_JSON=(.*)$/m);
     file = match?.[1]?.trim().replace(/^['"]|['"]$/g, '') || undefined;
   }
+  // Keep the standard local file path available for developers who don't use
+  // the root .env path override. This file is gitignored and supplied to EAS
+  // as a secret file environment variable for cloud builds.
+  if (!file) {
+    const localFile = path.join(__dirname, 'google-services.json');
+    if (fs.existsSync(localFile)) file = localFile;
+  }
   if (!file) return undefined;
 
   // Windows paths in the root .env need their WSL mount path when Expo runs in Linux.
@@ -17,7 +24,7 @@ function googleServicesPath() {
     const wslPath = path.join('/mnt', windowsPath[1].toLowerCase(), windowsPath[2].replace(/\\/g, '/'));
     if (fs.existsSync(wslPath)) return wslPath;
   }
-  return file;
+  return path.isAbsolute(file) ? file : path.resolve(__dirname, file);
 }
 
 module.exports = ({ config }) => {

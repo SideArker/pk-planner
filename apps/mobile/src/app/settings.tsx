@@ -21,7 +21,7 @@ import { Spacing } from "@/constants/theme";
 import { ThemeMode, useAppTheme } from "@/context/ThemeContext";
 import { useScheduleData } from "@/hooks/useScheduleData";
 import { useUserSchedule } from "@/hooks/useUserSchedule";
-import { useAppVersion } from "@/hooks/useAppVersion";
+import { useAppUpdate } from "@/context/UpdateContext";
 import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   loadNotificationPreferences,
@@ -44,8 +44,8 @@ export default function SettingsScreen() {
     downloadUrl,
     changelog,
     isChecking,
-    openUpdate,
-  } = useAppVersion();
+    openModal,
+  } = useAppUpdate();
   const {
     config,
     saveAllConfig,
@@ -635,7 +635,7 @@ export default function SettingsScreen() {
               {updateAvailable && downloadUrl && (
                 <Pressable
                   accessibilityRole="button"
-                  onPress={() => void openUpdate()}
+                  onPress={openModal}
                   style={({ pressed }) => [
                     styles.updateButton,
                     {

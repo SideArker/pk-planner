@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 import * as Application from 'expo-application';
 import * as Linking from 'expo-linking';
 
-const VERSION_URL = 'https://pk-planner.rsowa126.workers.dev/api/version';
+const VERSION_URL = 'https://pkplanner.sidearker.com/api/version';
 
 interface VersionResponse {
   version?: unknown;

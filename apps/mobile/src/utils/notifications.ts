@@ -23,7 +23,7 @@ const INSTALLATION_KEY = 'pk_planner_notification_installation';
 const LOCAL_IDS_KEY = 'pk_planner_notification_ids';
 const COUNTDOWN_STATE_KEY = 'pk_planner_countdown_enabled';
 const API_URL = (process.env.EXPO_PUBLIC_API_URL ||
-  'https://pk-planner.rsowa126.workers.dev/api/schedule').replace(/\/schedule\/?$/, '');
+  'https://pkplanner.sidearker.com/api/schedule').replace(/\/schedule\/?$/, '');
 
 type NotificationsModule = typeof import('expo-notifications');
 let notificationsPromise: Promise<NotificationsModule> | null = null;

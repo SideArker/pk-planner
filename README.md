@@ -38,7 +38,9 @@ pnpm build:web
 
 `pnpm build:web` zapisuje stronę w `apps/web/dist`. Ten katalog może być katalogiem wyjściowym Cloudflare Pages. Worker ma konfigurację wdrożenia w `apps/worker/wrangler.jsonc`. Projekt mobile pozostaje projektem Expo.
 
-W Cloudflare Workers Builds ustaw katalog główny repozytorium i komendę deploy `pnpm build:worker`. Komenda najpierw buduje web, a potem wdraża Worker razem z plikami z `apps/web/dist`. Aplikacja jest dostępna pod adresem Workera, a `/api/*` obsługuje jego API. Jeśli publikujesz samą statyczną stronę przez Cloudflare Pages, użyj `pnpm build:web` i katalogu `apps/web/dist`.
+W Cloudflare Workers Builds ustaw katalog główny repozytorium i komendę deploy `pnpm build:worker`. Komenda najpierw buduje web, a potem wdraża Worker razem z plikami z `apps/web/dist`. Aplikacja jest dostępna pod `https://pkplanner.sidearker.com`, a `/api/*` obsługuje jego API. Jeśli publikujesz samą statyczną stronę przez Cloudflare Pages, użyj `pnpm build:web` i katalogu `apps/web/dist`.
+
+Stary adres `https://pk-planner.rsowa126.workers.dev` musi nadal serwować stronę z tego buildu. Przy wejściu pod ten adres skrypt w `index.html` odczytuje konfigurację użytkownika, motyw i układ z `localStorage`, po czym przekazuje je do nowej domeny przez fragment URL. Nowa domena zapisuje dane przed uruchomieniem aplikacji i usuwa fragment z adresu. Nie ustawiaj serwerowego przekierowania 308 na starym hoście, dopóki migracja ma działać.
 
 ## Wspólny pakiet
 
@@ -62,7 +64,7 @@ Worker obsługuje zapytania API w dwóch wariantach:
    - `GET /health` oraz `GET /api/health` - stan workera,
    - `GET /` oraz `GET /api` - katalog endpointów API.
 
-> **Uwaga o domenie `workers.dev`**: Darmowa domena `*.workers.dev` (np. `pk-planner.rsowa126.workers.dev`) nie obsługuje wielopoziomowych subdomen (np. `api.pk-planner...`) z powodu braku certyfikatów SSL wildcard na tym poziomie w Cloudflare. Aby korzystać z subdomeny `api.<domena>`, dodaj Custom Domain w Cloudflare Dashboard (**Workers & Pages** -> **pk-planner** -> **Settings** -> **Domains & Routes** -> **Add Custom Domain**).
+> **Uwaga o domenie `workers.dev`**: Darmowa domena `*.workers.dev` nie obsługuje wielopoziomowych subdomen (np. `api.pk-planner...`) z powodu braku certyfikatów SSL wildcard na tym poziomie w Cloudflare. Aby korzystać z subdomeny `api.<domena>`, dodaj Custom Domain w Cloudflare Dashboard (**Workers & Pages** -> **pk-planner** -> **Settings** -> **Domains & Routes** -> **Add Custom Domain**).
 
 Lokalnie wpisz adres JSON do głównego `.env`; `pnpm dev:worker` ładuje ten plik. Wdrożony Worker wymaga ustawienia `UPSTREAM_URL` w ustawieniach Cloudflare. Bez adresu endpoint zwraca `500`.
 

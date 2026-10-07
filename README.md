@@ -1,81 +1,111 @@
-# PK Planner
+<div align="center">
+  <img src="apps/web/public/icon-192.png" width="112" height="112" alt="Ikona PK Planner" />
+  <h1>PK Planner</h1>
+  <p><strong>Twój plan zajęć, bez szukania po tabelach.</strong><br />Wybierz grupę, ułóż własny widok i miej harmonogram zawsze pod ręką.</p>
+  <p>
+    <a href="https://pkplanner.sidearker.com"><img alt="Otwórz aplikację webową" src="https://img.shields.io/badge/Otw%C3%B3rz%20web-pkplanner.sidearker.com-18181b?style=for-the-badge" /></a>
+    <a href="https://github.com/SideArker/pk-planner/releases/latest"><img alt="Pobierz Android APK" src="https://img.shields.io/badge/Pobierz-Android%20APK-4b5563?style=for-the-badge" /></a>
+  </p>
+</div>
 
-Minimalne monorepo planu zajęć, zarządzane przez pnpm workspaces.
+---
 
-## Struktura
+## W skrócie
 
-- `apps/web` — React, Vite i TypeScript; gotowe do zbudowania jako statyczna strona dla Cloudflare Pages.
-- `apps/mobile` — Expo, React Native i TypeScript; projekt Expo Router.
-- `apps/worker` — Cloudflare Worker i Wrangler; punkt wyjścia dla proxy publicznego JSON-a uczelni.
-- `packages/core` — wspólne typy, parser, filtry i narzędzia.
-- `.github/workflows/ci.yml` — kontrola lint, typów i buildu web.
+| | Funkcja |
+| :---: | --- |
+| 🗓️ | **Plan dopasowany do Ciebie** — wybór rocznika, przedmiotów i grup. |
+| ✏️ | **Własne zajęcia i poprawki** — dodawanie bloków oraz nadpisywanie danych planu. |
+| 🔎 | **Szybkie przeglądanie** — wyszukiwarka, widok dzienny i tygodniowy, filtr tygodni A/B. |
+| 📥 | **Eksport do kalendarza** — plik ICS z wybranym planem. |
+| 🔔 | **Powiadomienia mobilne** — zmiany planu, przypomnienia i odliczanie do zajęć. |
+| 🌗 | **Jasny i ciemny motyw** — na webie i w aplikacji mobilnej. |
 
-## Wymagania
+Aplikacja działa w przeglądarce oraz jako aplikacja mobilna Expo. Ustawienia planu są przechowywane lokalnie na urządzeniu.
 
-Node.js 22.12+ i pnpm 12.9.1. Do uruchomienia mobile użyj Expo Go, emulatora albo własnego buildu Expo.
+## Uruchom lokalnie
 
-## Start
+Potrzebujesz **Node.js 22.12+** i **pnpm 12.9.1**.
 
 ```bash
 pnpm install
-pnpm dev:web
-pnpm dev:mobile
-pnpm dev:worker
+pnpm dev:web       # aplikacja webowa
+pnpm dev:mobile    # Expo Go / emulator / build mobilny
+pnpm dev:worker    # API na Cloudflare Worker
 ```
 
-`pnpm dev:mobile` tworzy tymczasowy tunel Cloudflare przez zainstalowany w repozytorium Wrangler i wyświetla kod QR `exps://` dla Expo Go. Nie wymaga konta Cloudflare; publiczny adres zmienia się po każdym uruchomieniu. Zatrzymaj tunel klawiszami Ctrl+C. Na fizycznym iPhonie Expo CLI i Expo Go muszą być zalogowane na to samo konto Expo. Jeśli telefon ma bezpośredni dostęp do komputera w LAN, możesz uruchomić `pnpm --filter mobile exec expo start --lan --go`.
+Uruchom każdy serwer w osobnym terminalu. `pnpm dev:mobile` tworzy tymczasowy tunel Cloudflare i pokazuje kod QR `exps://`; adres zmienia się przy każdym uruchomieniu. Na fizycznym iPhonie Expo CLI i Expo Go muszą być zalogowane na to samo konto. Jeśli telefon widzi komputer w sieci lokalnej, możesz użyć `pnpm --filter mobile exec expo start --lan --go`.
 
-Na Androidzie Expo Go uruchamia plan i ustawienia, ale powiadomienia są wyłączone. Aby używać powiadomień, uruchom zainstalowany build aplikacji.
+Expo Go na Androidzie uruchamia plan i ustawienia, ale powiadomienia wymagają zainstalowanego buildu aplikacji.
 
-Każdy serwer uruchom w osobnym terminalu. Kontrole i build:
+### Kontrole i build
 
 ```bash
 pnpm lint
-pnpm lint:fix
 pnpm typecheck
 pnpm build:web
 ```
 
-`pnpm build:web` zapisuje stronę w `apps/web/dist`. Ten katalog może być katalogiem wyjściowym Cloudflare Pages. Worker ma konfigurację wdrożenia w `apps/worker/wrangler.jsonc`. Projekt mobile pozostaje projektem Expo.
+Build webowy trafia do `apps/web/dist`.
 
-W Cloudflare Workers Builds ustaw katalog główny repozytorium i komendę deploy `pnpm build:worker`. Komenda najpierw buduje web, a potem wdraża Worker razem z plikami z `apps/web/dist`. Aplikacja jest dostępna pod `https://pkplanner.sidearker.com`, a `/api/*` obsługuje jego API. Jeśli publikujesz samą statyczną stronę przez Cloudflare Pages, użyj `pnpm build:web` i katalogu `apps/web/dist`.
+## Jak zbudowany jest projekt
 
-Stary adres `https://pk-planner.rsowa126.workers.dev` musi nadal serwować stronę z tego buildu. Przy wejściu pod ten adres skrypt w `index.html` odczytuje konfigurację użytkownika, motyw i układ z `localStorage`, po czym przekazuje je do nowej domeny przez fragment URL. Nowa domena zapisuje dane przed uruchomieniem aplikacji i usuwa fragment z adresu. Nie ustawiaj serwerowego przekierowania 308 na starym hoście, dopóki migracja ma działać.
+| Katalog | Rola |
+| --- | --- |
+| [`apps/web`](apps/web) | React, Vite i TypeScript; strona oraz ustawienia planu. |
+| [`apps/mobile`](apps/mobile) | Expo, React Native i Expo Router; plan oraz powiadomienia. |
+| [`apps/worker`](apps/worker) | Cloudflare Worker; API, wersje aplikacji i rejestracja powiadomień. |
+| [`packages/core`](packages/core) | Wspólne typy, parser, filtry i logika planu. |
 
-## Wspólny pakiet
+Web i mobile importują `@pk-planner/core` bez osobnego buildu pakietu. Nowe publiczne funkcje pakietu eksportuj z [`packages/core/src/index.ts`](packages/core/src/index.ts).
 
-Web i mobile mają zależność `@pk-planner/core: workspace:*`. Importuj typy i funkcje z `@pk-planner/core`; kod źródłowy jest współdzielony bez osobnego buildu pakietu. Dodawaj eksporty w `packages/core/src/index.ts`.
+## Konfiguracja API
 
-## Worker
+Skopiuj [`.env.example`](.env.example) do lokalnego `.env` i ustaw adres źródłowego JSON-a planu:
 
-`GET /health` zwraca stan Workera. `GET /api/schedule` pobiera JSON z `UPSTREAM_URL` i zwraca go klientowi. `GET /api/version` zwraca najnowszą wersję aplikacji, opcjonalny `apkUrl` oraz `changelog` w formacie Markdown pobrany z opisu wydania GitHub. Gdy wydanie jest niedostępne, zwraca wersję z `apps/mobile/app.json` i tekst z `apps/mobile/release-notes.json`. Klient mobilny może porównać tę wersję ze swoją zainstalowaną wersją. Odpowiedź ma `Cache-Control: no-store`.
+```dotenv
+UPSTREAM_URL=https://twoj-serwer.example/api/schedule-snapshot.php
+VITE_API_URL=https://pkplanner.sidearker.com/api/schedule
+EXPO_PUBLIC_API_URL=https://pkplanner.sidearker.com/api/schedule
+```
 
-### Routing API i obsługa subdomeny (`api.*`)
+`UPSTREAM_URL` jest wymagany również we wdrożonym Workerze. Gdy go brakuje, endpoint planu zwraca `500`. Zmienna `VITE_API_URL` konfiguruje web, a `EXPO_PUBLIC_API_URL` aplikację mobilną; obie wskazują nową domenę. Lokalnie web może też korzystać z `/api/schedule` przez proxy Vite.
 
-Worker obsługuje zapytania API w dwóch wariantach:
-1. **Ścieżka na głównej domenie**:
-   - `GET /api/schedule` - zwraca plan zajęć,
-   - `GET /api/health` lub `GET /health` - stan workera,
-   - `GET /api/version` - aktualna wersja aplikacji,
-   - `GET /api` - katalog endpointów API.
-2. **Subdomena z prefiksem `api.`** (np. `api.twojadomena.pl` po podpięciu Custom Domain w Cloudflare):
-   - `GET /schedule` oraz `GET /api/schedule` - zwraca plan zajęć,
-   - `GET /version` - aktualna wersja aplikacji,
-   - `GET /health` oraz `GET /api/health` - stan workera,
-   - `GET /` oraz `GET /api` - katalog endpointów API.
+| Endpoint | Co zwraca |
+| --- | --- |
+| `GET /api/schedule` | Plan pobrany z `UPSTREAM_URL`. |
+| `GET /api/version` | Najnowszą wersję aplikacji, link do APK i opis zmian. |
+| `GET /api/health` lub `GET /health` | Stan Workera. |
+| `GET /api` | Katalog endpointów API. |
+| `PUT /api/notifications/:installationId` | Rejestrację urządzenia do powiadomień. |
+| `DELETE /api/notifications/:installationId` | Usunięcie rejestracji. |
 
-> **Uwaga o domenie `workers.dev`**: Darmowa domena `*.workers.dev` nie obsługuje wielopoziomowych subdomen (np. `api.pk-planner...`) z powodu braku certyfikatów SSL wildcard na tym poziomie w Cloudflare. Aby korzystać z subdomeny `api.<domena>`, dodaj Custom Domain w Cloudflare Dashboard (**Workers & Pages** -> **pk-planner** -> **Settings** -> **Domains & Routes** -> **Add Custom Domain**).
+Worker obsługuje też ścieżki bez `/api` na skonfigurowanej subdomenie `api.*`, np. `/schedule` i `/version`.
 
-Lokalnie wpisz adres JSON do głównego `.env`; `pnpm dev:worker` ładuje ten plik. Wdrożony Worker wymaga ustawienia `UPSTREAM_URL` w ustawieniach Cloudflare. Bez adresu endpoint zwraca `500`.
+## Publikacja
+
+### Web i Worker
+
+W Cloudflare Workers Builds ustaw katalog główny repozytorium i komendę wdrożenia `pnpm build:worker`. Buduje ona web i wdraża Workera z plikami `apps/web/dist`. Główna domena to **[pkplanner.sidearker.com](https://pkplanner.sidearker.com)**, a API jest dostępne pod `/api/*`. Samą statyczną stronę można również opublikować z `apps/web/dist` przez Cloudflare Pages.
+
+**Migracja ze starej domeny.** Adres `pk-planner.rsowa126.workers.dev` musi nadal serwować ten sam build strony. Po jego otwarciu skrypt odczytuje z lokalnego `localStorage` konfigurację planu, motyw i układ, przekazuje je do nowej domeny przez fragment URL, zapisuje przed startem Reacta i usuwa fragment z adresu. Serwerowe przekierowanie 308 ominęłoby odczyt danych na starym originie.
+
+### Android APK
+
+Push tagu w formacie `vMAJOR.MINOR.PATCH` uruchamia [workflow Android release](.github/workflows/android-release.yml). Workflow ustawia wersję z tagu, buduje podpisany APK i dodaje go do [GitHub Releases](https://github.com/SideArker/pk-planner/releases). Potrzebuje sekretów `GOOGLE_SERVICES_JSON_BASE64`, `ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS` i `ANDROID_KEY_PASSWORD`.
 
 ## Powiadomienia mobilne
 
-W ustawieniach aplikacji można osobno włączyć powiadomienia o zmianie opublikowanego planu, przypomnienia 30 minut przed zajęciami i na ich początku oraz odliczanie czasu zajęć. Android używa FCM HTTP v1 i Workera, który co minutę sprawdza zapisane plany urządzeń oraz odcisk planu źródłowego. Powiadomienia o zmianie planu są obecnie dostępne na Androidzie. iOS używa lokalnych powiadomień; Android też przechodzi na nie, jeśli FCM nie jest skonfigurowany lub Worker jest niedostępny. Lokalny harmonogram obejmuje najbliższe 14 dni i odnawia się po otwarciu planu. Na iOS odliczanie pokazuje czas przy rozpoczęciu zajęć, bez aktualizacji w tle.
+W ustawieniach można osobno włączyć powiadomienia o zmianie planu, przypomnienia 30 minut przed zajęciami i na początku oraz odliczanie czasu zajęć. Android używa FCM HTTP v1 i Workera; Worker co minutę sprawdza zarejestrowane urządzenia oraz wersję planu. iOS używa powiadomień lokalnych. Lokalny harmonogram obejmuje najbliższe 14 dni i odnawia się po otwarciu planu.
 
-Aby uruchomić FCM na Androidzie:
+Aby uruchomić push na Androidzie:
 
-1. W Firebase dodaj aplikację Android z identyfikatorem `com.sidearker.pkplanner`, pobierz `google-services.json` i ustaw w głównym `.env` zmienną `GOOGLE_SERVICES_JSON` na **ścieżkę** do tego pliku. Przy budowaniu przez EAS ustaw tę samą zmienną w środowisku budowania jako ścieżkę do przesłanego pliku.
-2. W Firebase wygeneruj JSON konta usługi z uprawnieniem do FCM HTTP v1. Pełną zawartość JSON ustaw jako `FCM_SERVICE_ACCOUNT_JSON` w głównym `.env` dla lokalnego Workera, a we wdrożeniu jako sekret Cloudflare: `pnpm --filter worker exec wrangler secret put FCM_SERVICE_ACCOUNT_JSON`. Nie używaj prefiksu `EXPO_PUBLIC_` dla tego sekretu.
-3. Wdróż Workera z `apps/worker/wrangler.jsonc` i zbuduj nową aplikację Android. Konfiguracja tworzy Durable Object dla rejestracji urządzeń oraz uruchamia wysyłkę co minutę. Powiadomienia push nie działają w Expo Go na Androidzie; potrzebny jest build aplikacji.
+1. W Firebase dodaj aplikację `com.sidearker.pkplanner`, pobierz `google-services.json` i ustaw w głównym `.env` zmienną `GOOGLE_SERVICES_JSON` na **ścieżkę** do pliku. Dla buildów w GitHub Actions użyj sekretu `GOOGLE_SERVICES_JSON_BASE64`.
+2. Wygeneruj JSON konta usługi z uprawnieniem do FCM HTTP v1. Pełną zawartość ustaw jako `FCM_SERVICE_ACCOUNT_JSON` w lokalnym `.env`, a we wdrożeniu jako sekret Cloudflare: `pnpm --filter worker exec wrangler secret put FCM_SERVICE_ACCOUNT_JSON`.
+3. Wdróż Workera i zbuduj aplikację Android. Konfiguracja tworzy Durable Object dla rejestracji urządzeń oraz uruchamia zadanie co minutę.
 
-FCM wysyła odliczanie co 5 minut, aktualizując jedno powiadomienie przez ten sam `tag`. Po zakończeniu zajęć zastępuje je zwykłym powiadomieniem. Opcja `sticky` utrzymuje je na Androidzie, lecz Android 14 i nowsze pozwalają użytkownikowi usunąć większość takich powiadomień, więc nie można zagwarantować całkowitej blokady usuwania.
+Na Androidzie odliczanie aktualizuje jedno powiadomienie co 5 minut. System Android 14 i nowsze pozwalają usuwać większość powiadomień nawet przy opcji `sticky`.
+
+---
+
+<div align="center"><sub>PK Planner · plan zajęć pod Twoją kontrolą</sub></div>

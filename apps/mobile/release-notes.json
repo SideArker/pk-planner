@@ -1,4 +1,4 @@
 {
-  "version": "1.0.10",
-  "changelog": "## Co nowego\n\n- Dodano powiadomienie oraz możliwość pobrania i instalacji aktualizacji aplikacji bezpośrednio z poziomu ustawień.\n- Poprawiono czytelność nakładających się zajęć oraz wyróżniono kolizje w planie.\n- Poprawiono czytelność kafelków z zajęciami."
+  "version": "1.0.11",
+  "changelog": "## Wersja stabilna (Stable)\n\n- Oficjalne wydanie stabilne (Stable release).\n- Wersja bazująca na v1.0.10 bez dodatkowych zmian funkcjonalnych."
 }

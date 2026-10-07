@@ -226,6 +226,12 @@ export function SettingsModal({
               <span>Zresetuj zapisane dane</span>
             </button>
           </div>
+          <a
+            href="/prywatnosc.html"
+            className="inline-block text-xs text-zinc-600 underline underline-offset-2 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+          >
+            Prywatność w PK Planner
+          </a>
         </div>
       </div>
     </div>

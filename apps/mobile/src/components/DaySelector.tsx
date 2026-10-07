@@ -23,7 +23,7 @@ export function DaySelector({
   onSelectDay,
   dayCounts = {},
 }: DaySelectorProps) {
-  const { theme } = useAppTheme();
+  const { theme, resolvedTheme } = useAppTheme();
   const scrollRef = useRef<ScrollView>(null);
   const dayPositions = useRef<Partial<Record<Day, number>>>({});
 
@@ -33,13 +33,15 @@ export function DaySelector({
   }, [selectedDay]);
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, {
+      backgroundColor: resolvedTheme === 'dark' ? '#18181b' : '#e9edf2',
+    }]}>
       <ScrollView
         ref={scrollRef}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
-        {days.map((day) => {
+        {days.map((day, index) => {
           const isSelected = day === selectedDay;
           const count = dayCounts[day] ?? 0;
           const shortName = DAY_SHORT_LABELS[day] || day;
@@ -60,6 +62,7 @@ export function DaySelector({
                 styles.dayButton,
                 {
                   borderBottomColor: isSelected ? theme.accent : 'transparent',
+                  borderRightColor: index < days.length - 1 ? theme.border : 'transparent',
                   opacity: pressed ? 0.8 : 1,
                 },
               ]}
@@ -95,10 +98,12 @@ const styles = StyleSheet.create({
   wrapper: {
     paddingTop: 4,
     paddingBottom: 8,
+    marginHorizontal: Spacing.three,
+    marginBottom: 8,
+    borderRadius: 9,
+    overflow: 'hidden',
   },
   scrollContent: {
-    paddingHorizontal: Spacing.three,
-    gap: 4,
     flexDirection: 'row',
   },
   dayButton: {
@@ -108,6 +113,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     borderBottomWidth: 2,
+    borderRightWidth: StyleSheet.hairlineWidth,
   },
   dayShort: {
     fontSize: 13,

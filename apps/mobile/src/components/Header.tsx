@@ -1,7 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
-  Animated,
-  Easing,
   Pressable,
   StyleSheet,
   Text,
@@ -12,41 +10,15 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { Spacing } from '@/constants/theme';
 
 interface HeaderProps {
-  isLoading: boolean;
-  onRefresh: () => void;
   onAddCustom: () => void;
   title?: string;
 }
 
 export function Header({
-  isLoading,
-  onRefresh,
   onAddCustom,
   title = 'Mój Planner',
 }: HeaderProps) {
   const { theme, resolvedTheme } = useAppTheme();
-  const [spinValue] = useState(() => new Animated.Value(0));
-
-  useEffect(() => {
-    if (isLoading) {
-      Animated.loop(
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 900,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }),
-      ).start();
-    } else {
-      spinValue.setValue(0);
-    }
-  }, [isLoading, spinValue]);
-
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
-
   const isDark = resolvedTheme === 'dark';
 
   return (
@@ -69,25 +41,6 @@ export function Header({
 
       {/* Action Buttons */}
       <View style={styles.actionsRow}>
-        <Pressable
-          onPress={onRefresh}
-          disabled={isLoading}
-          style={({ pressed }) => [
-            styles.refreshBtn,
-            {
-              opacity: pressed ? 0.7 : 1,
-            },
-          ]}
-          accessibilityLabel="Odśwież plan">
-          <Animated.View style={{ transform: [{ rotate: spin }] }}>
-            <Ionicons
-              name="reload-outline"
-              size={18}
-              color={theme.textSecondary}
-            />
-          </Animated.View>
-        </Pressable>
-
         <Pressable
           onPress={onAddCustom}
           style={({ pressed }) => [
@@ -138,12 +91,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  refreshBtn: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   addBtn: {
     height: 36,

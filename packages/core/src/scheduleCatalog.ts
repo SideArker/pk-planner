@@ -39,6 +39,10 @@ export function formatActivityName(activity?: string): string {
   return ACTIVITY_LABELS[key] || activity.toUpperCase();
 }
 
+function activityGroupKey(block: ScheduleBlock): string {
+  return `${block.cohort || ""}|${block.groupNo ?? ""}`;
+}
+
 export type FieldOfStudy = "Informatyka" | "Cyberpsychologia";
 export type Degree = "I stopień" | "II stopień";
 
@@ -441,11 +445,12 @@ export function buildSubjectCatalog(
   for (const [subject, actMap] of subjectMap.entries()) {
     const activities: SubjectActivity[] = [];
     for (const [activityKey, rawOptions] of actMap.entries()) {
-      // Deduplicate options by group and day/start
+      // One choice represents every occurrence of the same teaching group.
       const seen = new Set<string>();
       const options: SubjectActivityOption[] = [];
       for (const opt of rawOptions) {
-        const key = `${opt.group}-${opt.day}-${opt.start}-${opt.room}`;
+        const block = matchingBlocks.find((candidate) => candidate.id === opt.id)!;
+        const key = activityGroupKey(block);
         if (!seen.has(key)) {
           seen.add(key);
           options.push(opt);
@@ -507,8 +512,9 @@ export function resolveUserBlocks(
         continue;
       }
 
-      // If user made an explicit selection for this activity:
+      // A saved block ID selects its whole group, including added occurrences.
       if (chosenGroupOrId) {
+        const selectedBlock = matchingBlocks.find((candidate) => candidate.id === chosenGroupOrId);
         const { group } = cohortParts(block.cohort);
         const groupString =
           group !== null ? `Grupa ${group}` : "Wszyscy";
@@ -516,6 +522,8 @@ export function resolveUserBlocks(
         // Matches either direct block ID or group label
         const isSelected =
           block.id === chosenGroupOrId ||
+          (selectedBlock && block.day && block.start != null &&
+            activityGroupKey(block) === activityGroupKey(selectedBlock)) ||
           groupString === chosenGroupOrId ||
           String(group) === chosenGroupOrId ||
           block.cohort === chosenGroupOrId;
@@ -628,7 +636,7 @@ export function findAlternativeGroups(
         : b.cohort && cBase.toLowerCase() !== base.toLowerCase()
           ? b.cohort
           : "Wszyscy";
-    const key = `${groupLabel}-${b.day}-${b.start}-${b.room}`;
+    const key = activityGroupKey(b);
     if (!seen.has(key)) {
       seen.add(key);
       options.push({

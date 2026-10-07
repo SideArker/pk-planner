@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   },
   segmentContainer: {
     flexDirection: 'row',
-    flex: 1,
+    width: '100%',
     padding: 3,
     borderRadius: 7,
   },

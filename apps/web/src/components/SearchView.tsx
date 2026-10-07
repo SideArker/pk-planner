@@ -302,13 +302,13 @@ export function SearchView({ state, onSelectBlock }: SearchViewProps) {
             {visibleDays.map((day) => (
               <div
                 key={day}
-                className="rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 p-3.5 space-y-3"
+                className="space-y-3 rounded-md border border-zinc-200 bg-zinc-50/50 p-3.5 dark:border-zinc-800 dark:bg-zinc-900/50"
               >
                 <div className="flex items-center justify-between pb-2 border-b border-zinc-200/60 dark:border-zinc-800">
                   <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-100">
                     {DAY_INFO[day][0]}
                   </span>
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-zinc-400" aria-label={`${blocksByDay[day].length} zajęć`}>
                     {blocksByDay[day].length}
                   </span>
                 </div>

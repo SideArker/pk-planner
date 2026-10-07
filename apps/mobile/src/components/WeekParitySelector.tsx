@@ -8,7 +8,7 @@ import {
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
 
-export type WeekParityFilter = 'A' | 'B' | 'ALL';
+export type WeekParityFilter = 'A' | 'B' | 'ALL' | 'CURRENT';
 
 interface WeekParitySelectorProps {
   selectedParity: WeekParityFilter;
@@ -23,35 +23,35 @@ export function WeekParitySelector({
   const isDark = resolvedTheme === 'dark';
 
   const options: { id: WeekParityFilter; label: string }[] = [
+    { id: 'ALL', label: 'Wszystkie' },
+    { id: 'CURRENT', label: 'Bieżący' },
     { id: 'A', label: 'Tydzień A' },
     { id: 'B', label: 'Tydzień B' },
-    { id: 'ALL', label: 'Wszystkie' },
   ];
 
   return (
     <View style={styles.container}>
-      <View style={styles.row}>
         <View
           style={[
             styles.segmentContainer,
             {
-              backgroundColor: isDark ? '#18181b' : '#f1f5f9',
-              borderColor: theme.border,
+              backgroundColor: isDark ? '#18181b' : '#e9edf2',
             },
-          ]}>
+          ]}
+          accessibilityRole="tablist">
         {options.map((opt) => {
           const isSelected = selectedParity === opt.id;
           return (
             <Pressable
               key={opt.id}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: isSelected }}
               onPress={() => onSelectParity(opt.id)}
               style={({ pressed }) => [
                 styles.segmentItem,
                 {
                   backgroundColor: isSelected
-                    ? isDark
-                      ? '#27272a'
-                      : '#ffffff'
+                    ? isDark ? '#303036' : '#ffffff'
                     : 'transparent',
                   opacity: pressed ? 0.8 : 1,
                 },
@@ -61,7 +61,7 @@ export function WeekParitySelector({
                   styles.segmentLabel,
                   {
                     color: isSelected ? theme.text : theme.textSecondary,
-                    fontWeight: isSelected ? '700' : '500',
+                    fontWeight: isSelected ? '600' : '500',
                   },
                 ]}>
                 {opt.label}
@@ -70,7 +70,6 @@ export function WeekParitySelector({
           );
         })}
         </View>
-      </View>
     </View>
   );
 }
@@ -78,29 +77,24 @@ export function WeekParitySelector({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: Spacing.three,
-    marginTop: 10,
-    marginBottom: 8,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    marginTop: 12,
+    marginBottom: 10,
   },
   segmentContainer: {
     flexDirection: 'row',
     flex: 1,
     padding: 3,
-    borderRadius: 10,
-    borderWidth: 1,
+    borderRadius: 7,
   },
   segmentItem: {
     flex: 1,
-    paddingVertical: 6,
+    minHeight: 36,
+    paddingHorizontal: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
+    borderRadius: 5,
   },
   segmentLabel: {
-    fontSize: 12,
+    fontSize: 11,
   },
 });

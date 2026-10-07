@@ -69,15 +69,12 @@ export function Header({
 
       {/* Action Buttons */}
       <View style={styles.actionsRow}>
-        {/* Refresh button */}
         <Pressable
           onPress={onRefresh}
           disabled={isLoading}
           style={({ pressed }) => [
-            styles.actionBtn,
+            styles.refreshBtn,
             {
-              backgroundColor: isDark ? '#18181b' : '#f8fafc',
-              borderColor: theme.border,
               opacity: pressed ? 0.7 : 1,
             },
           ]}
@@ -86,7 +83,7 @@ export function Header({
             <Ionicons
               name="reload-outline"
               size={18}
-              color={theme.text}
+              color={theme.textSecondary}
             />
           </Animated.View>
         </Pressable>
@@ -94,15 +91,15 @@ export function Header({
         <Pressable
           onPress={onAddCustom}
           style={({ pressed }) => [
-            styles.actionBtn,
+            styles.addBtn,
             {
-              backgroundColor: isDark ? '#18181b' : '#f8fafc',
-              borderColor: theme.border,
+              backgroundColor: theme.accent,
               opacity: pressed ? 0.7 : 1,
             },
           ]}
           accessibilityLabel="Dodaj własne zajęcia">
-          <Ionicons name="add" size={20} color={theme.text} />
+          <Ionicons name="add" size={18} color="#ffffff" />
+          <Text style={styles.addText}>Dodaj zajęcia</Text>
         </Pressable>
       </View>
     </View>
@@ -142,12 +139,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  actionBtn: {
+  refreshBtn: {
     width: 36,
     height: 36,
-    borderRadius: 9,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  addBtn: {
+    height: 36,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  addText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: '700',
   },
 });

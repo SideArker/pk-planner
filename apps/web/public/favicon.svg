@@ -1,12 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
   <defs>
-    <!-- Background Gradient (Dark Zinc/Obsidian) -->
-    <radialGradient id="bgGrad" cx="50%" cy="40%" r="65%">
-      <stop offset="0%" stop-color="#18181c" />
-      <stop offset="70%" stop-color="#0c0c0f" />
-      <stop offset="100%" stop-color="#060608" />
-    </radialGradient>
-
     <!-- Book Cover Gradient (Matte Dark Zinc Leather) -->
     <linearGradient id="coverGrad" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#24242c" />
@@ -15,13 +8,13 @@
 
     <!-- Subtle Ambient Drop Shadow -->
     <filter id="bookShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.75" />
-      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.85" />
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#000000" flood-opacity="0.18" />
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#000000" flood-opacity="0.12" />
     </filter>
   </defs>
 
-  <!-- Squircle Canvas Base -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <!-- White icon canvas -->
+  <rect width="512" height="512" fill="#ffffff" />
 
   <!-- Book Container with Shadow -->
   <g filter="url(#bookShadow)">

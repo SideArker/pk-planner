@@ -10,7 +10,7 @@ Otwórz projekt w Expo Go, emulatorze albo własnym buildzie Expo. Ekrany są w 
 
 ## Wydanie Androida
 
-Workflow `.github/workflows/android-release.yml` buduje podpisany APK i publikuje go po wypchnięciu taga, np. `v1.0.1`. Tag ustawia wersję aplikacji. Każde uruchomienie workflow zwiększa Androidowy `versionCode`.
+Workflow `.github/workflows/android-release.yml` buduje podpisany APK i publikuje go po wypchnięciu taga w formacie `vMAJOR.MINOR.PATCH`, np. `v1.1.0`. Tag ustawia wersję aplikacji. Każde uruchomienie workflow zwiększa Androidowy `versionCode`.
 
 Utwórz prywatny keystore poza repozytorium. `keytool` jest częścią JDK:
 
@@ -36,6 +36,6 @@ Dodaj poniższe sekrety repozytorium w GitHub: **Settings → Secrets and variab
 Wypchnij tag wersji, aby zbudować i opublikować APK:
 
 ```bash
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.1.0
+git push origin v1.1.0
 ```

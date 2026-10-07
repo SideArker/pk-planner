@@ -70,7 +70,7 @@ jobs:
         run: ./gradlew assembleRelease --stacktrace --info --console=plain
 
       - name: Prepare release notes
-        run: node -e 'const fs = require("node:fs"); const notes = JSON.parse(fs.readFileSync("apps/mobile/release-notes.json", "utf8")); fs.writeFileSync("apps/mobile/release-body.md", notes.changelog + "\n")'
+        run: node -e 'const fs = require("node:fs"); const notes = JSON.parse(fs.readFileSync("apps/mobile/release-notes.json", "utf8")); if (notes.version !== process.env.GITHUB_REF_NAME.slice(1)) throw new Error("Release notes version does not match tag"); fs.writeFileSync("apps/mobile/release-body.md", notes.changelog + "\n")'
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

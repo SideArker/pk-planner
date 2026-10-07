@@ -133,7 +133,7 @@ export default {
               apkUrl: apk?.browser_download_url,
               changelog: typeof data.body === 'string' && data.body.trim()
                 ? data.body
-                : version === mobileAppVersion ? mobileReleaseNotes.changelog : '',
+                : version === mobileReleaseNotes.version ? mobileReleaseNotes.changelog : '',
             });
           }
         }
@@ -141,7 +141,10 @@ export default {
         // Fall back to the version built into this Worker.
       }
 
-      return json({ version: mobileAppVersion, changelog: mobileReleaseNotes.changelog });
+      return json({
+        version: mobileAppVersion,
+        changelog: mobileAppVersion === mobileReleaseNotes.version ? mobileReleaseNotes.changelog : '',
+      });
     }
 
     if (isScheduleEndpoint) {

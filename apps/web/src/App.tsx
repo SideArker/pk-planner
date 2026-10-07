@@ -7,7 +7,7 @@ import {
   exerciseGroupForLab,
   resolveUserBlocks,
 } from "@pk-planner/core";
-import { AlertCircle, Calendar, RefreshCw } from "lucide-react";
+import { AlertCircle, Calendar, Download, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddCustomBlockModal } from "./components/AddCustomBlockModal";
 import { BlockDetailModal } from "./components/BlockDetailModal";
@@ -17,12 +17,14 @@ import { ScheduleView } from "./components/ScheduleView";
 import { SearchView } from "./components/SearchView";
 import { SettingsModal } from "./components/SettingsModal";
 import { useScheduleData } from "./hooks/useScheduleData";
+import { useAndroidDownload } from "./hooks/useAndroidDownload";
 import { useTheme } from "./hooks/useTheme";
 import { useUserSchedule } from "./hooks/useUserSchedule";
 
 export default function App() {
   const { theme, resolvedTheme, toggleTheme, setTheme } = useTheme();
   const { state, isLoading, error, lastUpdated, refresh } = useScheduleData();
+  const androidDownloadUrl = useAndroidDownload();
   const {
     config,
     isConfigured,
@@ -130,6 +132,17 @@ export default function App() {
       />
 
       <main className="flex-1 mx-auto w-full max-w-[92%] 2xl:max-w-[1750px] p-4 sm:p-6 lg:p-6">
+        {androidDownloadUrl && (
+          <div className="mb-4 flex justify-end">
+            <a
+              href={androidDownloadUrl}
+              className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200 dark:hover:bg-indigo-900/60 sm:text-sm"
+            >
+              <Download className="h-4 w-4" aria-hidden="true" />
+              Pobierz aplikację na Androida
+            </a>
+          </div>
+        )}
         {/* Error notification banner */}
         {error && (
           <div className="mb-6 rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 p-4 text-xs sm:text-sm text-red-800 dark:text-red-300 flex items-center justify-between gap-3">

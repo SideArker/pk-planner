@@ -402,6 +402,7 @@ export function buildSubjectCatalog(
   const matchingBlocks = state.blocks.filter((b) =>
     blockMatchesBaseCohort(b, cohortBase),
   );
+  const blocksById = new Map(matchingBlocks.map((block) => [block.id, block]));
   const subjectMap = new Map<string, Map<string, SubjectActivityOption[]>>();
 
   for (const block of matchingBlocks) {
@@ -446,17 +447,18 @@ export function buildSubjectCatalog(
     const activities: SubjectActivity[] = [];
     for (const [activityKey, rawOptions] of actMap.entries()) {
       // One choice represents every occurrence of the same teaching group.
-      const seen = new Set<string>();
-      const options: SubjectActivityOption[] = [];
+      const optionsByGroup = new Map<string, SubjectActivityOption>();
       for (const opt of rawOptions) {
-        const block = matchingBlocks.find((candidate) => candidate.id === opt.id)!;
+        const block = blocksById.get(opt.id)!;
         const key = activityGroupKey(block);
-        if (!seen.has(key)) {
-          seen.add(key);
-          options.push(opt);
+        const previous = optionsByGroup.get(key);
+        const previousBlock = previous && blocksById.get(previous.id);
+        if (!previous || (previousBlock?.date && !block.date)) {
+          optionsByGroup.set(key, opt);
         }
       }
 
+      const options = [...optionsByGroup.values()];
       options.sort((a, b) =>
         a.group.localeCompare(b.group, "pl", { numeric: true }),
       );
@@ -491,6 +493,7 @@ export function resolveUserBlocks(
     const matchingBlocks = state.blocks.filter((b) =>
       blockMatchesBaseCohort(b, cohortBase),
     );
+    const blocksById = new Map(matchingBlocks.map((block) => [block.id, block]));
 
     for (const block of matchingBlocks) {
       const subject = (block.subject || "Bez nazwy").trim();
@@ -514,7 +517,11 @@ export function resolveUserBlocks(
 
       // A saved block ID selects its whole group, including added occurrences.
       if (chosenGroupOrId) {
-        const selectedBlock = matchingBlocks.find((candidate) => candidate.id === chosenGroupOrId);
+        const candidate = blocksById.get(chosenGroupOrId);
+        const selectedBlock = candidate &&
+          (candidate.subject || "Bez nazwy").trim() === subject &&
+          (candidate.activity || "INNE").toLowerCase().trim() === activityKey
+          ? candidate : undefined;
         const { group } = cohortParts(block.cohort);
         const groupString =
           group !== null ? `Grupa ${group}` : "Wszyscy";

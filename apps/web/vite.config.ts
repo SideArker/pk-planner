@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   const rootDir = path.resolve(import.meta.dirname, "../../");
   const env = loadEnv(mode, rootDir, "");
 
-  let proxyTarget = "https://pk-planner.rsowa126.workers.dev";
+  let proxyTarget = "https://pkplanner.sidearker.com";
   if (env.WORKER_URL) {
     proxyTarget = env.WORKER_URL;
   } else if (env.VITE_API_URL && env.VITE_API_URL.startsWith("http")) {
@@ -37,4 +37,3 @@ export default defineConfig(({ mode }) => {
     },
   };
 });
-

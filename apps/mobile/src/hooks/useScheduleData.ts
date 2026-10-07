@@ -5,7 +5,7 @@ import { parseSchedulePayload, type SchedulePayload } from '@pk-planner/core';
 
 const CACHE_KEY = 'pk_planner_cached_payload';
 const CACHE_TIME_KEY = 'pk_planner_cached_time';
-const DEFAULT_API_URL = 'https://pk-planner.rsowa126.workers.dev/api/schedule';
+const DEFAULT_API_URL = 'https://pkplanner.sidearker.com/api/schedule';
 
 export function useScheduleData() {
   const [payload, setPayload] = useState<SchedulePayload | null>(null);

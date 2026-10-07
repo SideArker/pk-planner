@@ -13,6 +13,48 @@
     <meta name="theme-color" content="#090a0d" />
     <script>
       (function () {
+        var newOrigin = 'https://pkplanner.sidearker.com';
+        var hostname = window.location.hostname;
+        var allowedKeys = [
+          'pk_planner_user_config',
+          'pk_planner_theme',
+          'pk_planner_desktop_layout',
+        ];
+
+        try {
+          var migrationPrefix = '#storage-migration=';
+          if (hostname === 'pkplanner.sidearker.com' && window.location.hash.indexOf(migrationPrefix) === 0) {
+            var payload = window.location.hash.slice(migrationPrefix.length);
+            var data = JSON.parse(decodeURIComponent(payload));
+            allowedKeys.forEach(function (key) {
+              if (typeof data[key] === 'string') {
+                localStorage.setItem(key, data[key]);
+              }
+            });
+
+            window.history.replaceState(
+              null,
+              '',
+              window.location.pathname + window.location.search
+            );
+          }
+
+          if (hostname === 'pk-planner.rsowa126.workers.dev') {
+            var storage = {};
+            allowedKeys.forEach(function (key) {
+              storage[key] = localStorage.getItem(key);
+            });
+            var encoded = encodeURIComponent(JSON.stringify(storage));
+            window.location.replace(
+              newOrigin + window.location.pathname + window.location.search +
+              migrationPrefix + encoded
+            );
+            return;
+          }
+        } catch (err) {
+          console.error('Storage migration failed', err);
+        }
+
         try {
           var saved = localStorage.getItem('pk_planner_theme');
           var isDark =

@@ -63,9 +63,10 @@ export function BlockCard({
         styles.card,
         {
           backgroundColor: theme.card,
-          borderColor: theme.cardBorder,
-          borderLeftColor: isCurrent ? theme.accent : theme.cardBorder,
-          borderLeftWidth: isCurrent ? 3 : 1,
+          borderColor: hasCollision ? '#ef4444' : theme.cardBorder,
+          borderWidth: hasCollision ? 1.5 : 1,
+          borderLeftColor: isCurrent ? theme.accent : hasCollision ? '#ef4444' : theme.cardBorder,
+          borderLeftWidth: isCurrent ? 3 : hasCollision ? 1.5 : 1,
           opacity: pressed ? 0.78 : isOtherWeek ? 0.58 : 1,
         },
       ]}>
@@ -83,7 +84,7 @@ export function BlockCard({
             <Text style={[styles.statusText, { color: theme.accent }]}>Trwa teraz</Text>
           </View>
         )}
-        {hasCollision && <Text style={[styles.alertText, { color: muted }]}>· Kolizja</Text>}
+        {hasCollision && <Text style={[styles.alertText, { color: '#ef4444', fontWeight: '600' }]}>· Kolizja</Text>}
       </View>
       <View style={styles.detailsRow}>
         <Ionicons name="time-outline" size={15} color={muted} />

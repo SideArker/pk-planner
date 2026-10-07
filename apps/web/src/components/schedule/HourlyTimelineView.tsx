@@ -232,7 +232,7 @@ export function HourlyTimelineView({
                 {positioned.map(pos => (
                   <div
                     key={pos.block.id}
-                    className="absolute pointer-events-auto transition-all"
+                    className="absolute pointer-events-auto transition-all hover:z-30"
                     style={{
                       top: pos.top + 2,
                       height: pos.height,

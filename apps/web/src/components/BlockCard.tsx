@@ -69,20 +69,25 @@ export function BlockCard({
           : "Co 2 tyg."
       : null;
 
+  const borderClass = hasCollision
+    ? "border-red-500/80 dark:border-red-500/80 ring-1 ring-red-500/25 dark:ring-red-500/30 hover:border-red-600 dark:hover:border-red-400"
+    : "border-zinc-200/90 hover:border-zinc-300 dark:border-zinc-800 dark:hover:border-zinc-700";
+
   return (
     <button
       onClick={() => onClick(block)}
       style={styleProp}
-      className={`group relative w-full rounded-md border border-zinc-200/90 bg-white text-left transition-colors hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800/80 ${
+      title={hasCollision ? `Kolizja: nakłada się z ${collisionInfo.map(c => `${c.conflictingSubject} (${c.conflictingTime})`).join(", ")}` : undefined}
+      className={`group relative w-full rounded-md border bg-white text-left transition-colors hover:bg-zinc-50 dark:bg-zinc-900 dark:hover:bg-zinc-800/80 ${borderClass} ${
         isCurrent ? "border-l-[3px] border-l-emerald-500 dark:border-l-emerald-400" : ""
-      } ${isCompact ? "overflow-x-hidden overflow-y-auto p-1.5 [&>*]:shrink-0" : "overflow-hidden p-3"} ${isOtherWeek ? "opacity-55" : ""} ${className}`}
+      } ${isCompact ? "overflow-x-hidden overflow-y-auto p-2 [&>*]:shrink-0" : "overflow-hidden p-3"} ${isOtherWeek ? "opacity-55" : ""} ${className}`}
     >
-      <h3 className={`font-semibold text-zinc-900 dark:text-zinc-100 ${isCompact ? "break-words text-[10px] leading-tight" : "line-clamp-2 text-sm leading-snug"}`}>
+      <h3 className={`font-semibold text-zinc-900 dark:text-zinc-100 ${isCompact ? "break-words text-xs leading-snug" : "line-clamp-2 text-sm leading-snug"}`}>
         {block.subject}
       </h3>
 
-      <div className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-zinc-500 dark:text-zinc-400 ${isCompact ? "mt-0.5 text-[9px] leading-tight" : "mt-1 text-[11px]"}`}>
-        <span className="inline-flex items-center gap-1">
+      <div className={`flex flex-wrap items-center gap-x-1.5 gap-y-0.5 ${isCompact ? "mt-1 text-[11px] leading-snug" : "mt-1 text-[11px]"}`}>
+        <span className="inline-flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
           <span className="h-1 w-1 rounded-full bg-zinc-400 dark:bg-zinc-500" aria-hidden="true" />
           {formatActivityName(block.activity)}
         </span>
@@ -93,37 +98,41 @@ export function BlockCard({
             Trwa teraz
           </span>
         )}
-        {(block.isCustom || block.id.startsWith("custom-")) && <span>· Własne</span>}
-        {parityLabel && <span>· {parityLabel}{isCurrentParity ? " (bieżący)" : ""}</span>}
+        {(block.isCustom || block.id.startsWith("custom-")) && (
+          <span className="text-zinc-500 dark:text-zinc-400">· Własne</span>
+        )}
+        {parityLabel && (
+          <span className="text-zinc-500 dark:text-zinc-400">· {parityLabel}{isCurrentParity ? " (bieżący)" : ""}</span>
+        )}
         {hasCollision && (
-          <span className="inline-flex items-center gap-1 text-zinc-600 dark:text-zinc-300">
-            <AlertTriangle className="h-3 w-3" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1 font-semibold text-red-600 dark:text-red-400">
+            <AlertTriangle className="h-3 w-3 shrink-0 text-red-500 dark:text-red-400" aria-hidden="true" />
             Kolizja
           </span>
         )}
       </div>
 
-      <div className={`flex flex-wrap items-center gap-x-1.5 text-zinc-700 dark:text-zinc-300 ${isCompact ? "mt-1 gap-y-0.5 text-[9px] leading-tight" : "mt-2 gap-y-1 text-xs"}`}>
-        <span className="inline-flex items-center gap-1 whitespace-nowrap tabular-nums">
+      <div className={`flex flex-wrap items-center gap-x-1.5 text-zinc-700 dark:text-zinc-300 ${isCompact ? "mt-1.5 gap-y-1 text-[11px] leading-snug" : "mt-2 gap-y-1 text-xs"}`}>
+        <span className="inline-flex items-center gap-1 whitespace-nowrap tabular-nums font-medium">
           <Clock3 className="h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
           {startTime}–{endTime}
         </span>
         <span className="text-zinc-300 dark:text-zinc-600" aria-hidden="true">·</span>
         {isOnline ? (
-          <span className="inline-flex items-center gap-1 rounded-sm bg-zinc-100 px-1.5 py-0.5 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+          <span className="inline-flex items-center gap-1 rounded bg-zinc-100 px-1.5 py-0.5 font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
             <Globe2 className="h-3 w-3 shrink-0" aria-hidden="true" />
             Online
           </span>
         ) : (
-          <span className="inline-flex min-w-0 items-center gap-1">
+          <span className="inline-flex min-w-0 items-center gap-1 font-medium">
             <MapPin className="h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" aria-hidden="true" />
-            <span className="truncate">{room ? `Sala ${room}` : "Bez sali"}</span>
+            <span className={isCompact ? "break-words" : "truncate"}>{room ? `Sala ${room}` : "Bez sali"}</span>
           </span>
         )}
       </div>
 
       {teacher && (
-        <div className={`text-zinc-400 dark:text-zinc-500 ${isCompact ? "mt-1 break-words text-[9px] leading-tight" : "mt-2 truncate text-xs"}`}>
+        <div className={`text-zinc-500 dark:text-zinc-400 ${isCompact ? "mt-1.5 break-words text-[11px] leading-snug" : "mt-2 truncate text-xs"}`}>
           {teacher}
         </div>
       )}

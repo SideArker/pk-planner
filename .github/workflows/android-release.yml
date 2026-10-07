@@ -3,7 +3,7 @@ name: Android release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 permissions:
   contents: write
@@ -20,13 +20,13 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: "24"
           cache: pnpm
 
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - uses: android-actions/setup-android@v4
 
@@ -67,7 +67,7 @@ jobs:
 
       - name: Build signed APK
         working-directory: apps/mobile/android
-        run: ./gradlew assembleRelease --stacktrace --info --console=plain
+        run: ./gradlew assembleRelease
 
       - name: Prepare release notes
         run: node -e 'const fs = require("node:fs"); const notes = JSON.parse(fs.readFileSync("apps/mobile/release-notes.json", "utf8")); if (notes.version !== process.env.GITHUB_REF_NAME.slice(1)) throw new Error("Release notes version does not match tag"); fs.writeFileSync("apps/mobile/release-body.md", notes.changelog + "\n")'

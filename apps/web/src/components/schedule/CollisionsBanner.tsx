@@ -9,17 +9,17 @@ export function CollisionsBanner({ collisions }: CollisionsBannerProps) {
   if (collisions.size === 0) return null
 
   return (
-    <div className="rounded-2xl border border-amber-300 dark:border-amber-900/80 bg-amber-50/90 dark:bg-amber-950/40 p-3.5 px-4 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between gap-3 shadow-xs">
+    <div className="flex items-center justify-between gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900/60 dark:text-zinc-300">
       <div className="flex items-center gap-2.5 flex-1 min-w-0">
-        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+        <AlertTriangle className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400" />
         <div className="flex-1 min-w-0">
           <p className="font-semibold">
             Wykryto kolizje terminów w wybranym planie ({collisions.size}{' '}
             {collisions.size === 1 ? 'zajęcia kolidujące' : 'zajęć kolidujących'})
           </p>
-          <p className="text-[11px] text-amber-700 dark:text-amber-300/80 mt-0.5 truncate">
+          <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
             Niektóre z wybranych przedmiotów nakładają się na siebie w tych samych godzinach.
-            Kliknij na podświetlone zajęcia, aby wybrać inną grupę.
+            Kliknij zajęcia oznaczone „Kolizja”, aby wybrać inną grupę.
           </p>
         </div>
       </div>

@@ -178,9 +178,9 @@ export function ScheduleView({
       {/* Collision Warning Banner */}
       <CollisionsBanner collisions={collisions} />
 
-      {/* Mobile Day Selector (tab pill buttons) */}
+      {/* Mobile day selector */}
       <div className="lg:hidden">
-        <div className="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800 text-xs font-medium overflow-x-auto">
+        <div className="flex overflow-x-auto border-b border-zinc-200 text-xs dark:border-zinc-800">
           {days.map(day => {
             const count = blocksByDay[day].length
             const isSelected = activeMobileDay === day
@@ -190,25 +190,19 @@ export function ScheduleView({
               <button
                 key={day}
                 onClick={() => setActiveMobileDay(day)}
-                className={`flex-1 min-w-[64px] py-2 px-1 text-center rounded-lg transition-all relative flex flex-col items-center gap-0.5 cursor-pointer ${
+                className={`relative flex min-w-[64px] flex-1 cursor-pointer flex-col items-center gap-0.5 border-b-2 px-1 py-2 text-center transition-colors ${
                   isSelected
-                    ? 'bg-white text-zinc-900 shadow-xs dark:bg-zinc-700 dark:text-zinc-100 font-semibold'
-                    : 'text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                    ? 'border-zinc-900 font-semibold text-zinc-900 dark:border-zinc-100 dark:text-zinc-100'
+                    : 'border-transparent text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
                 }`}
               >
                 <div className="flex items-center gap-1">
                   <span>{DAY_INFO[day][0]}</span>
                   {isToday && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" title="Dziś" aria-label="Dziś" />
                   )}
                 </div>
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    count > 0
-                      ? 'bg-zinc-200/60 dark:bg-zinc-600 text-zinc-700 dark:text-zinc-200 font-semibold'
-                      : 'text-zinc-300 dark:text-zinc-600'
-                  }`}
-                >
+                <span className="text-[10px] font-normal text-zinc-400 dark:text-zinc-500" aria-label={`${count} zajęć`}>
                   {count}
                 </span>
               </button>
@@ -220,7 +214,7 @@ export function ScheduleView({
       {/* Mobile Day Content List */}
       <div className="lg:hidden">
         {blocksByDay[activeMobileDay].length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/50 py-16 px-4 text-center">
+          <div className="flex flex-col items-center justify-center rounded-md border border-zinc-200 bg-white px-4 py-16 text-center dark:border-zinc-800 dark:bg-zinc-900/50">
             <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
               Brak zajęć w tym dniu
             </p>

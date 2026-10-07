@@ -146,8 +146,8 @@ export function HourlyTimelineView({
   return (
     <div className="hidden lg:flex flex-col gap-2.5">
       {/* Header Row */}
-      <div className="flex items-center gap-2.5 sticky top-2 z-20">
-        <div className="w-20 shrink-0 p-3 rounded-xl border border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm flex items-center justify-center text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider shadow-xs">
+      <div className="sticky top-2 z-20 flex items-center gap-2.5">
+        <div className="flex w-20 shrink-0 items-center justify-center rounded-md border border-zinc-200 bg-white/95 p-3 text-xs font-semibold uppercase tracking-wider text-zinc-500 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/95 dark:text-zinc-400">
           Godzina
         </div>
 
@@ -158,31 +158,17 @@ export function HourlyTimelineView({
           return (
             <div
               key={day}
-              className={`flex-1 min-w-0 p-3 rounded-xl border font-medium flex items-center justify-between shadow-xs transition-colors backdrop-blur-sm ${
-                isToday
-                  ? 'border-blue-400/90 dark:border-blue-800 bg-blue-50/90 dark:bg-blue-950/80 text-blue-900 dark:text-blue-100'
-                  : 'border-zinc-200/80 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 text-zinc-900 dark:text-zinc-100'
-              }`}
+              className="flex min-w-0 flex-1 items-center justify-between rounded-md border border-zinc-200 bg-white/95 p-3 text-zinc-900 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-900/95 dark:text-zinc-100"
             >
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="font-bold text-sm tracking-tight truncate">
+                <span className="truncate text-sm font-semibold tracking-tight">
                   {DAY_INFO[day][0]}
                 </span>
                 {isToday && (
-                  <span className="text-[10px] bg-blue-600 text-white dark:bg-blue-500 px-1.5 py-0.5 rounded-full font-semibold shadow-xs">
-                    Dziś
-                  </span>
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500" title="Dziś" aria-label="Dziś" />
                 )}
               </div>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-                  count > 0
-                    ? isToday
-                      ? 'bg-blue-200/60 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200'
-                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300'
-                    : 'text-zinc-300 dark:text-zinc-600'
-                }`}
-              >
+              <span className="text-xs text-zinc-400 dark:text-zinc-500" aria-label={`${count} zajęć`}>
                 {count}
               </span>
             </div>
@@ -193,7 +179,7 @@ export function HourlyTimelineView({
       {/* Grid Canvas */}
       <div className="flex gap-2.5 items-stretch relative">
         {/* Left Hours Axis */}
-        <div className="w-20 shrink-0 flex flex-col rounded-2xl border border-zinc-200/80 dark:border-zinc-800 bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xs shadow-xs relative">
+        <div className="relative flex w-20 shrink-0 flex-col rounded-md border border-zinc-200 bg-white/70 dark:border-zinc-800 dark:bg-zinc-900/70">
           {hours.map(h => (
             <div
               key={h}
@@ -207,13 +193,13 @@ export function HourlyTimelineView({
             </div>
           ))}
 
-          {/* Current time indicator badge on Left Hours Axis */}
+          {/* Current time on the hours axis */}
           {isTimeInRange && (
             <div
               className="absolute left-1 right-1 -translate-y-1/2 z-30 pointer-events-none flex items-center justify-center"
               style={{ top: currentTop }}
             >
-              <div className="w-full flex items-center justify-center py-0.5 px-1 rounded-md bg-red-600 dark:bg-red-500 text-white font-mono text-[11px] font-bold shadow-md shadow-red-500/20 tracking-tight">
+              <div className="flex w-full items-center justify-center rounded-sm bg-emerald-600 px-1 py-0.5 font-mono text-[11px] font-semibold tracking-tight text-white dark:bg-emerald-500">
                 {formattedTime}
               </div>
             </div>
@@ -228,11 +214,7 @@ export function HourlyTimelineView({
           return (
             <div
               key={day}
-              className={`flex-1 min-w-0 relative rounded-2xl border transition-colors shadow-xs ${
-                isToday
-                  ? 'border-blue-300/80 dark:border-blue-900/60 bg-blue-50/15 dark:bg-blue-950/10'
-                  : 'border-zinc-200/80 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/40'
-              }`}
+              className="relative min-w-0 flex-1 rounded-md border border-zinc-200 bg-white/50 dark:border-zinc-800 dark:bg-zinc-900/40"
             >
               {/* Hourly dashed lines */}
               {hours.map(h => (
@@ -267,7 +249,7 @@ export function HourlyTimelineView({
                       isCompact={pos.isNarrow || pos.isShort}
                       isCurrent={activeBlockIds?.has(pos.block.id)}
                       currentTime={now}
-                      className="h-full flex flex-col justify-between overflow-hidden shadow-xs hover:z-30 hover:shadow-md"
+                      className="flex h-full flex-col justify-between overflow-hidden hover:z-30"
                       onClick={onSelectBlock}
                     />
                   </div>
@@ -281,25 +263,17 @@ export function HourlyTimelineView({
                     className="absolute inset-x-0 -translate-y-1/2 z-20 pointer-events-none flex items-center"
                     style={{ top: currentTop }}
                   >
-                    {/* Pulsing live dot */}
-                    <div className="relative -ml-1 flex h-3.5 w-3.5 items-center justify-center shrink-0">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-600 dark:bg-red-500 ring-2 ring-white dark:ring-zinc-900 shadow-sm" />
+                    <div className="relative -ml-1 flex h-2.5 w-2.5 shrink-0 items-center justify-center">
+                      <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-zinc-900" />
                     </div>
-                    {/* Solid vibrant line */}
-                    <div className="h-[2px] flex-1 bg-red-500 dark:bg-red-400 shadow-xs" />
-                    {/* Time chip badge */}
-                    <div className="mr-1.5 ml-1 px-1.5 py-0.5 rounded-md bg-red-600 dark:bg-red-500 text-white font-mono text-[10px] font-bold shadow-sm flex items-center gap-1 shrink-0">
-                      <span className="h-1 w-1 rounded-full bg-white animate-pulse" />
-                      <span>{formattedTime}</span>
-                    </div>
+                    <div className="h-px flex-1 bg-emerald-500 dark:bg-emerald-400" />
                   </div>
                 ) : (
                   <div
                     className="absolute inset-x-0 -translate-y-1/2 z-15 pointer-events-none"
                     style={{ top: currentTop }}
                   >
-                    <div className="border-t border-dashed border-red-400/40 dark:border-red-500/30" />
+                    <div className="border-t border-dashed border-zinc-300 dark:border-zinc-700" />
                   </div>
                 )
               )}

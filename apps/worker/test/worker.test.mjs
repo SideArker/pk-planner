@@ -7,7 +7,7 @@ const mockEnv = {
 }
 
 test('OPTIONS returns 204 with CORS headers', async () => {
-  const req = new Request('https://pk-planner.workers.dev/api/schedule', {
+  const req = new Request('https://pkplanner.sidearker.com/api/schedule', {
     method: 'OPTIONS',
   })
   const res = await worker.fetch(req, mockEnv)
@@ -16,7 +16,7 @@ test('OPTIONS returns 204 with CORS headers', async () => {
 })
 
 test('Non-GET/OPTIONS returns 405', async () => {
-  const req = new Request('https://pk-planner.workers.dev/api/schedule', {
+  const req = new Request('https://pkplanner.sidearker.com/api/schedule', {
     method: 'POST',
   })
   const res = await worker.fetch(req, mockEnv)
@@ -26,17 +26,17 @@ test('Non-GET/OPTIONS returns 405', async () => {
 })
 
 test('Health check works on /health and /api/health', async () => {
-  const res1 = await worker.fetch(new Request('https://pk-planner.workers.dev/health'), mockEnv)
+  const res1 = await worker.fetch(new Request('https://pkplanner.sidearker.com/health'), mockEnv)
   assert.equal(res1.status, 200)
   assert.deepEqual(await res1.json(), { ok: true })
 
-  const res2 = await worker.fetch(new Request('https://pk-planner.workers.dev/api/health'), mockEnv)
+  const res2 = await worker.fetch(new Request('https://pkplanner.sidearker.com/api/health'), mockEnv)
   assert.equal(res2.status, 200)
   assert.deepEqual(await res2.json(), { ok: true })
 })
 
 test('API root endpoint returns directory on /api', async () => {
-  const res = await worker.fetch(new Request('https://pk-planner.workers.dev/api'), mockEnv)
+  const res = await worker.fetch(new Request('https://pkplanner.sidearker.com/api'), mockEnv)
   assert.equal(res.status, 200)
   const body = await res.json()
   assert.equal(body.ok, true)
@@ -64,7 +64,7 @@ test('API subdomain prefix (api.*) routing works', async () => {
 })
 
 test('Version endpoint returns mobile app version', async () => {
-  const res1 = await worker.fetch(new Request('https://pk-planner.workers.dev/api/version'), mockEnv)
+  const res1 = await worker.fetch(new Request('https://pkplanner.sidearker.com/api/version'), mockEnv)
   assert.equal(res1.status, 200)
   assert.equal(res1.headers.get('Cache-Control'), 'no-store')
   const body1 = await res1.json()
@@ -91,7 +91,7 @@ test('notification registration validates input and reaches storage', async () =
     },
   }
   const id = '123e4567-e89b-42d3-a456-426614174000'
-  const url = `https://pk-planner.workers.dev/api/notifications/${id}`
+  const url = `https://pkplanner.sidearker.com/api/notifications/${id}`
   const bad = await worker.fetch(new Request(url, {
     method: 'PUT', body: JSON.stringify({ token: 'short', reminders: true, countdown: false, blocks: [] }),
   }), env)

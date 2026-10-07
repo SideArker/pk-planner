@@ -9,7 +9,6 @@
       :root { color-scheme: light dark; font: 16px/1.6 system-ui, sans-serif; }
       body { max-width: 720px; margin: 0 auto; padding: 28px 20px 64px; }
       h1 { line-height: 1.2; }
-      h2 { margin-top: 2rem; font-size: 1.2rem; }
       a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
       .muted { opacity: .7; }
     </style>
@@ -19,24 +18,7 @@
       <p><a href="/">← PK Planner</a></p>
       <h1>Prywatność w PK Planner</h1>
       <p class="muted">Ostatnia aktualizacja: 7 października 2026 r.</p>
-      <p>PK Planner prowadzę i udostępniam osobiście jako SideArker. Aplikacja nie wymaga konta ani podania imienia czy adresu e-mail. W sprawach dotyczących aplikacji i danych możesz skontaktować się ze mną przez <a href="https://github.com/SideArker/pk-planner/issues">GitHub Issues</a>. Nie wpisuj danych prywatnych w publicznym zgłoszeniu.</p>
-
-      <h2>Plan i ustawienia</h2>
-      <p>Wybrane grupy, własne zajęcia, poprawki planu i motyw są zapisywane na Twoim urządzeniu: w pamięci przeglądarki (<code>localStorage</code>) albo w pamięci aplikacji mobilnej. Web zapisuje też kopię pobranego planu. Dane te możesz usunąć przez reset ustawień aplikacji albo wyczyszczenie danych aplikacji lub przeglądarki. Eksport planu do kalendarza odbywa się na Twoje żądanie.</p>
-
-      <h2>Powiadomienia na Androidzie</h2>
-      <p>Gdy korzystasz z powiadomień na Androidzie, aplikacja przesyła do PK Planner losowy identyfikator instalacji, token powiadomień urządzenia, wybrane ustawienia powiadomień oraz bloki Twojego planu potrzebne do wysłania przypomnień. Mogą to być także nazwy własnych zajęć. Dane są przechowywane w Cloudflare Durable Objects. Do dostarczenia powiadomień używam Firebase Cloud Messaging (Google), który otrzymuje token urządzenia i treść powiadomienia.</p>
-      <p>Wyłączenie wszystkich powiadomień w ustawieniach aplikacji powoduje wysłanie żądania usunięcia rejestracji. Jeśli żądanie nie dotrze do serwera, np. z powodu braku internetu, zapis może pozostać do czasu automatycznego usunięcia. Nieaktywne rejestracje są usuwane po 180 dniach. Odinstalowanie aplikacji samo w sobie nie wysyła żądania usunięcia. Na iOS przypomnienia o zajęciach są planowane lokalnie na urządzeniu.</p>
-
-      <h2>Strona i cookies</h2>
-      <p>Strona PK Planner nie używa cookies do analityki ani reklam. Korzysta z <code>localStorage</code> do zapamiętywania ustawień i planu. Strona oraz API działają na Cloudflare, które obsługuje żądania sieciowe i może przetwarzać adres IP oraz dane techniczne połączenia. W zależności od konfiguracji zabezpieczeń Cloudflare może też używać własnych technicznych cookies.</p>
-
-      <h2>Jakie dane przetwarza PK Planner i po co</h2>
-      <p>Tak, ale zakres zależy od funkcji. Wybrane grupy, własne zajęcia i inne ustawienia planu w wersji webowej oraz iOS pozostają na Twoim urządzeniu. Serwer nie dostaje Twojej osobistej konfiguracji planu z tych wersji. Strona i API działają przez Cloudflare; obsługa żądań sieciowych może obejmować adres IP i techniczne dane połączenia, ale kod Workera nie zapisuje ich w rejestrze powiadomień.</p>
-      <p>Na Androidzie, gdy powiadomienia push są włączone i system telefonu na nie pozwala, serwer PK Planner zapisuje losowy identyfikator instalacji, token push urządzenia, wybrane ustawienia powiadomień oraz bloki planu potrzebne do ich wysyłania — m.in. nazwy zajęć, dni i godziny. Dane trafiają do Cloudflare Durable Objects. Służą wyłącznie obsłudze przypomnień i powiadomień o zmianach planu. Przy dostarczaniu powiadomienia Firebase Cloud Messaging od Google otrzymuje token urządzenia i treść powiadomienia, która może zawierać nazwę zajęć.</p>
-      <p>Rejestrację można usunąć, wyłączając wszystkie powiadomienia, o ile telefon połączy się wtedy z serwerem. W pozostałych przypadkach rejestracja jest usuwana najpóźniej 180 dni po ostatniej rejestracji urządzenia. Nieaktywne powiadomienia lokalne iOS nie wysyłają planu na serwer.</p>
-      <p>Jeśli RODO ma zastosowanie, dane potrzebne do obsługi włączonych powiadomień przetwarzam w celu wykonania żądanej funkcji (art. 6 ust. 1 lit. b RODO). Cloudflare obsługuje ruch sieciowy i przechowywanie rejestracji; szczegóły przetwarzania przez dostawcę wynikają też z jego własnych warunków i polityk.</p>
-      <p>Możesz zwrócić się o dostęp do danych dotyczących rejestracji powiadomień lub poprosić o ich usunięcie. Masz też prawo złożyć skargę do Prezesa Urzędu Ochrony Danych Osobowych. Nie mamy kont użytkowników, więc do odnalezienia rejestracji przyda się identyfikator instalacji.</p>
+      <p>PK Planner nie wymaga konta ani podania imienia czy adresu e-mail i nie używa danych do reklam ani analityki. Ustawienia, własne zajęcia i plan są przechowywane lokalnie na Twoim urządzeniu; strona i API są obsługiwane przez Cloudflare, które może przetwarzać techniczne dane połączenia, takie jak adres IP. Na Androidzie, jeśli włączysz powiadomienia push, aplikacja wysyła do serwera losowy identyfikator instalacji, token powiadomień, ustawienia powiadomień i potrzebne bloki planu, które mogą zawierać nazwy zajęć. Dane rejestracji są przechowywane w Cloudflare i służą wyłącznie do wysyłania wybranych powiadomień; Firebase Cloud Messaging od Google otrzymuje token push i treść wysyłanego powiadomienia. Rejestrację można usunąć, wyłączając powiadomienia w aplikacji, a nieaktywne wpisy są automatycznie usuwane po 180 dniach; przypomnienia na iOS są planowane lokalnie. PK Planner prowadzę osobiście jako SideArker; w sprawach dotyczących prywatności możesz napisać przez <a href="https://github.com/SideArker/pk-planner/issues">GitHub Issues</a> (nie umieszczaj tam danych prywatnych).</p>
 
     </main>
   </body>

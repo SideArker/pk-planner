@@ -31,20 +31,19 @@ export function WeekParitySelector({
 
   return (
     <View style={styles.container}>
-        <View
-          style={[
-            styles.segmentContainer,
-            {
-              backgroundColor: isDark ? '#18181b' : '#e9edf2',
-            },
-          ]}
-          accessibilityRole="tablist">
+      <View
+        style={[
+          styles.segmentContainer,
+          { backgroundColor: isDark ? '#18181b' : '#e9edf2' },
+        ]}
+        accessibilityRole="tablist">
         {options.map((opt) => {
           const isSelected = selectedParity === opt.id;
           return (
             <Pressable
               key={opt.id}
               accessibilityRole="tab"
+              accessibilityLabel={opt.label}
               accessibilityState={{ selected: isSelected }}
               onPress={() => onSelectParity(opt.id)}
               style={({ pressed }) => [
@@ -57,6 +56,7 @@ export function WeekParitySelector({
                 },
               ]}>
               <Text
+                numberOfLines={1}
                 style={[
                   styles.segmentLabel,
                   {
@@ -69,26 +69,28 @@ export function WeekParitySelector({
             </Pressable>
           );
         })}
-        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    height: 52,
+    flexShrink: 0,
     paddingHorizontal: Spacing.three,
     marginTop: 12,
     marginBottom: 10,
   },
   segmentContainer: {
     flexDirection: 'row',
-    width: '100%',
+    flex: 1,
     padding: 3,
     borderRadius: 7,
   },
   segmentItem: {
     flex: 1,
-    minHeight: 36,
+    minWidth: 0,
     paddingHorizontal: 2,
     alignItems: 'center',
     justifyContent: 'center',

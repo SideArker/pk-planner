@@ -559,6 +559,53 @@ test("catalog simplifies lecture group to Wszyscy and handles online room format
   assert.match(ics, /LOCATION:Online/);
 });
 
+test("one group choice includes every placed recurring and added occurrence", () => {
+  const lecture = {
+    id: "lecture",
+    subject: "Bazy danych I",
+    activity: "W",
+    cohort: "I stopień stac sem. 3",
+    groupNo: 1,
+    planType: "stacjonarne",
+    day: "WED",
+    start: 630,
+  };
+  const exercise = {
+    ...lecture,
+    id: "exercise-3",
+    activity: "C",
+    cohort: "I stopień stac sem. 3 / gr. 3",
+    groupNo: 3,
+    start: 1185,
+  };
+  const testState = {
+    blocks: [
+      { ...lecture, id: "lecture@additional", start: 1170, date: "2026-10-07" },
+      lecture,
+      { ...exercise, id: "exercise-2", cohort: "I stopień stac sem. 3 / gr. 2", groupNo: 2 },
+      exercise,
+      { ...exercise, id: "exercise-3@oneoff", day: "THU", start: 720, date: "2026-10-08" },
+      { ...exercise, id: "exercise-3@parked", day: null, start: null },
+    ],
+    rooms: [],
+  };
+  const catalog = buildSubjectCatalog(testState, lecture.cohort);
+  const activities = catalog[0].activities;
+  assert.equal(activities.find((item) => item.activity === "w").options.length, 1);
+  assert.equal(activities.find((item) => item.activity === "w").options[0].id, "lecture");
+  assert.equal(activities.find((item) => item.activity === "c").options.length, 2);
+
+  const resolved = resolveUserBlocks(testState, {
+    cohort: lecture.cohort,
+    planType: "stacjonarne",
+    selectedSubjects: { "Bazy danych I": true },
+    selectedGroups: { "Bazy danych I:w": "lecture", "Bazy danych I:c": "exercise-3" },
+  });
+  assert.deepEqual(resolved.map((item) => item.id), [
+    "lecture@additional", "lecture", "exercise-3", "exercise-3@oneoff",
+  ]);
+});
+
 test("isBlockActiveNow correctly detects active blocks based on time, day, and parity", () => {
   // 2026-10-06 is Tuesday (TUE), Week 2 (B)
   const testNow = new Date(2026, 9, 6, 16, 30); // 16:30 = 990 min
@@ -616,4 +663,3 @@ test("isBlockActiveNow correctly detects active blocks based on time, day, and p
   assert.equal(isBlockActiveNow(activeBlockB, exactStart), true);
   assert.equal(isBlockActiveNow(activeBlockB, exactEnd), false);
 });
-

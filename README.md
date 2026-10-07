@@ -25,6 +25,10 @@ Aplikacja działa w przeglądarce oraz jako aplikacja mobilna Expo. Ustawienia p
 
 [Informacja o prywatności](https://pkplanner.sidearker.com/prywatnosc.html) opisuje też dane wysyłane przy powiadomieniach na Androidzie.
 
+## Licencja
+
+Własny kod PK Planner jest udostępniany na licencji [MIT](LICENSE), Copyright (c) 2026 SideArker. Licencja ta nie obejmuje zależności zewnętrznych, znaków towarowych ani danych i zasobów, do których prawa należą do innych podmiotów. Ich własne warunki licencyjne pozostają w mocy. Plik [`apps/mobile/EXPO-LICENSE`](apps/mobile/EXPO-LICENSE) zawiera licencję MIT Expo.
+
 ## Uruchom lokalnie
 
 Potrzebujesz **Node.js 22.12+** i **pnpm 12.9.1**.

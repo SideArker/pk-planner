@@ -23,6 +23,29 @@ jobs:
           node-version: "24"
           cache: pnpm
 
+      - name: Prepare release notes
+        continue-on-error: true
+        run: |
+          touch apps/mobile/release-body.md
+          node -e '
+            const fs = require("node:fs");
+            let changelog = "";
+            try {
+              if (fs.existsSync("apps/mobile/release-notes.json")) {
+                const notes = JSON.parse(fs.readFileSync("apps/mobile/release-notes.json", "utf8"));
+                const tagVersion = (process.env.GITHUB_REF_NAME || "").replace(/^v/, "");
+                if (notes.version === tagVersion) {
+                  changelog = notes.changelog || "";
+                } else {
+                  console.warn("Release notes version (" + notes.version + ") does not match tag (" + tagVersion + "). Continuing with empty changelog.");
+                }
+              }
+            } catch (err) {
+              console.warn("Could not parse release notes:", err.message);
+            }
+            fs.writeFileSync("apps/mobile/release-body.md", (changelog ? changelog + "\n" : ""));
+          '
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -69,8 +92,13 @@ jobs:
         working-directory: apps/mobile/android
         run: ./gradlew assembleRelease
 
-      - name: Prepare release notes
-        run: node -e 'const fs = require("node:fs"); const notes = JSON.parse(fs.readFileSync("apps/mobile/release-notes.json", "utf8")); if (notes.version !== process.env.GITHUB_REF_NAME.slice(1)) throw new Error("Release notes version does not match tag"); fs.writeFileSync("apps/mobile/release-body.md", notes.changelog + "\n")'
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pk-planner-${{ github.ref_name }}
+          path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

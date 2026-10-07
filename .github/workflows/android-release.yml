@@ -67,7 +67,7 @@ jobs:
 
       - name: Build signed APK
         working-directory: apps/mobile/android
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease --stacktrace --info --console=plain
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, StyleSheet } from 'react-native';
 import {
   type Day,
@@ -9,6 +9,7 @@ import {
 } from '@pk-planner/core';
 
 import { BlockCard } from '@/components/BlockCard';
+import { PullToRefreshGesture } from '@/components/PullToRefreshGesture';
 import { EmptyState } from '@/components/ui';
 import { Spacing } from '@/constants/theme';
 import { type WeekParityFilter } from '@/components/WeekParitySelector';
@@ -23,6 +24,8 @@ export interface ScheduleDayPagerProps {
   onSelectBlock: (block: ScheduleBlock) => void;
   onVerticalScroll: (day: Day, offset: number) => void;
   onSelectedDayScroll: (offset: number) => void;
+  onPullMove?: (distance: number) => void;
+  onPullEnd?: (completed: boolean) => void;
 }
 
 interface ScheduleDayPageProps {
@@ -32,6 +35,8 @@ interface ScheduleDayPageProps {
   collisions: ReturnType<typeof detectScheduleCollisions>;
   onSelectBlock: (block: ScheduleBlock) => void;
   onVerticalScroll: (offset: number) => void;
+  onPullMove?: (distance: number) => void;
+  onPullEnd?: (completed: boolean) => void;
 }
 
 export function ScheduleDayPage({
@@ -41,7 +46,10 @@ export function ScheduleDayPage({
   collisions,
   onSelectBlock,
   onVerticalScroll,
+  onPullMove,
+  onPullEnd,
 }: ScheduleDayPageProps) {
+  const scrollOffset = useRef(0);
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -63,6 +71,7 @@ export function ScheduleDayPage({
     .sort((a, b) => (a.start ?? 0) - (b.start ?? 0)), [blocks, day, effectiveParity]);
 
   return (
+    <PullToRefreshGesture scrollOffset={scrollOffset} onPullMove={onPullMove} onPullEnd={onPullEnd}>
     <FlatList
       data={dayBlocks}
       extraData={now}
@@ -71,7 +80,10 @@ export function ScheduleDayPage({
       bounces={false}
       overScrollMode="never"
       scrollEventThrottle={16}
-      onScroll={event => onVerticalScroll(Math.max(0, event.nativeEvent.contentOffset.y))}
+      onScroll={event => {
+        scrollOffset.current = Math.max(0, event.nativeEvent.contentOffset.y);
+        onVerticalScroll(scrollOffset.current);
+      }}
       renderItem={({ item }) => (
         <BlockCard
           block={item}
@@ -90,6 +102,7 @@ export function ScheduleDayPage({
         />
       }
     />
+    </PullToRefreshGesture>
   );
 }
 

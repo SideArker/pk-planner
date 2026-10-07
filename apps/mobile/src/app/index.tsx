@@ -4,7 +4,6 @@ import {
   ActivityIndicator,
   Animated,
   Easing,
-  PanResponder,
   Pressable,
   StyleSheet,
   AppState,
@@ -55,7 +54,7 @@ function getInitialToday(days: Day[]): Day {
   return days.includes(current) ? current : days[0] || 'MON';
 }
 
-const PULL_THRESHOLD = 62;
+const PULL_THRESHOLD = 82;
 
 function springPullTo(value: Animated.Value, toValue: number, onComplete?: () => void) {
   Animated.spring(value, {
@@ -121,48 +120,32 @@ export default function ScheduleScreen() {
     return () => animation.stop();
   }, [isPullRefreshing, spinnerRotation]);
 
-  // The responder reads these refs only when a touch event occurs.
-  // oxlint-disable-next-line react/refs
-  const [panResponder] = useState(() => PanResponder.create({
-    onMoveShouldSetPanResponderCapture: (_, gesture) =>
-      gesture.numberActiveTouches === 1 &&
-      !isLoadingRef.current &&
-      !pullRefreshing.current &&
-      scrollOffset.current <= 1 &&
-      gesture.dy > 8 &&
-      gesture.dy > Math.abs(gesture.dx) * 1.4,
-    onPanResponderGrant: () => pullOffset.stopAnimation(),
-    onPanResponderMove: (_, gesture) => {
-      // The resistance increases as the content approaches its maximum travel.
-      const distance = 112 * (1 - Math.exp(-Math.max(0, gesture.dy) / 140));
-      pullDistance.current = distance;
-      pullOffset.setValue(distance);
-      setPullReady(distance >= PULL_THRESHOLD);
-    },
-    onPanResponderRelease: () => {
-      if (pullDistance.current >= PULL_THRESHOLD && !isLoadingRef.current) {
-        pullRefreshing.current = true;
-        setIsPullRefreshing(true);
-        springPullTo(pullOffset, 68);
-        void refreshRef.current().finally(() => {
-          springPullTo(pullOffset, 0, () => {
-            pullRefreshing.current = false;
-            setIsPullRefreshing(false);
-            setPullReady(false);
-          });
+  const handlePullMove = useCallback((rawDistance: number) => {
+    if (isLoadingRef.current || pullRefreshing.current) return;
+    const distance = 112 * (1 - Math.exp(-rawDistance / 140));
+    pullDistance.current = distance;
+    pullOffset.setValue(distance);
+    setPullReady(distance >= PULL_THRESHOLD);
+  }, [pullOffset]);
+
+  const handlePullEnd = useCallback((completed: boolean) => {
+    if (completed && pullDistance.current >= PULL_THRESHOLD && !isLoadingRef.current) {
+      pullRefreshing.current = true;
+      setIsPullRefreshing(true);
+      springPullTo(pullOffset, 88);
+      void refreshRef.current().finally(() => {
+        springPullTo(pullOffset, 0, () => {
+          pullRefreshing.current = false;
+          setIsPullRefreshing(false);
+          setPullReady(false);
         });
-      } else {
-        setPullReady(false);
-        springPullTo(pullOffset, 0);
-      }
-      pullDistance.current = 0;
-    },
-    onPanResponderTerminate: () => {
-      pullDistance.current = 0;
+      });
+    } else if (!pullRefreshing.current) {
       setPullReady(false);
       springPullTo(pullOffset, 0);
-    },
-  }));
+    }
+    pullDistance.current = 0;
+  }, [pullOffset]);
 
   const pullSpin = spinnerRotation.interpolate({
     inputRange: [0, 1],
@@ -259,8 +242,6 @@ export default function ScheduleScreen() {
       ]}>
       {/* Header */}
       <Header
-        isLoading={isLoading}
-        onRefresh={refresh}
         onAddCustom={() => setIsAddCustomOpen(true)}
       />
 
@@ -355,7 +336,7 @@ export default function ScheduleScreen() {
                 }),
                 transform: [{
                   translateY: pullOffset.interpolate({
-                    inputRange: [0, 68, 112],
+                  inputRange: [0, 88, 112],
                     outputRange: [-16, 0, 12],
                     extrapolate: 'clamp',
                   }),
@@ -374,8 +355,7 @@ export default function ScheduleScreen() {
             </Text>
           </Animated.View>
           <Animated.View
-            style={[styles.flexOne, { transform: [{ translateY: pullOffset }] }]}
-            {...panResponder.panHandlers}>
+            style={[styles.flexOne, { transform: [{ translateY: pullOffset }] }]}>
           {/* Error Banner */}
           {Boolean(error) && (
             <View
@@ -472,6 +452,8 @@ export default function ScheduleScreen() {
                 parityFilter={effectiveParity}
                 onSelectBlock={setSelectedBlock}
                 onVerticalScroll={(offset) => { scrollOffset.current = Math.max(0, offset); }}
+                onPullMove={handlePullMove}
+                onPullEnd={handlePullEnd}
               />
             </View>
           ) : (
@@ -494,6 +476,8 @@ export default function ScheduleScreen() {
                   if (day === selectedDay) scrollOffset.current = offset;
                 }}
                 onSelectedDayScroll={(offset) => { scrollOffset.current = offset; }}
+                onPullMove={handlePullMove}
+                onPullEnd={handlePullEnd}
               />
             </>
           )}

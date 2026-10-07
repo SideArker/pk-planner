@@ -16,6 +16,7 @@ import {
   roomLabel,
 } from '@pk-planner/core';
 import { useAppTheme } from '@/context/ThemeContext';
+import { PullToRefreshGesture } from '@/components/PullToRefreshGesture';
 
 const HOUR_HEIGHT = 72;
 const HOUR_WIDTH = 52;
@@ -32,6 +33,8 @@ export interface ScheduleGridProps {
   currentTime?: Date;
   onSelectBlock: (block: ScheduleBlock) => void;
   onVerticalScroll?: (offset: number) => void;
+  onPullMove?: (distance: number) => void;
+  onPullEnd?: (completed: boolean) => void;
 }
 
 interface PositionedBlock {
@@ -101,7 +104,10 @@ export function ScheduleGrid({
   currentTime,
   onSelectBlock,
   onVerticalScroll,
+  onPullMove,
+  onPullEnd,
 }: ScheduleGridProps) {
+  const scrollOffset = useRef(0);
   const { theme } = useAppTheme();
   const [tickTime, setTickTime] = useState(() => new Date());
   useEffect(() => {
@@ -191,6 +197,7 @@ export function ScheduleGrid({
   }, [indicatorY, layout.startMinute, nowTop, nowDay, nowMinute]);
 
   return (
+    <PullToRefreshGesture scrollOffset={scrollOffset} onPullMove={onPullMove} onPullEnd={onPullEnd}>
     <ScrollView
       nestedScrollEnabled
       bounces={false}
@@ -198,7 +205,10 @@ export function ScheduleGrid({
       style={styles.verticalScroll}
       showsVerticalScrollIndicator
       scrollEventThrottle={16}
-      onScroll={(event) => onVerticalScroll?.(event.nativeEvent.contentOffset.y)}>
+      onScroll={(event) => {
+        scrollOffset.current = Math.max(0, event.nativeEvent.contentOffset.y);
+        onVerticalScroll?.(scrollOffset.current);
+      }}>
       <View style={styles.gridRow}>
           <View style={{ width: HOUR_WIDTH }}>
             <View style={[styles.hourHeader, { backgroundColor: theme.card, borderColor: theme.border }]}>
@@ -336,6 +346,7 @@ export function ScheduleGrid({
         </ScrollView>
       </View>
     </ScrollView>
+    </PullToRefreshGesture>
   );
 }
 

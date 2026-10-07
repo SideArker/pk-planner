@@ -117,7 +117,7 @@ export default function App() {
   const showInitialOnboarding = !isConfigured && !isLoading && Boolean(state);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex flex-col font-sans transition-colors">
       <Header
         currentView={currentView}
         onViewChange={setCurrentView}
@@ -136,7 +136,7 @@ export default function App() {
           <div className="mb-4 flex justify-end">
             <a
               href={androidDownloadUrl}
-              className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-700 transition-colors hover:bg-indigo-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 dark:border-indigo-800 dark:bg-indigo-950/50 dark:text-indigo-200 dark:hover:bg-indigo-900/60 sm:text-sm"
+              className="inline-flex items-center gap-2 rounded-sm px-2 py-1.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-500 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 sm:text-sm"
             >
               <Download className="h-4 w-4" aria-hidden="true" />
               Pobierz aplikację na Androida

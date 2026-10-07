@@ -1,5 +1,4 @@
 import { Calendar, Moon, RefreshCw, Search, Settings, Sun } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { Theme } from "../hooks/useTheme";
 
 interface HeaderProps {
@@ -34,7 +33,7 @@ export function Header({
           <img
             src="/icon-192.png"
             alt="PK Planner"
-            className="h-9 w-9 rounded-lg shadow-xs object-cover"
+            className="h-9 w-9 rounded-md object-cover"
           />
           <div>
             <div className="flex items-center gap-2">
@@ -42,7 +41,7 @@ export function Header({
                 PK Planner
               </span>
               {cohort && (
-                <span className="hidden sm:inline-flex items-center rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700/60">
+                <span className="hidden sm:inline-flex items-center rounded-sm bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                   {cohort}
                 </span>
               )}
@@ -54,72 +53,78 @@ export function Header({
         </div>
 
         {/* View Switcher Tabs */}
-        <nav className="flex items-center rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-xs sm:text-sm font-medium">
+        <nav className="flex items-center rounded-md bg-zinc-100 p-0.5 text-xs font-medium dark:bg-zinc-900 sm:text-sm">
           <button
             onClick={() => onViewChange("schedule")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all ${
+            aria-label="Mój plan"
+            title="Mój plan"
+            className={`flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors ${
               currentView === "schedule"
-                ? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-50"
+                ? "bg-white text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
                 : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
             }`}
           >
             <Calendar className="h-4 w-4" />
-            <span>Mój plan</span>
+            <span className="hidden sm:inline">Mój plan</span>
           </button>
           <button
             onClick={() => onViewChange("search")}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 transition-all ${
+            aria-label="Wyszukiwarka"
+            title="Wyszukiwarka"
+            className={`flex items-center gap-1.5 rounded-sm px-3 py-1.5 transition-colors ${
               currentView === "search"
-                ? "bg-white text-zinc-900 shadow-xs dark:bg-zinc-800 dark:text-zinc-50"
+                ? "bg-white text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50"
                 : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
             }`}
           >
             <Search className="h-4 w-4" />
-            <span>Wyszukiwarka</span>
+            <span className="hidden sm:inline">Wyszukiwarka</span>
           </button>
         </nav>
 
         {/* Right actions */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <Button
-            variant="outline"
-            size="icon"
+          <button
+            type="button"
             onClick={onRefresh}
             disabled={isLoading}
             title="Odśwież plan zajęć"
+            aria-label="Odśwież plan zajęć"
+            className="rounded-sm p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-50 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
           >
             <RefreshCw
               className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
             />
-          </Button>
+          </button>
 
           {(() => {
             const isDark = (resolvedTheme ?? (theme === "dark" ? "dark" : "light")) === "dark";
             return (
-              <Button
-                variant="outline"
-                size="icon"
+              <button
+                type="button"
                 onClick={onToggleTheme}
                 title={isDark ? "Włącz jasny motyw" : "Włącz ciemny motyw"}
+                aria-label={isDark ? "Włącz jasny motyw" : "Włącz ciemny motyw"}
+                className="rounded-sm p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
               >
                 {isDark ? (
-                  <Sun className="h-4 w-4 text-amber-400" />
+                  <Sun className="h-4 w-4" />
                 ) : (
                   <Moon className="h-4 w-4" />
                 )}
-              </Button>
+              </button>
             );
           })()}
 
-          <Button
-            variant="outline"
+          <button
+            type="button"
             onClick={onOpenSettings}
             title="Ustawienia"
-            className="flex items-center gap-1.5 px-3"
+            aria-label="Ustawienia"
+            className="rounded-sm p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
           >
             <Settings className="h-4 w-4" />
-            <span className="hidden sm:inline">Ustawienia</span>
-          </Button>
+          </button>
         </div>
       </div>
     </header>

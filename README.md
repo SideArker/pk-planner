@@ -23,6 +23,8 @@
 
 Aplikacja działa w przeglądarce oraz jako aplikacja mobilna Expo. Ustawienia planu są przechowywane lokalnie na urządzeniu.
 
+[Informacja o prywatności](https://pkplanner.sidearker.com/prywatnosc.html) opisuje też dane wysyłane przy powiadomieniach na Androidzie.
+
 ## Uruchom lokalnie
 
 Potrzebujesz **Node.js 22.12+** i **pnpm 12.9.1**.

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { isRunningInExpoGo } from "expo";
+import * as Linking from "expo-linking";
 import {
   Alert,
   Platform,
@@ -675,6 +676,12 @@ export default function SettingsScreen() {
 
         {/* App Footer */}
         <View style={styles.footerContainer}>
+          <Pressable
+            accessibilityRole="link"
+            onPress={() => void Linking.openURL("https://pkplanner.sidearker.com/prywatnosc.html")}
+          >
+            <Text style={[styles.footerText, { color: theme.accent, textDecorationLine: "underline" }]}>Prywatność w PK Planner</Text>
+          </Pressable>
           <Text style={[styles.footerText, { color: theme.textSecondary }]}>
             PK Planner · Mobilna wersja SideArker
           </Text>

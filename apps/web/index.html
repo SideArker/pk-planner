@@ -26,11 +26,17 @@
           if (hostname === 'pkplanner.sidearker.com' && window.location.hash.indexOf(migrationPrefix) === 0) {
             var payload = window.location.hash.slice(migrationPrefix.length);
             var data = JSON.parse(decodeURIComponent(payload));
-            allowedKeys.forEach(function (key) {
-              if (typeof data[key] === 'string') {
-                localStorage.setItem(key, data[key]);
-              }
-            });
+            if (!data || typeof data !== 'object' || Array.isArray(data)) {
+              throw new Error('Invalid storage migration payload');
+            }
+            if (!localStorage.getItem('pk_planner_storage_migrated')) {
+              allowedKeys.forEach(function (key) {
+                if (typeof data[key] === 'string') {
+                  localStorage.setItem(key, data[key]);
+                }
+              });
+              localStorage.setItem('pk_planner_storage_migrated', '1');
+            }
 
             window.history.replaceState(
               null,
@@ -42,7 +48,11 @@
           if (hostname === 'pk-planner.rsowa126.workers.dev') {
             var storage = {};
             allowedKeys.forEach(function (key) {
-              storage[key] = localStorage.getItem(key);
+              try {
+                storage[key] = localStorage.getItem(key);
+              } catch (_) {
+                storage[key] = null;
+              }
             });
             var encoded = encodeURIComponent(JSON.stringify(storage));
             window.location.replace(

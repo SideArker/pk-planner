@@ -14,6 +14,9 @@ import * as IntentLauncher from 'expo-intent-launcher';
 
 const VERSION_URL = 'https://pkplanner.sidearker.com/api/version';
 
+// Ustaw na true, aby przetestować lokalnie modal, pobieranie APK i instalator bez tworzenia nowej wersji
+const MOCK_UPDATE_IN_DEV = true;
+
 interface VersionResponse {
   version?: unknown;
   apkUrl?: unknown;
@@ -78,6 +81,27 @@ export function UpdateProvider({ children }: { children: React.ReactNode }) {
   const checkVersion = useCallback(async () => {
     setIsChecking(true);
     try {
+      if (__DEV__ && MOCK_UPDATE_IN_DEV) {
+        const mockVersion = '9.9.9';
+        setLatestVersion(mockVersion);
+        setChangelog(
+          '## Test aktualizacji lokalnej\n\n' +
+          '- Sprawdzenie pobierania natywnego APK z GitHuba\n' +
+          '- Wizualizacja postępu pobierania (MB oraz pasek)\n' +
+          '- Wywołanie systemowego instalatora Androida'
+        );
+        setDownloadUrl(
+          Platform.OS === 'android'
+            ? 'https://github.com/SideArker/pk-planner/releases/download/v1.0.9/app-release.apk'
+            : null
+        );
+        if (compareVersions(mockVersion, installedVersion) > 0 && !hasAutoPromptedRef.current) {
+          hasAutoPromptedRef.current = true;
+          setIsModalVisible(true);
+        }
+        return;
+      }
+
       const response = await fetch(VERSION_URL);
       if (!response.ok) return;
 

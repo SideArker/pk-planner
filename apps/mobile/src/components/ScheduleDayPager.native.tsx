@@ -19,6 +19,8 @@ export function ScheduleDayPager({
   onSelectBlock,
   onVerticalScroll,
   onSelectedDayScroll,
+  onPullMove,
+  onPullEnd,
 }: ScheduleDayPagerProps) {
   const pagerRef = useRef<PagerViewRef>(null);
   const [initialPage] = React.useState(() => Math.max(0, days.indexOf(selectedDay)));
@@ -83,6 +85,8 @@ export function ScheduleDayPager({
             parity={parity}
             collisions={collisions}
             onSelectBlock={handleSelectBlock}
+            onPullMove={onPullMove}
+            onPullEnd={onPullEnd}
             onVerticalScroll={offset => {
               scrollOffsets.current[day] = offset;
               onVerticalScroll(day, offset);

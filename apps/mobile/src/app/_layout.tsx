@@ -8,7 +8,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { UpdateModal } from '@/components/UpdateModal';
 import { ThemeProvider, useAppTheme } from '@/context/ThemeContext';
+import { UpdateProvider } from '@/context/UpdateContext';
 import { requestNotificationPermission } from '@/utils/notifications';
 
 SplashScreen.preventAutoHideAsync();
@@ -104,7 +106,10 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <RootTabsLayout />
+        <UpdateProvider>
+          <RootTabsLayout />
+          <UpdateModal />
+        </UpdateProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

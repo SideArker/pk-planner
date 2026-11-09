@@ -75,7 +75,7 @@ VITE_API_URL=https://pkplanner.sidearker.com/api/schedule
 EXPO_PUBLIC_API_URL=https://pkplanner.sidearker.com/api/schedule
 ```
 
-`UPSTREAM_URL` jest wymagany również we wdrożonym Workerze. Gdy go brakuje, endpoint planu zwraca `500`. Zmienna `VITE_API_URL` konfiguruje web, a `EXPO_PUBLIC_API_URL` aplikację mobilną; obie wskazują nową domenę. Lokalnie web może też korzystać z `/api/schedule` przez proxy Vite.
+`UPSTREAM_URL` jest wymagany również we wdrożonym Workerze. Gdy go brakuje, endpoint planu zwraca `500`. Web pobiera API z własnego originu (`/api/*`), a `VITE_API_URL` ustawia cel lokalnego proxy Vite. `EXPO_PUBLIC_API_URL` wskazuje API dla aplikacji mobilnej.
 
 | Endpoint | Co zwraca |
 | --- | --- |

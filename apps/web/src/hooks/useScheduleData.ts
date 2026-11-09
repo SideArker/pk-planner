@@ -27,7 +27,7 @@ export function useScheduleData() {
     setIsLoading(true)
     setError(null)
 
-    const apiUrl = import.meta.env.VITE_API_URL || '/api/schedule'
+    const apiUrl = '/api/schedule'
 
     try {
       const res = await fetch(apiUrl, { cache: force ? 'reload' : 'default' })

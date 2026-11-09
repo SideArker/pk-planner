@@ -9,11 +9,7 @@ export function useAndroidDownload() {
 
   useEffect(() => {
     const controller = new AbortController();
-    const scheduleUrl = new URL(import.meta.env.VITE_API_URL || "/api/schedule", window.location.href);
-    scheduleUrl.pathname = scheduleUrl.pathname.replace(/\/schedule\/?$/, "/version");
-    scheduleUrl.search = "";
-
-    void fetch(scheduleUrl, { signal: controller.signal })
+    void fetch("/api/version", { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error(`Version HTTP ${response.status}`);
         return response.json() as Promise<VersionResponse>;

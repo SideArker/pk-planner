@@ -7,6 +7,10 @@ interface ScheduleControlsProps {
   planType: PlanType
   currentWeek: TeachingWeekInfo
   blocksCount: number
+  weekOffset: number
+  onPreviousWeek: () => void
+  onNextWeek: () => void
+  onToday: () => void
   parityFilter: ParityFilterType
   onParityFilterChange: (filter: ParityFilterType) => void
   desktopLayout: 'columns' | 'grid'
@@ -19,6 +23,10 @@ export function ScheduleControls({
   planType,
   currentWeek,
   blocksCount,
+  weekOffset,
+  onPreviousWeek,
+  onNextWeek,
+  onToday,
   parityFilter,
   onParityFilterChange,
   desktopLayout,
@@ -26,16 +34,26 @@ export function ScheduleControls({
   onOpenCustomize,
   onOpenAddCustom,
 }: ScheduleControlsProps) {
+  const weekButtonClass = 'inline-flex min-h-8 items-center rounded-md border border-zinc-300 bg-white px-2.5 py-1 font-medium text-zinc-700 shadow-xs transition-colors cursor-pointer hover:border-zinc-400 hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:border-zinc-500 dark:hover:bg-zinc-800'
+
   return (
     <div className="flex flex-col gap-3 border-b border-zinc-200 pb-3 dark:border-zinc-800 lg:flex-row lg:items-center lg:justify-between">
-      <div className="min-w-0 text-xs text-zinc-500 dark:text-zinc-400">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-2 text-xs text-zinc-500 dark:text-zinc-400">
         <span className="font-medium text-zinc-700 dark:text-zinc-300">
           {planType === 'stacjonarne' ? 'Plan stacjonarny' : 'Zjazdy niestacjonarne'}
         </span>
-        <span className="mx-2 text-zinc-300 dark:text-zinc-600">·</span>
-        <span>Tydzień {currentWeek.parityLabel} ({currentWeek.dateRangeLabel})</span>
-        <span className="mx-2 text-zinc-300 dark:text-zinc-600">·</span>
+        <span aria-hidden="true" className="text-zinc-300 dark:text-zinc-600">·</span>
+        <span>Tydzień {currentWeek.parityLabel}</span>
+        <span aria-hidden="true" className="text-zinc-300 dark:text-zinc-600">·</span>
         <span>{blocksCount} zajęć</span>
+        <div className="flex flex-wrap items-center gap-1.5 sm:ml-1" role="group" aria-label="Nawigacja tygodnia">
+          <button type="button" onClick={onPreviousWeek} className={weekButtonClass} aria-label="Poprzedni tydzień">‹ Poprzedni</button>
+          <span className="whitespace-nowrap">{currentWeek.dateRangeLabel}</span>
+          <button type="button" onClick={onNextWeek} className={weekButtonClass} aria-label="Następny tydzień">Następny ›</button>
+          {weekOffset !== 0 && (
+            <button type="button" onClick={onToday} className="cursor-pointer text-zinc-700 underline underline-offset-2 hover:text-zinc-950 dark:text-zinc-200 dark:hover:text-white">Dzisiaj</button>
+          )}
+        </div>
       </div>
 
       <div className="flex min-w-0 flex-wrap items-center gap-2">

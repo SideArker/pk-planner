@@ -136,7 +136,7 @@ export default function App() {
 
       <main className="flex-1 mx-auto w-full max-w-[92%] 2xl:max-w-[1750px] p-4 sm:p-6 lg:p-6">
         {getPublicAlerts(payload?.timetableNotices, config.cohort, config.planType).map(alert => (
-          <div key={`${alert.title}-${alert.date}`} className="mb-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+          <div key={`${alert.title}-${alert.date}`} className="mb-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
             <strong>{alert.title}</strong>{alert.text && <span> · {alert.text}</span>}
           </div>
         ))}

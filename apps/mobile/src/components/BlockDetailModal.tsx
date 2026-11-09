@@ -397,9 +397,9 @@ export function BlockDetailModal({
 
                 {officialNotices.map(note => (
                   <View key={note} style={styles.detailItem}>
-                    <Ionicons name="information-circle-outline" size={18} color={theme.accent} />
+                    <Ionicons name="information-circle-outline" size={18} color={theme.textSecondary} />
                     <View style={{ flex: 1 }}>
-                      <Text style={[styles.detailLabel, { color: theme.accent }]}>Informacja z planu uczelni</Text>
+                      <Text style={[styles.detailLabel, { color: theme.textSecondary }]}>Informacja z planu uczelni</Text>
                       <Text style={[styles.detailValue, { color: theme.text }]}>{note}</Text>
                     </View>
                   </View>

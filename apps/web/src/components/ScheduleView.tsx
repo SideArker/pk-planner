@@ -175,6 +175,10 @@ export function ScheduleView({
         planType={planType}
         currentWeek={currentWeek}
         blocksCount={filteredBlocks.length}
+        weekOffset={weekOffset}
+        onPreviousWeek={() => setWeekOffset(value => value - 1)}
+        onNextWeek={() => setWeekOffset(value => value + 1)}
+        onToday={() => setWeekOffset(0)}
         parityFilter={parityFilter}
         onParityFilterChange={setParityFilter}
         desktopLayout={desktopLayout}
@@ -182,13 +186,6 @@ export function ScheduleView({
         onOpenCustomize={onOpenCustomize}
         onOpenAddCustom={onOpenAddCustom}
       />
-      <div className="flex items-center gap-2 text-xs" aria-label="Wybór tygodnia">
-        <button type="button" onClick={() => setWeekOffset(value => value - 1)} className="rounded border px-2 py-1 dark:border-zinc-700">Poprzedni</button>
-        <span>{currentWeek.dateRangeLabel}</span>
-        <button type="button" onClick={() => setWeekOffset(value => value + 1)} className="rounded border px-2 py-1 dark:border-zinc-700">Następny</button>
-        {weekOffset !== 0 && <button type="button" onClick={() => setWeekOffset(0)} className="underline">Dzisiaj</button>}
-      </div>
-
       {/* Collision Warning Banner */}
       <CollisionsBanner collisions={collisions} />
 

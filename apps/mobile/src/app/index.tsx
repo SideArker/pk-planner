@@ -102,6 +102,7 @@ export default function ScheduleScreen() {
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const [pullReady, setPullReady] = useState(false);
   const weekInfo = getTeachingWeekInfo(viewedDate);
+  const isCurrentWeek = weekInfo.startDate.getTime() === getTeachingWeekInfo().startDate.getTime();
   const effectiveParity = selectedParity === 'CURRENT' ? weekInfo.parityLabel : selectedParity;
 
   useEffect(() => {
@@ -384,10 +385,10 @@ export default function ScheduleScreen() {
             </View>
           )}
 
-          {/* Collisions Alert Banner if collisions exist */}
+          {/* Timetable alerts */}
           {getPublicAlerts(payload?.timetableNotices, config.cohort, config.planType).map(alert => (
-            <View key={`${alert.title}-${alert.date}`} style={[styles.collisionAlert, { backgroundColor: isDark ? '#172554' : '#eff6ff', borderColor: theme.accent }]}>
-              <Ionicons name="information-circle-outline" size={18} color={theme.accent} />
+            <View key={`${alert.title}-${alert.date}`} style={[styles.collisionAlert, { backgroundColor: isDark ? '#27272a' : '#f8fafc', borderColor: theme.border }]}>
+              <Ionicons name="information-circle-outline" size={18} color={theme.textSecondary} />
               <Text style={[styles.collisionAlertText, { color: theme.text, flex: 1 }]}>{alert.title}{alert.text ? ` · ${alert.text}` : ''}</Text>
             </View>
           ))}
@@ -420,9 +421,30 @@ export default function ScheduleScreen() {
           />
 
           <View style={styles.weekNavigation}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Poprzedni tydzień" onPress={() => setViewedDate(value => { const next = new Date(value); next.setDate(next.getDate() - 7); return next; })}><Text style={{ color: theme.text }}>‹ Poprzedni</Text></Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="Bieżący tydzień" onPress={() => setViewedDate(new Date())}><Text style={{ color: theme.textSecondary }}>{weekInfo.dateRangeLabel}</Text></Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="Następny tydzień" onPress={() => setViewedDate(value => { const next = new Date(value); next.setDate(next.getDate() + 7); return next; })}><Text style={{ color: theme.text }}>Następny ›</Text></Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Poprzedni tydzień"
+              onPress={() => setViewedDate(value => { const next = new Date(value); next.setDate(next.getDate() - 7); return next; })}
+              style={({ pressed }) => [styles.weekNavigationButton, { backgroundColor: isDark ? '#27272a' : '#f8fafc', borderColor: theme.border, opacity: pressed ? 0.7 : 1 }]}>
+              <Text style={[styles.weekNavigationButtonText, { color: theme.text }]}>‹ Poprzedni</Text>
+            </Pressable>
+            <Text style={[styles.weekNavigationDateText, { color: theme.textSecondary }]}>{weekInfo.dateRangeLabel}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Następny tydzień"
+              onPress={() => setViewedDate(value => { const next = new Date(value); next.setDate(next.getDate() + 7); return next; })}
+              style={({ pressed }) => [styles.weekNavigationButton, { backgroundColor: isDark ? '#27272a' : '#f8fafc', borderColor: theme.border, opacity: pressed ? 0.7 : 1 }]}>
+              <Text style={[styles.weekNavigationButtonText, { color: theme.text }]}>Następny ›</Text>
+            </Pressable>
+            {!isCurrentWeek && (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Wróć do bieżącego tygodnia"
+                onPress={() => setViewedDate(new Date())}
+                style={styles.weekNavigationLink}>
+                <Text style={[styles.weekNavigationLinkText, { color: theme.text }]}>Dzisiaj</Text>
+              </Pressable>
+            )}
           </View>
 
           <View style={styles.viewRow}>
@@ -551,10 +573,37 @@ export default function ScheduleScreen() {
 const styles = StyleSheet.create({
   weekNavigation: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 4,
     paddingHorizontal: Spacing.three,
     paddingVertical: 8,
+  },
+  weekNavigationButton: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderRadius: 9,
+    paddingHorizontal: 6,
+  },
+  weekNavigationButtonText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  weekNavigationDateText: {
+    fontSize: 11,
+    marginHorizontal: 2,
+  },
+  weekNavigationLink: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  weekNavigationLinkText: {
+    fontSize: 11,
+    textDecorationLine: 'underline',
   },
   safeArea: {
     flex: 1,

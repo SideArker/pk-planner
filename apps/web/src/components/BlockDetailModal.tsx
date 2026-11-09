@@ -233,14 +233,14 @@ export function BlockDetailModal({
               </div>
 
               {block.notes && (
-                <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 p-3 bg-amber-50/40 dark:bg-amber-950/20 text-xs">
-                  <span className="font-semibold text-amber-900 dark:text-amber-200">Uwagi: </span>
-                  <span className="text-amber-800 dark:text-amber-300">{block.notes}</span>
+                <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+                  <span className="font-semibold">Uwagi: </span>
+                  <span>{block.notes}</span>
                 </div>
               )}
 
               {officialNotices.map(note => (
-                <div key={note} className="rounded-xl border border-blue-200 dark:border-blue-900/60 p-3 bg-blue-50/60 dark:bg-blue-950/20 text-xs text-blue-900 dark:text-blue-200">
+                <div key={note} className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
                   <span className="font-semibold">Informacja z planu uczelni: </span>{note}
                 </div>
               ))}

@@ -123,6 +123,7 @@ export class NotificationStore {
         try {
           await sendFcm(this.env.FCM_SERVICE_ACCOUNT_JSON, registration.token, {
             title: title.trim(), body: body.trim(), tag: 'critical-update', channelId: 'updates', sticky: false,
+            sound: 'default',
           });
           sent += 1;
         } catch (error) {

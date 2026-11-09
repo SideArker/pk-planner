@@ -30,6 +30,7 @@ export interface NotificationEvent {
   tag: string;
   channelId: 'classes' | 'countdown' | 'updates';
   sticky: boolean;
+  sound?: 'default';
 }
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];

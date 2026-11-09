@@ -80,6 +80,7 @@ export async function sendFcm(
             tag: event.tag,
             sticky: event.sticky,
             channel_id: event.channelId,
+            sound: event.sound,
           },
         },
       },

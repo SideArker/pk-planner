@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   STANDARD_PK_SLOTS,
   type Day,
@@ -6,6 +6,7 @@ import {
   type ScheduleBlock,
   availableDays,
   DAY_INFO,
+  dayForScheduleDate,
   minutesToTime,
   timeToMinutes,
 } from '@pk-planner/core'
@@ -16,7 +17,8 @@ import { Input } from '@/components/ui/input'
 interface AddCustomBlockModalProps {
   isOpen: boolean
   onClose: () => void
-  onAddBlock: (block: Partial<ScheduleBlock> & { subject: string; planType: PlanType }) => void
+  onSaveBlock: (block: Partial<ScheduleBlock> & { subject: string; planType: PlanType }) => void
+  initialBlock?: ScheduleBlock | null
   planType: PlanType
   defaultDay?: Day
 }
@@ -35,7 +37,8 @@ const ACTIVITY_OPTIONS = [
 export function AddCustomBlockModal({
   isOpen,
   onClose,
-  onAddBlock,
+  onSaveBlock,
+  initialBlock,
   planType,
   defaultDay = 'MON',
 }: AddCustomBlockModalProps) {
@@ -47,12 +50,31 @@ export function AddCustomBlockModal({
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(2) // default blok 2
   const [customStartTime, setCustomStartTime] = useState('09:15')
   const [duration, setDuration] = useState(90)
-  const [parity, setParity] = useState<'all' | 'A' | 'B'>('all')
+  const [parity, setParity] = useState<'all' | 'A' | 'B' | 'once'>('all')
+  const [singleDate, setSingleDate] = useState('')
   const [room, setRoom] = useState('')
   const [teacher, setTeacher] = useState('')
   const [cohort, setCohort] = useState('')
   const [notes, setNotes] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+    setSubject(initialBlock?.subject || '')
+    setActivity(initialBlock?.activity || 'Ć')
+    const available = availableDays(planType)
+    setDay(initialBlock?.day || (available.includes(defaultDay) ? defaultDay : available[0]))
+    setCustomStartTime(minutesToTime(initialBlock?.start ?? 555))
+    setDuration(initialBlock?.duration || 90)
+    setSelectedSlotIndex(STANDARD_PK_SLOTS.find(slot => slot.start === initialBlock?.start && slot.duration === initialBlock?.duration)?.index ?? (initialBlock ? null : 2))
+    setParity(initialBlock?.date || initialBlock?.frequency === 'jednorazowo' ? 'once' : initialBlock?.teachingWeekParity === 0 ? 'A' : initialBlock?.teachingWeekParity === 1 ? 'B' : 'all')
+    setSingleDate(initialBlock?.date || '')
+    setRoom(initialBlock?.room || '')
+    setTeacher(initialBlock?.teacher || '')
+    setCohort(initialBlock?.cohort === 'Własne' ? '' : initialBlock?.cohort || '')
+    setNotes(initialBlock?.notes || '')
+    setError(null)
+  }, [isOpen, initialBlock, defaultDay, planType])
 
   if (!isOpen) return null
 
@@ -80,16 +102,31 @@ export function AddCustomBlockModal({
       return
     }
 
+    if (!Number.isInteger(duration) || duration < 15 || duration > 360) {
+      setError('Czas trwania musi wynosić od 15 do 360 minut.')
+      return
+    }
+
+    const datedDay = parity === 'once' ? dayForScheduleDate(singleDate) : null
+    if (parity === 'once' && (!datedDay || !days.includes(datedDay))) {
+      setError('Podaj poprawną datę zajęć w dozwolonym dniu planu.')
+      return
+    }
+
     const teachingWeekParity = parity === 'A' ? 0 : parity === 'B' ? 1 : null
 
-    onAddBlock({
+    onSaveBlock({
       subject: subject.trim(),
       activity: activity.trim(),
-      day,
+      day: datedDay || day,
       start: startMinutes,
-      duration: Number(duration) || 90,
+      duration,
       planType,
       teachingWeekParity,
+      frequency: parity === 'once' ? 'jednorazowo' : parity === 'all' ? 'co_tydzien' : 'co_2_tygodnie',
+      date: parity === 'once' ? singleDate : null,
+      allowedDates: parity === 'once' ? [singleDate] : [],
+      dateViewOnly: parity === 'once',
       room: room.trim() || null,
       teacher: teacher.trim() || undefined,
       teacherDisplay: teacher.trim() || undefined,
@@ -98,13 +135,6 @@ export function AddCustomBlockModal({
       isCustom: true,
     })
 
-    // Reset and close
-    setSubject('')
-    setNotes('')
-    setRoom('')
-    setTeacher('')
-    setCohort('')
-    setError(null)
     onClose()
   }
 
@@ -119,7 +149,7 @@ export function AddCustomBlockModal({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-semibold text-zinc-900 dark:text-zinc-100 leading-snug">
-                Dodaj własne zajęcia
+                {initialBlock ? 'Edytuj własne zajęcia' : 'Dodaj własne zajęcia'}
               </h2>
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
                 Wprowadź lektorat, WF, koło naukowe lub własne aktywności
@@ -187,7 +217,7 @@ export function AddCustomBlockModal({
           </div>
 
           {/* Day of Week */}
-          <div>
+          {parity !== 'once' && <div>
             <label className="block font-semibold text-zinc-800 dark:text-zinc-200 mb-1.5 flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-zinc-500" />
               <span>Dzień tygodnia</span>
@@ -208,7 +238,7 @@ export function AddCustomBlockModal({
                 </button>
               ))}
             </div>
-          </div>
+          </div>}
 
           {/* Time & Duration */}
           <div>
@@ -273,7 +303,7 @@ export function AddCustomBlockModal({
             <label className="block font-semibold text-zinc-800 dark:text-zinc-200 mb-1.5">
               Częstotliwość tygodni
             </label>
-            <div className="grid grid-cols-3 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <button
                 type="button"
                 onClick={() => setParity('all')}
@@ -307,8 +337,20 @@ export function AddCustomBlockModal({
               >
                 Tydzień B
               </button>
+              <button
+                type="button"
+                onClick={() => setParity('once')}
+                className={`py-1.5 px-2 rounded-lg border text-center transition-all cursor-pointer font-medium ${parity === 'once' ? 'border-zinc-900 bg-zinc-900 text-white dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-900' : 'border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900 text-zinc-700 dark:text-zinc-300 hover:border-zinc-300'}`}
+              >
+                Jednorazowo
+              </button>
             </div>
           </div>
+
+          {parity === 'once' && <div>
+            <label className="block font-semibold text-zinc-800 dark:text-zinc-200 mb-1">Data zajęć</label>
+            <Input type="date" required value={singleDate} onChange={e => setSingleDate(e.target.value)} className="text-xs" />
+          </div>}
 
           {/* Room & Teacher */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -343,6 +385,12 @@ export function AddCustomBlockModal({
 
           {/* Notes */}
           <div>
+            <label className="block font-semibold text-zinc-800 dark:text-zinc-200 mb-1">Grupa (opcjonalnie)</label>
+            <Input value={cohort} onChange={e => setCohort(e.target.value)} placeholder="np. 3" className="text-xs" />
+          </div>
+
+          {/* Notes */}
+          <div>
             <label className="block font-semibold text-zinc-800 dark:text-zinc-200 mb-1">
               Notatki (opcjonalnie)
             </label>
@@ -362,7 +410,7 @@ export function AddCustomBlockModal({
             </Button>
             <Button type="submit" size="sm" className="gap-1.5">
               <Plus className="h-4 w-4" />
-              <span>Dodaj zajęcia</span>
+              <span>{initialBlock ? 'Zapisz zmiany' : 'Dodaj zajęcia'}</span>
             </Button>
           </div>
         </form>

@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   Modal,
+  Alert,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -14,8 +16,11 @@ import {
   type BlockOverride,
   type ScheduleBlock,
   type ScheduleState,
+  type TimetableNotices,
   DAY_INFO,
   findAlternativeGroups,
+  getBlockNotices,
+  getGoogleCalendarUrl,
   formatActivityName,
   minutesToTime,
   roomLabel,
@@ -27,22 +32,26 @@ import { useAppTheme } from '@/context/ThemeContext';
 interface BlockDetailModalProps {
   block: ScheduleBlock | null;
   state: ScheduleState | null;
+  timetableNotices?: TimetableNotices;
   isOpen: boolean;
   onClose: () => void;
   onSwitchGroup: (subject: string, activity: string, chosenOptionId: string) => void;
   onSaveOverride: (blockId: string, override: BlockOverride) => void;
   onRemoveCustomBlock?: (blockId: string) => void;
+  onEditCustomBlock?: (block: ScheduleBlock) => void;
   collisionInfo?: BlockCollisionInfo[];
 }
 
 export function BlockDetailModal({
   block,
   state,
+  timetableNotices,
   isOpen,
   onClose,
   onSwitchGroup,
   onSaveOverride,
   onRemoveCustomBlock,
+  onEditCustomBlock,
   collisionInfo,
 }: BlockDetailModalProps) {
   const { theme, resolvedTheme } = useAppTheme();
@@ -72,6 +81,7 @@ export function BlockDetailModal({
   const teacher = teacherDisplay(block);
   const room = roomLabel(block.room);
   const isCustomBlock = Boolean(block.isCustom || block.id.startsWith('custom-'));
+  const officialNotices = getBlockNotices(block, timetableNotices);
   const alternativeGroups = state ? findAlternativeGroups(state, block) : [];
 
   const handleSaveCustom = () => {
@@ -229,7 +239,7 @@ export function BlockDetailModal({
               </Pressable>
             )}
 
-            <Pressable
+            {!isCustomBlock && <Pressable
               onPress={() => setActiveTab('custom')}
               style={[
                 styles.tabBtn,
@@ -251,7 +261,7 @@ export function BlockDetailModal({
                 ]}>
                 Dostosuj
               </Text>
-            </Pressable>
+            </Pressable>}
           </View>
 
           {/* Tab Content */}
@@ -313,7 +323,7 @@ export function BlockDetailModal({
                       Termin
                     </Text>
                     <Text style={[styles.detailValue, { color: theme.text }]}>
-                      {block.day && DAY_INFO[block.day] ? DAY_INFO[block.day][1] : block.day},{' '}
+                      {block.date ? `${block.date} · ` : ''}{block.day && DAY_INFO[block.day] ? DAY_INFO[block.day][1] : block.day},{' '}
                       {startTime} – {endTime} ({block.duration || 90} min)
                     </Text>
                   </View>
@@ -383,6 +393,33 @@ export function BlockDetailModal({
                       </Text>
                     </View>
                   </View>
+                )}
+
+                {officialNotices.map(note => (
+                  <View key={note} style={styles.detailItem}>
+                    <Ionicons name="information-circle-outline" size={18} color={theme.accent} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.detailLabel, { color: theme.accent }]}>Informacja z planu uczelni</Text>
+                      <Text style={[styles.detailValue, { color: theme.text }]}>{note}</Text>
+                    </View>
+                  </View>
+                ))}
+
+                {Boolean(getGoogleCalendarUrl(block)) && (
+                  <Pressable
+                    accessibilityRole="link"
+                    onPress={() => void Linking.openURL(getGoogleCalendarUrl(block)).catch(() => Alert.alert('Nie udało się otworzyć Google Calendar.'))}
+                    style={({ pressed }) => [styles.deleteBtn, { borderColor: theme.border, opacity: pressed ? 0.8 : 1 }]}>
+                    <Ionicons name="calendar-outline" size={18} color={theme.text} />
+                    <Text style={[styles.deleteBtnText, { color: theme.text }]}>Dodaj do Google Calendar</Text>
+                  </Pressable>
+                )}
+
+                {isCustomBlock && onEditCustomBlock && (
+                  <Pressable onPress={() => onEditCustomBlock(block)} style={({ pressed }) => [styles.deleteBtn, { borderColor: theme.border, opacity: pressed ? 0.8 : 1 }]}>
+                    <Ionicons name="create-outline" size={18} color={theme.text} />
+                    <Text style={[styles.deleteBtnText, { color: theme.text }]}>Edytuj własne zajęcia</Text>
+                  </Pressable>
                 )}
 
                 {/* Delete button if custom block */}

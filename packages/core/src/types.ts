@@ -70,7 +70,8 @@ export interface ScheduleValidation {
 
 export interface TimetableNotices {
   notices: unknown[]
-  publicAlerts?: Array<{ planType?: PlanType; date?: string; expiresAfter?: string; title?: string; text?: string; items?: string[] }>
+  publicationNotes?: unknown[]
+  publicAlerts?: Array<{ planType?: PlanType; cohort?: string; date?: string; expiresAfter?: string; title?: string; text?: string; items?: string[] }>
   [key: string]: unknown
 }
 
@@ -128,4 +129,3 @@ export interface SubjectCatalogItem {
   subject: string
   activities: SubjectActivity[]
 }
-

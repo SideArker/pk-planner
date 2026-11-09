@@ -5,6 +5,7 @@ import {
   type ScheduleBlock,
   cohortParts,
   exerciseGroupForLab,
+  getPublicAlerts,
   resolveUserBlocks,
 } from "@pk-planner/core";
 import { AlertCircle, Calendar, Download, RefreshCw } from "lucide-react";
@@ -23,7 +24,7 @@ import { useUserSchedule } from "./hooks/useUserSchedule";
 
 export default function App() {
   const { theme, resolvedTheme, toggleTheme, setTheme } = useTheme();
-  const { state, isLoading, error, lastUpdated, refresh } = useScheduleData();
+  const { payload, state, isLoading, error, lastUpdated, refresh } = useScheduleData();
   const androidDownloadUrl = useAndroidDownload();
   const {
     config,
@@ -32,6 +33,7 @@ export default function App() {
     setSubjectGroup,
     setBlockOverride,
     addCustomBlock,
+    updateCustomBlock,
     removeCustomBlock,
     resetConfig,
     updateSelections,
@@ -46,6 +48,7 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null);
 
   // Resolve active schedule blocks based on user's cohort and chosen groups
   const userBlocks = useMemo(() => {
@@ -132,6 +135,11 @@ export default function App() {
       />
 
       <main className="flex-1 mx-auto w-full max-w-[92%] 2xl:max-w-[1750px] p-4 sm:p-6 lg:p-6">
+        {getPublicAlerts(payload?.timetableNotices, config.cohort, config.planType).map(alert => (
+          <div key={`${alert.title}-${alert.date}`} className="mb-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+            <strong>{alert.title}</strong>{alert.text && <span> · {alert.text}</span>}
+          </div>
+        ))}
         {androidDownloadUrl && (
           <div className="mb-4 flex justify-end">
             <a
@@ -223,8 +231,9 @@ export default function App() {
       {/* Add Custom Block Modal */}
       <AddCustomBlockModal
         isOpen={isAddCustomOpen}
-        onClose={() => setIsAddCustomOpen(false)}
-        onAddBlock={addCustomBlock}
+        onClose={() => { setIsAddCustomOpen(false); setEditingBlock(null); }}
+        onSaveBlock={block => editingBlock ? updateCustomBlock(editingBlock.id, block) : addCustomBlock(block)}
+        initialBlock={editingBlock}
         planType={config.planType}
       />
 
@@ -232,11 +241,13 @@ export default function App() {
       <BlockDetailModal
         block={selectedBlock}
         state={state}
+        timetableNotices={payload?.timetableNotices}
         isOpen={Boolean(selectedBlock)}
         onClose={() => setSelectedBlock(null)}
         onSwitchGroup={handleSwitchGroup}
         onSaveOverride={handleSaveOverride}
         onRemoveCustomBlock={removeCustomBlock}
+        onEditCustomBlock={block => { setSelectedBlock(null); setEditingBlock(block); setIsAddCustomOpen(true); }}
       />
 
       {/* Settings Modal */}

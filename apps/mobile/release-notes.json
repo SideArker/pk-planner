@@ -1,4 +1,4 @@
 {
-  "version": "1.1.0",
-  "changelog": "## PK Planner 1.1.0\n\n- Dodano informację o prywatności, dostępną z ustawień aplikacji.\n- Opisano dane przetwarzane przy powiadomieniach Androida oraz sposób usuwania rejestracji.\n- Projekt udostępniono na licencji MIT."
+  "version": "1.1.2",
+  "changelog": "Notatki z planu, edycja zajęć i poprawione terminy jednorazowe."
 }

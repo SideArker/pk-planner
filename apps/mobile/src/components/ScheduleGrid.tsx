@@ -28,6 +28,7 @@ export type ScheduleGridParityFilter = 'ALL' | 'A' | 'B';
 
 export interface ScheduleGridProps {
   blocks: ScheduleBlock[];
+  viewedDate: Date;
   planType: PlanType;
   parityFilter?: ScheduleGridParityFilter;
   currentTime?: Date;
@@ -99,6 +100,7 @@ function positionDayBlocks(blocks: ScheduleBlock[], startHour: number): Position
 /** A horizontally and vertically scrollable weekly timetable. The parent owns its controls. */
 export function ScheduleGrid({
   blocks,
+  viewedDate,
   planType,
   parityFilter = 'ALL',
   currentTime,
@@ -124,8 +126,9 @@ export function ScheduleGrid({
     return () => clearTimeout(timer);
   }, [currentTime]);
   const now = currentTime ?? tickTime;
-  const currentParity = getTeachingWeekInfo(now).parityLabel;
-  const today = DAY_INDEX_TO_DAY[now.getDay()];
+  const currentParity = getTeachingWeekInfo(viewedDate).parityLabel;
+  const isViewingCurrentWeek = getTeachingWeekInfo(now).startDate.getTime() === getTeachingWeekInfo(viewedDate).startDate.getTime();
+  const today = isViewingCurrentWeek ? DAY_INDEX_TO_DAY[now.getDay()] : null;
 
   const layout = useMemo(() => {
     const days = availableDays(planType);
@@ -169,7 +172,7 @@ export function ScheduleGrid({
 
   const nowMinute = now.getHours() * 60 + now.getMinutes();
   const nowDay = now.toDateString();
-  const showNow = nowMinute >= layout.startMinute && nowMinute < layout.endMinute;
+  const showNow = isViewingCurrentWeek && nowMinute >= layout.startMinute && nowMinute < layout.endMinute;
   const nowTop = (nowMinute - layout.startMinute) * HOUR_HEIGHT / 60;
   const indicatorY = useAnimatedValue(nowTop);
   const previousPosition = useRef({

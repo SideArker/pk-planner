@@ -4,6 +4,7 @@ import {
   type PlanType,
   type ScheduleBlock,
   availableDays,
+  blockOccursInWeek,
   DAY_INFO,
   DAY_INDEX_TO_DAY,
   detectScheduleCollisions,
@@ -44,15 +45,16 @@ export function ScheduleView({
 }: ScheduleViewProps) {
   const now = useCurrentTime()
   const days: Day[] = useMemo(() => availableDays(planType), [planType])
+  const [weekOffset, setWeekOffset] = useState(0)
 
   const actualToday: Day | null = useMemo(() => {
     return DAY_INDEX_TO_DAY[now.getDay()] ?? null
   }, [now])
 
   const todayDay: Day | null = useMemo(() => {
-    if (!actualToday) return null
+    if (!actualToday || weekOffset !== 0) return null
     return days.includes(actualToday) ? actualToday : null
-  }, [actualToday, days])
+  }, [actualToday, days, weekOffset])
 
   const [activeMobileDay, setActiveMobileDay] = useState<Day>(() => {
     const real = DAY_INDEX_TO_DAY[new Date().getDay()] || 'MON'
@@ -69,28 +71,34 @@ export function ScheduleView({
     localStorage.setItem('pk_planner_desktop_layout', newLayout)
   }
 
-  const currentWeek = useMemo(() => getTeachingWeekInfo(now), [now])
+  const viewedDate = useMemo(() => {
+    const date = new Date(now)
+    date.setDate(date.getDate() + weekOffset * 7)
+    return date
+  }, [now, weekOffset])
+  const currentWeek = useMemo(() => getTeachingWeekInfo(viewedDate), [viewedDate])
   const [parityFilter, setParityFilter] = useState<ParityFilterType>('all')
 
   // Filter blocks by parity
   const filteredBlocks = useMemo(() => {
     return blocks.filter(b => {
+      if (!blockOccursInWeek(b, viewedDate)) return false
       if (parityFilter === 'all') return true
       const targetParity = parityFilter === 'current' ? currentWeek.parityLabel : parityFilter
       return isBlockInWeekParity(b, targetParity)
     })
-  }, [blocks, parityFilter, currentWeek])
+  }, [blocks, parityFilter, currentWeek, viewedDate])
 
   // Active blocks that are happening right now
   const activeBlockIds = useMemo(() => {
     const set = new Set<string>()
     for (const b of filteredBlocks) {
-      if (isBlockActiveNow(b, now, currentWeek.parityLabel)) {
+      if (weekOffset === 0 && isBlockActiveNow(b, now)) {
         set.add(b.id)
       }
     }
     return set
-  }, [filteredBlocks, now, currentWeek.parityLabel])
+  }, [filteredBlocks, now, weekOffset])
 
   // Collisions detection
   const collisions = useMemo(() => {
@@ -174,6 +182,12 @@ export function ScheduleView({
         onOpenCustomize={onOpenCustomize}
         onOpenAddCustom={onOpenAddCustom}
       />
+      <div className="flex items-center gap-2 text-xs" aria-label="Wybór tygodnia">
+        <button type="button" onClick={() => setWeekOffset(value => value - 1)} className="rounded border px-2 py-1 dark:border-zinc-700">Poprzedni</button>
+        <span>{currentWeek.dateRangeLabel}</span>
+        <button type="button" onClick={() => setWeekOffset(value => value + 1)} className="rounded border px-2 py-1 dark:border-zinc-700">Następny</button>
+        {weekOffset !== 0 && <button type="button" onClick={() => setWeekOffset(0)} className="underline">Dzisiaj</button>}
+      </div>
 
       {/* Collision Warning Banner */}
       <CollisionsBanner collisions={collisions} />

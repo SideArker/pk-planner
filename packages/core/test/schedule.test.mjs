@@ -24,7 +24,79 @@ import {
   detectScheduleCollisions,
   blockPlacementText,
   isBlockActiveNow,
+  blockOccursInWeek,
+  dayForScheduleDate,
+  getBlockNotices,
+  getPublicAlerts,
+  updateConfigCustomBlock,
 } from "../src/index.ts";
+
+test('snapshot notes match the right class and group, with expiry', () => {
+  const source = {
+    notices: [{ match: { planType: 'stacjonarne', subjects: ['Bazy danych I'], activity: 'C', cohort: 'I stopień stac sem. 3', teachers: ['Olena'], groupsByActivity: { C: [3] } }, text: 'Ćwiczenia online', expiresAfter: '2026-11-25' }],
+    publicationNotes: [{ match: { blockIds: ['b3'] }, text: 'Komunikat' }],
+    publicAlerts: [{ planType: 'stacjonarne', cohort: 'I stopień stac sem. 3', date: '2026-11-10', expiresAfter: '2026-11-25', title: 'Zmiana' }],
+  };
+  const block = { id: 'b3', subject: 'Bazy danych I', activity: 'Ć', cohort: 'I stopień stac sem. 3 / gr. 3', teacher: 'Olena', planType: 'stacjonarne', groupNo: 3 };
+  assert.deepEqual(getBlockNotices(block, source, new Date(2026, 10, 24)), ['Ćwiczenia online', 'Komunikat']);
+  assert.deepEqual(getBlockNotices({ ...block, groupNo: 2, id: 'b2' }, source, new Date(2026, 10, 24)), []);
+  assert.deepEqual(getBlockNotices(block, source, new Date(2026, 10, 26)), ['Komunikat']);
+  assert.equal(getPublicAlerts(source, block.cohort, block.planType, new Date(2026, 10, 9)).length, 0);
+  assert.equal(getPublicAlerts(source, block.cohort, block.planType, new Date(2026, 10, 24)).length, 1);
+});
+
+test('a single date determines its day and rejects invalid dates', () => {
+  assert.equal(dayForScheduleDate('2026-11-24'), 'TUE');
+  assert.equal(dayForScheduleDate('2026-02-30'), null);
+  assert.equal(dayForScheduleDate('24.11.2026'), null);
+});
+
+test('calendar export starts alternating classes on their selected week', () => {
+  const alternating = { id: 'custom-b', subject: 'Zajęcia własne', activity: 'C', planType: 'stacjonarne', day: 'TUE', start: 780, duration: 90, teachingWeekParity: 1, frequency: 'co_2_tygodnie' };
+  const mondayOfWeekA = new Date(2026, 10, 9);
+  assert.match(getGoogleCalendarUrl(alternating, mondayOfWeekA), /dates=20261117T130000\/20261117T143000/);
+  assert.match(getGoogleCalendarUrl(alternating, mondayOfWeekA), /INTERVAL=2/);
+  assert.match(generateIcs([alternating], { referenceMonday: mondayOfWeekA }), /DTSTART:20261117T\d{6}Z/);
+});
+
+test('editing a custom class replaces its old override without changing its id', () => {
+  const original = { id: 'custom-1', subject: 'Original', planType: 'stacjonarne', notes: 'Stara notatka' };
+  const updated = updateConfigCustomBlock({ cohort: '', planType: 'stacjonarne', selectedSubjects: {}, selectedGroups: {}, customBlocks: [original], overrides: { 'custom-1': { customNotes: 'Poprzednia edycja' } } }, 'custom-1', { notes: 'Nowa notatka', date: '2026-11-24', day: 'TUE', frequency: 'jednorazowo' });
+  assert.equal(updated.customBlocks[0].id, 'custom-1');
+  assert.equal(updated.customBlocks[0].date, '2026-11-24');
+  assert.equal(updated.customBlocks[0].notes, 'Nowa notatka');
+  assert.equal(updated.overrides['custom-1'], undefined);
+});
+
+test("dated visits appear only in their week and export once", () => {
+  const visit = {
+    ...block,
+    id: 'visit-2026-11-24',
+    subject: 'Bazy danych I',
+    day: 'TUE',
+    start: 780,
+    date: '2026-11-24',
+    allowedDates: ['2026-11-24'],
+    frequency: 'jednorazowo',
+    dateViewOnly: true,
+  };
+  assert.equal(blockOccursInWeek(visit, new Date(2026, 10, 9)), false);
+  assert.equal(blockOccursInWeek(visit, new Date(2026, 10, 24)), true);
+  assert.equal(blockOccursInWeek(visit, new Date(2026, 11, 1)), false);
+  assert.equal(isBlockActiveNow(visit, new Date(2026, 10, 10, 13, 30)), false);
+  const ics = generateIcs([visit], { referenceMonday: new Date(2026, 10, 9) });
+  assert.match(ics, /DTSTART:20261124T\d{6}Z/);
+  assert.doesNotMatch(ics, /RRULE:/);
+  const url = getGoogleCalendarUrl(visit, new Date(2026, 10, 9));
+  assert.match(url, /dates=20261124T130000\/20261124T143000/);
+  assert.doesNotMatch(url, /recur=/);
+  const own = { ...block, id: 'custom-1', subject: 'Własne zajęcia', isCustom: true };
+  assert.match(generateIcs([own]), /SUMMARY:Własne zajęcia \(C\)/);
+  assert.match(getGoogleCalendarUrl(own, new Date(2026, 10, 9)), /UNTIL=2027/);
+  assert.equal(blockOccursInWeek({ ...visit, date: null }, new Date(2026, 10, 24)), true);
+  assert.equal(blockOccursInWeek({ ...visit, date: null }, new Date(2026, 10, 10)), false);
+  assert.equal(blockOccursInWeek({ ...block, day: 'TUE', excludedDates: ['2026-11-24'] }, new Date(2026, 10, 24)), false);
+});
 
 const block = {
   id: "b1",

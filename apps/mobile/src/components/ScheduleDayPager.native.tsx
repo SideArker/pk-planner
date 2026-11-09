@@ -14,6 +14,7 @@ export function ScheduleDayPager({
   selectedDay,
   onSelectDay,
   blocks,
+  viewedDate,
   parity,
   collisions,
   onSelectBlock,
@@ -82,6 +83,7 @@ export function ScheduleDayPager({
           <ScheduleDayPage
             day={day}
             blocks={blocks}
+            viewedDate={viewedDate}
             parity={parity}
             collisions={collisions}
             onSelectBlock={handleSelectBlock}

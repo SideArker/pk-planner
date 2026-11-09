@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   Pressable,
@@ -16,6 +16,7 @@ import {
   type ScheduleBlock,
   availableDays,
   DAY_INFO,
+  dayForScheduleDate,
   minutesToTime,
   timeToMinutes,
 } from '@pk-planner/core';
@@ -25,7 +26,8 @@ import { useAppTheme } from '@/context/ThemeContext';
 interface AddCustomBlockModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddBlock: (block: Partial<ScheduleBlock> & { subject: string; planType: PlanType }) => void;
+  onSaveBlock: (block: Partial<ScheduleBlock> & { subject: string; planType: PlanType }) => void;
+  initialBlock?: ScheduleBlock | null;
   planType: PlanType;
   defaultDay?: Day;
 }
@@ -44,7 +46,8 @@ const ACTIVITY_OPTIONS = [
 export function AddCustomBlockModal({
   isOpen,
   onClose,
-  onAddBlock,
+  onSaveBlock,
+  initialBlock,
   planType,
   defaultDay = 'MON',
 }: AddCustomBlockModalProps) {
@@ -59,11 +62,31 @@ export function AddCustomBlockModal({
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(2);
   const [customStartTime, setCustomStartTime] = useState('09:15');
   const [duration, setDuration] = useState(90);
-  const [parity, setParity] = useState<'all' | 'A' | 'B'>('all');
+  const [parity, setParity] = useState<'all' | 'A' | 'B' | 'once'>('all');
+  const [singleDate, setSingleDate] = useState('');
   const [room, setRoom] = useState('');
   const [teacher, setTeacher] = useState('');
+  const [cohort, setCohort] = useState('');
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setSubject(initialBlock?.subject || '');
+    setActivity(initialBlock?.activity || 'Ć');
+    const available = availableDays(planType);
+    setDay(initialBlock?.day || (available.includes(defaultDay) ? defaultDay : available[0]));
+    setCustomStartTime(minutesToTime(initialBlock?.start ?? 555));
+    setDuration(initialBlock?.duration || 90);
+    setSelectedSlotIndex(STANDARD_PK_SLOTS.find(slot => slot.start === initialBlock?.start && slot.duration === initialBlock?.duration)?.index ?? (initialBlock ? null : 2));
+    setParity(initialBlock?.date || initialBlock?.frequency === 'jednorazowo' ? 'once' : initialBlock?.teachingWeekParity === 0 ? 'A' : initialBlock?.teachingWeekParity === 1 ? 'B' : 'all');
+    setSingleDate(initialBlock?.date || '');
+    setRoom(initialBlock?.room || '');
+    setTeacher(initialBlock?.teacher || '');
+    setCohort(initialBlock?.cohort === 'Własne' ? '' : initialBlock?.cohort || '');
+    setNotes(initialBlock?.notes || '');
+    setError(null);
+  }, [isOpen, initialBlock, defaultDay, planType]);
 
   if (!isOpen) return null;
 
@@ -90,25 +113,38 @@ export function AddCustomBlockModal({
       return;
     }
 
+    if (!Number.isInteger(duration) || duration < 15 || duration > 360) {
+      setError('Czas trwania musi wynosić od 15 do 360 minut.');
+      return;
+    }
+
+    const datedDay = parity === 'once' ? dayForScheduleDate(singleDate) : null;
+    if (parity === 'once' && (!datedDay || !days.includes(datedDay))) {
+      setError('Podaj poprawną datę zajęć w dozwolonym dniu planu.');
+      return;
+    }
+
     const teachingWeekParity = parity === 'A' ? 0 : parity === 'B' ? 1 : null;
 
-    onAddBlock({
+    onSaveBlock({
       subject: subject.trim(),
       activity: activity.trim(),
-      day,
+      day: datedDay || day,
       start: startMinutes,
-      duration: Number(duration) || 90,
+      duration,
       room: room.trim() || undefined,
       teacher: teacher.trim() || undefined,
+      teacherDisplay: teacher.trim() || undefined,
+      cohort: cohort.trim() || 'Własne',
       notes: notes.trim() || undefined,
-      frequency: parity === 'all' ? 'co_tydzien' : 'co_2_tygodnie',
-      teachingWeekParity,
+      frequency: parity === 'once' ? 'jednorazowo' : parity === 'all' ? 'co_tydzien' : 'co_2_tygodnie',
+      teachingWeekParity: parity === 'once' ? null : teachingWeekParity,
+      date: parity === 'once' ? singleDate : null,
+      allowedDates: parity === 'once' ? [singleDate] : [],
+      dateViewOnly: parity === 'once',
       planType,
     });
 
-    // Reset state & close
-    setSubject('');
-    setError(null);
     onClose();
   };
 
@@ -131,7 +167,7 @@ export function AddCustomBlockModal({
           <View style={[styles.header, { borderBottomColor: theme.border }]}>
             <View>
               <Text style={[styles.headerTitle, { color: theme.text }]}>
-                Dodaj własne zajęcia
+                {initialBlock ? 'Edytuj własne zajęcia' : 'Dodaj własne zajęcia'}
               </Text>
               <Text style={[styles.headerSubtitle, { color: theme.textSecondary }]}>
                 Uzupełnij swój plan o dodatkowe przedmioty lub konsultacje
@@ -241,6 +277,7 @@ export function AddCustomBlockModal({
             </ScrollView>
 
             {/* Day */}
+            {parity !== 'once' && <>
             <Text style={[styles.label, { color: theme.text }]}>Dzień tygodnia</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsScroll}>
               <View style={styles.chipsRow}>
@@ -287,6 +324,7 @@ export function AddCustomBlockModal({
                 })}
               </View>
             </ScrollView>
+            </>}
 
             {/* Standard PK Slots */}
             <Text style={[styles.label, { color: theme.text }]}>
@@ -379,12 +417,13 @@ export function AddCustomBlockModal({
                 { id: 'all', label: 'Co tydzień' },
                 { id: 'A', label: 'Tylko tydz. A' },
                 { id: 'B', label: 'Tylko tydz. B' },
+                { id: 'once', label: 'Jednorazowo' },
               ].map((p) => {
                 const isSelected = parity === p.id;
                 return (
                   <Pressable
                     key={p.id}
-                    onPress={() => setParity(p.id as any)}
+                    onPress={() => setParity(p.id as 'all' | 'A' | 'B' | 'once')}
                     style={[
                       styles.parityBtn,
                       {
@@ -420,6 +459,18 @@ export function AddCustomBlockModal({
                 );
               })}
             </View>
+
+            {parity === 'once' && <>
+              <Text style={[styles.label, { color: theme.text }]}>Data zajęć (RRRR-MM-DD)</Text>
+              <TextInput
+                value={singleDate}
+                onChangeText={setSingleDate}
+                placeholder="2026-11-24"
+                placeholderTextColor={theme.textSecondary}
+                keyboardType="numbers-and-punctuation"
+                style={[styles.input, { backgroundColor: isDark ? '#27272a' : '#f8fafc', color: theme.text, borderColor: theme.border }]}
+              />
+            </>}
 
             {/* Room & Teacher */}
             <View style={styles.twoCol}>
@@ -460,6 +511,16 @@ export function AddCustomBlockModal({
             </View>
 
             {/* Notes */}
+            <Text style={[styles.label, { color: theme.text }]}>Grupa (opcjonalnie)</Text>
+            <TextInput
+              value={cohort}
+              onChangeText={setCohort}
+              placeholder="np. 3"
+              placeholderTextColor={theme.textSecondary}
+              style={[styles.input, { backgroundColor: isDark ? '#27272a' : '#f8fafc', color: theme.text, borderColor: theme.border }]}
+            />
+
+            {/* Notes */}
             <Text style={[styles.label, { color: theme.text }]}>Notatka</Text>
             <TextInput
               value={notes}
@@ -498,7 +559,7 @@ export function AddCustomBlockModal({
                   styles.submitBtnText,
                   { color: isDark ? '#09090b' : '#ffffff' },
                 ]}>
-                Dodaj do mojego planu
+                {initialBlock ? 'Zapisz zmiany' : 'Dodaj do mojego planu'}
               </Text>
             </Pressable>
           </View>

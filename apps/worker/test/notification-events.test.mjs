@@ -49,6 +49,18 @@ test('week parity and dated weekend restrict delivery', () => {
   assert.equal(notificationEvents(weekend, new Date('2026-10-17T07:30:00Z')).length, 0)
 })
 
+test('one-off visit notifies only on its allowed date', () => {
+  const visit = { ...registration, blocks: [{
+    id: 'visit', subject: 'Bazy danych I', day: 'TUE', start: 780,
+    duration: 90, date: '2026-11-24', allowedDates: ['2026-11-24'],
+    frequency: 'jednorazowo', dateViewOnly: true,
+  }] }
+  assert.ok(parseRegistration(visit))
+  assert.equal(notificationEvents(visit, new Date('2026-11-10T11:30:00Z')).length, 0)
+  assert.equal(notificationEvents(visit, new Date('2026-11-24T11:30:00Z')).length, 1)
+  assert.equal(notificationEvents(visit, new Date('2026-12-01T11:30:00Z')).length, 0)
+})
+
 test('registration rejects malformed blocks', () => {
   assert.ok(parseRegistration(registration))
   assert.equal(parseRegistration({ ...registration, blocks: [{ ...registration.blocks[0], start: 1440 }] }), null)

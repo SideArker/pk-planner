@@ -19,8 +19,10 @@ import {
   type PlanType,
   type ScheduleBlock,
   availableDays,
+  blockOccursInWeek,
   detectScheduleCollisions,
   getTeachingWeekInfo,
+  getPublicAlerts,
   isBlockInWeekParity,
   resolveUserBlocks,
 } from '@pk-planner/core';
@@ -71,7 +73,7 @@ export default function ScheduleScreen() {
   const { theme, resolvedTheme } = useAppTheme();
   const isDark = resolvedTheme === 'dark';
 
-  const { state, isLoading, error, refresh } = useScheduleData();
+  const { payload, state, isLoading, error, refresh } = useScheduleData();
   const {
     config,
     isLoaded,
@@ -80,6 +82,7 @@ export default function ScheduleScreen() {
     setSubjectGroup,
     setBlockOverride,
     addCustomBlock,
+    updateCustomBlock,
     removeCustomBlock,
   } = useUserSchedule();
 
@@ -87,6 +90,7 @@ export default function ScheduleScreen() {
 
   const [selectedDay, setSelectedDay] = useState<Day>(() => getInitialToday(days));
   const [selectedParity, setSelectedParity] = useState<WeekParityFilter>('ALL');
+  const [viewedDate, setViewedDate] = useState(() => new Date());
   const [scheduleView, setScheduleView] = useState<'list' | 'grid'>('list');
   const scrollOffset = useRef(0);
   const isLoadingRef = useRef(isLoading);
@@ -97,7 +101,7 @@ export default function ScheduleScreen() {
   const pullRefreshing = useRef(false);
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const [pullReady, setPullReady] = useState(false);
-  const weekInfo = getTeachingWeekInfo();
+  const weekInfo = getTeachingWeekInfo(viewedDate);
   const effectiveParity = selectedParity === 'CURRENT' ? weekInfo.parityLabel : selectedParity;
 
   useEffect(() => {
@@ -159,17 +163,20 @@ export default function ScheduleScreen() {
 
   useFocusEffect(useCallback(() => {
     setSelectedDay(getInitialToday(days));
+    setViewedDate(new Date());
   }, [days]));
 
   const [selectedBlock, setSelectedBlock] = useState<ScheduleBlock | null>(null);
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAddCustomOpen, setIsAddCustomOpen] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<ScheduleBlock | null>(null);
 
   // Resolve user's blocks from state & config
   const userBlocks = useMemo(() => {
     if (!state) return [];
     return resolveUserBlocks(state, config);
   }, [state, config]);
+  const displayBlocks = useMemo(() => userBlocks.filter(block => blockOccursInWeek(block, viewedDate)), [userBlocks, viewedDate]);
 
   useFocusEffect(useCallback(() => {
     if (!isLoaded || !state) return;
@@ -200,13 +207,13 @@ export default function ScheduleScreen() {
 
   // Collisions detection
   const collisions = useMemo(() => {
-    return detectScheduleCollisions(userBlocks);
-  }, [userBlocks]);
+    return detectScheduleCollisions(displayBlocks);
+  }, [displayBlocks]);
 
   // Counts of classes per day
   const dayCounts = useMemo(() => {
     const counts: Partial<Record<Day, number>> = {};
-    for (const b of userBlocks) {
+    for (const b of displayBlocks) {
       if (!b.day) continue;
       // Filter by parity if A or B selected
       if (effectiveParity !== 'ALL' && !isBlockInWeekParity(b, effectiveParity)) {
@@ -215,7 +222,7 @@ export default function ScheduleScreen() {
       counts[b.day] = (counts[b.day] || 0) + 1;
     }
     return counts;
-  }, [userBlocks, effectiveParity]);
+  }, [displayBlocks, effectiveParity]);
 
   const handleSaveOnboarding = (
     cohort: string,
@@ -378,6 +385,14 @@ export default function ScheduleScreen() {
           )}
 
           {/* Collisions Alert Banner if collisions exist */}
+          {getPublicAlerts(payload?.timetableNotices, config.cohort, config.planType).map(alert => (
+            <View key={`${alert.title}-${alert.date}`} style={[styles.collisionAlert, { backgroundColor: isDark ? '#172554' : '#eff6ff', borderColor: theme.accent }]}>
+              <Ionicons name="information-circle-outline" size={18} color={theme.accent} />
+              <Text style={[styles.collisionAlertText, { color: theme.text, flex: 1 }]}>{alert.title}{alert.text ? ` · ${alert.text}` : ''}</Text>
+            </View>
+          ))}
+
+          {/* Collisions Alert Banner if collisions exist */}
           {collisions.size > 0 && (
             <View
               style={[
@@ -403,6 +418,12 @@ export default function ScheduleScreen() {
             selectedParity={selectedParity}
             onSelectParity={setSelectedParity}
           />
+
+          <View style={styles.weekNavigation}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Poprzedni tydzień" onPress={() => setViewedDate(value => { const next = new Date(value); next.setDate(next.getDate() - 7); return next; })}><Text style={{ color: theme.text }}>‹ Poprzedni</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Bieżący tydzień" onPress={() => setViewedDate(new Date())}><Text style={{ color: theme.textSecondary }}>{weekInfo.dateRangeLabel}</Text></Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Następny tydzień" onPress={() => setViewedDate(value => { const next = new Date(value); next.setDate(next.getDate() + 7); return next; })}><Text style={{ color: theme.text }}>Następny ›</Text></Pressable>
+          </View>
 
           <View style={styles.viewRow}>
           <View
@@ -447,7 +468,8 @@ export default function ScheduleScreen() {
           {scheduleView === 'grid' ? (
             <View style={styles.gridContainer}>
               <ScheduleGrid
-                blocks={userBlocks}
+                blocks={displayBlocks}
+                viewedDate={viewedDate}
                 planType={config.planType}
                 parityFilter={effectiveParity}
                 onSelectBlock={setSelectedBlock}
@@ -468,8 +490,9 @@ export default function ScheduleScreen() {
                 days={days}
                 selectedDay={selectedDay}
                 onSelectDay={setSelectedDay}
-                blocks={userBlocks}
-                parity={selectedParity}
+                blocks={displayBlocks}
+                viewedDate={viewedDate}
+                parity={selectedParity === 'CURRENT' ? weekInfo.parityLabel : selectedParity}
                 collisions={collisions}
                 onSelectBlock={setSelectedBlock}
                 onVerticalScroll={(day, offset) => {
@@ -501,8 +524,9 @@ export default function ScheduleScreen() {
       {/* Add Custom Block Modal */}
       <AddCustomBlockModal
         isOpen={isAddCustomOpen}
-        onClose={() => setIsAddCustomOpen(false)}
-        onAddBlock={addCustomBlock}
+        onClose={() => { setIsAddCustomOpen(false); setEditingBlock(null); }}
+        onSaveBlock={block => editingBlock ? updateCustomBlock(editingBlock.id, block) : addCustomBlock(block)}
+        initialBlock={editingBlock}
         planType={config.planType}
         defaultDay={selectedDay}
       />
@@ -511,11 +535,13 @@ export default function ScheduleScreen() {
       <BlockDetailModal
         block={selectedBlock}
         state={state}
+        timetableNotices={payload?.timetableNotices}
         isOpen={Boolean(selectedBlock)}
         onClose={() => setSelectedBlock(null)}
         onSwitchGroup={setSubjectGroup}
         onSaveOverride={handleSaveOverride}
         onRemoveCustomBlock={removeCustomBlock}
+        onEditCustomBlock={block => { setSelectedBlock(null); setEditingBlock(block); setIsAddCustomOpen(true); }}
         collisionInfo={selectedBlock ? (collisions.get(selectedBlock.id) || []) : []}
       />
     </SafeAreaView>
@@ -523,6 +549,13 @@ export default function ScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
+  weekNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingVertical: 8,
+  },
   safeArea: {
     flex: 1,
   },

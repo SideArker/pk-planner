@@ -78,6 +78,37 @@ export function isBlockInWeekParity(
   return true;
 }
 
+function dateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+export function blockOccursOnDate(block: ScheduleBlock, date: Date): boolean {
+  const key = dateKey(date);
+  if (block.date && block.date !== key) return false;
+  const allowed = block.allowedDates;
+  if (Array.isArray(allowed) && allowed.length > 0 && !allowed.includes(key)) return false;
+  if (Array.isArray(block.excludedDates) && block.excludedDates.includes(key)) return false;
+  if ((block.dateViewOnly || block.frequency === "jednorazowo") && !block.date && !(Array.isArray(allowed) && allowed.length > 0)) return false;
+  const weekends = block.occurrenceWeekends?.length ? block.occurrenceWeekends : block.allowedWeekends;
+  if (weekends?.length) {
+    const saturday = new Date(date);
+    saturday.setDate(date.getDate() - ((date.getDay() + 1) % 7));
+    const sunday = new Date(saturday);
+    sunday.setDate(saturday.getDate() + 1);
+    if (!weekends.includes(`${dateKey(saturday)}_${dateKey(sunday)}`)) return false;
+  }
+  return true;
+}
+
+export function blockOccursInWeek(block: ScheduleBlock, weekDate: Date): boolean {
+  if (!block.day) return false;
+  const monday = getTeachingWeekInfo(weekDate).startDate;
+  const dayIndex = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].indexOf(block.day);
+  const date = new Date(monday);
+  date.setDate(monday.getDate() + dayIndex);
+  return blockOccursOnDate(block, date);
+}
+
 export const DAY_INDEX_TO_DAY: Record<number, Day> = {
   1: "MON",
   2: "TUE",
@@ -88,6 +119,14 @@ export const DAY_INDEX_TO_DAY: Record<number, Day> = {
   0: "SUN",
 };
 
+export function dayForScheduleDate(value: string): Day | null {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  return DAY_INDEX_TO_DAY[date.getDay()];
+}
+
 export function isBlockActiveNow(
   block: ScheduleBlock,
   now: Date = new Date(),
@@ -97,6 +136,7 @@ export function isBlockActiveNow(
 
   const currentDay = DAY_INDEX_TO_DAY[now.getDay()];
   if (!currentDay || block.day !== currentDay) return false;
+  if (!blockOccursOnDate(block, now)) return false;
 
   const currentParity = parityLabel ?? getTeachingWeekInfo(now).parityLabel;
   if (!isBlockInWeekParity(block, currentParity)) return false;

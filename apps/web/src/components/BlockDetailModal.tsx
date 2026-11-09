@@ -3,9 +3,11 @@ import {
   type BlockOverride,
   type ScheduleBlock,
   type ScheduleState,
+  type TimetableNotices,
   DAY_INFO,
   findAlternativeGroups,
   generateIcs,
+  getBlockNotices,
   getGoogleCalendarUrl,
   minutesToTime,
   roomLabel,
@@ -30,21 +32,25 @@ import { Input } from '@/components/ui/input'
 interface BlockDetailModalProps {
   block: ScheduleBlock | null
   state: ScheduleState | null
+  timetableNotices?: TimetableNotices
   isOpen: boolean
   onClose: () => void
   onSwitchGroup: (subject: string, activity: string, chosenOptionId: string) => void
   onSaveOverride: (blockId: string, override: BlockOverride) => void
   onRemoveCustomBlock?: (blockId: string) => void
+  onEditCustomBlock?: (block: ScheduleBlock) => void
 }
 
 export function BlockDetailModal({
   block,
   state,
+  timetableNotices,
   isOpen,
   onClose,
   onSwitchGroup,
   onSaveOverride,
   onRemoveCustomBlock,
+  onEditCustomBlock,
 }: BlockDetailModalProps) {
   const [activeTab, setActiveTab] = useState<'details' | 'switchGroup' | 'custom'>('details')
   const [customSubject, setCustomSubject] = useState('')
@@ -100,6 +106,7 @@ export function BlockDetailModal({
   const endTime = minutesToTime((block.start ?? 0) + (block.duration || 90))
 
   const isCustomBlock = Boolean(block.isCustom || block.id.startsWith('custom-'))
+  const officialNotices = getBlockNotices(block, timetableNotices)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-3 sm:p-4">
@@ -118,7 +125,7 @@ export function BlockDetailModal({
               )}
               {typeof block.frequency === 'string' && (
                 <span className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                  {block.frequency === 'co_tydzien' ? 'Co tydzień' : String(block.frequency)}
+                  {block.frequency === 'co_tydzien' ? 'Co tydzień' : block.frequency === 'co_2_tygodnie' ? `Tydzień ${block.teachingWeekParity === 0 ? 'A' : 'B'}` : block.frequency === 'jednorazowo' ? 'Jednorazowo' : String(block.frequency)}
                 </span>
               )}
             </div>
@@ -160,7 +167,7 @@ export function BlockDetailModal({
               <span>Zmień grupę ({alternativeGroups.length})</span>
             </button>
           )}
-          <button
+          {!isCustomBlock && <button
             onClick={() => setActiveTab('custom')}
             className={`flex items-center gap-1.5 py-2.5 px-3 border-b-2 transition-colors cursor-pointer ${
               activeTab === 'custom'
@@ -170,7 +177,7 @@ export function BlockDetailModal({
           >
             <Settings2 className="h-3.5 w-3.5" />
             <span>Własna edycja</span>
-          </button>
+          </button>}
         </div>
 
         {/* Tab content */}
@@ -184,7 +191,7 @@ export function BlockDetailModal({
                     <span>Termin</span>
                   </div>
                   <p className="font-medium text-zinc-900 dark:text-zinc-100">
-                    {block.day} · {startTime} - {endTime}
+                    {block.date ? `${block.date} · ` : ''}{block.day} · {startTime} - {endTime}
                   </p>
                   <p className="text-[11px] text-zinc-400">Czas trwania: {block.duration || 90} min</p>
                 </div>
@@ -232,6 +239,12 @@ export function BlockDetailModal({
                 </div>
               )}
 
+              {officialNotices.map(note => (
+                <div key={note} className="rounded-xl border border-blue-200 dark:border-blue-900/60 p-3 bg-blue-50/60 dark:bg-blue-950/20 text-xs text-blue-900 dark:text-blue-200">
+                  <span className="font-semibold">Informacja z planu uczelni: </span>{note}
+                </div>
+              ))}
+
               {/* Calendar export actions */}
               <div className="pt-2 flex flex-col sm:flex-row gap-2.5">
                 <Button asChild className="flex-1">
@@ -246,6 +259,8 @@ export function BlockDetailModal({
                   <span>Pobierz .ics</span>
                 </Button>
               </div>
+
+              {isCustomBlock && onEditCustomBlock && <Button variant="outline" size="sm" onClick={() => onEditCustomBlock(block)} className="w-full">Edytuj własne zajęcia</Button>}
 
               {isCustomBlock && onRemoveCustomBlock && (
                 <div className="pt-1">

@@ -33,11 +33,20 @@ export function parseRegistration(input: unknown): Registration | null {
       !item.every((entry) => typeof entry === 'string' && /^\d{4}-\d{2}-\d{2}_\d{4}-\d{2}-\d{2}$/.test(entry))))) {
       return null;
     }
+    const dates = [block.allowedDates, block.excludedDates];
+    if (dates.some((item) => item != null && (!Array.isArray(item) || item.length > 80 ||
+      !item.every((entry) => typeof entry === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(entry))))) return null;
+    if (block.dateViewOnly != null && typeof block.dateViewOnly !== 'boolean') return null;
+    if (block.frequency != null && (typeof block.frequency !== 'string' || block.frequency.length > 40)) return null;
     blocks.push({
       id: block.id,
       subject: block.subject,
       day: block.day as RegisteredBlock['day'],
       date: block.date as string | null | undefined,
+      allowedDates: block.allowedDates as string[] | undefined,
+      excludedDates: block.excludedDates as string[] | undefined,
+      dateViewOnly: block.dateViewOnly as boolean | undefined,
+      frequency: block.frequency as string | undefined,
       start: Number(block.start),
       duration: Number(block.duration),
       teachingWeekParity: block.teachingWeekParity as number | null | undefined,

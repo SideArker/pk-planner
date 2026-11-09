@@ -3,6 +3,10 @@ export interface RegisteredBlock {
   subject: string;
   day: 'MON' | 'TUE' | 'WED' | 'THU' | 'FRI' | 'SAT' | 'SUN';
   date?: string | null;
+  allowedDates?: string[];
+  excludedDates?: string[];
+  dateViewOnly?: boolean;
+  frequency?: string;
   start: number;
   duration: number;
   teachingWeekParity?: number | null;
@@ -60,6 +64,9 @@ function localParts(instant: Date) {
 function matches(block: RegisteredBlock, time: ReturnType<typeof localParts>): boolean {
   if (block.day !== time.day) return false;
   if (block.date && block.date !== time.date) return false;
+  if (block.allowedDates?.length && !block.allowedDates.includes(time.date)) return false;
+  if (block.excludedDates?.includes(time.date)) return false;
+  if ((block.dateViewOnly || block.frequency === 'jednorazowo') && !block.date && !block.allowedDates?.length) return false;
   if (block.teachingWeekParity != null && block.teachingWeekParity !== time.parity) return false;
   const weekends = block.occurrenceWeekends?.length
     ? block.occurrenceWeekends

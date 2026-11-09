@@ -19,6 +19,7 @@ export interface ScheduleDayPagerProps {
   selectedDay: Day;
   onSelectDay: (day: Day) => void;
   blocks: ScheduleBlock[];
+  viewedDate: Date;
   parity: WeekParityFilter;
   collisions: ReturnType<typeof detectScheduleCollisions>;
   onSelectBlock: (block: ScheduleBlock) => void;
@@ -31,6 +32,7 @@ export interface ScheduleDayPagerProps {
 interface ScheduleDayPageProps {
   day: Day;
   blocks: ScheduleBlock[];
+  viewedDate: Date;
   parity: WeekParityFilter;
   collisions: ReturnType<typeof detectScheduleCollisions>;
   onSelectBlock: (block: ScheduleBlock) => void;
@@ -42,6 +44,7 @@ interface ScheduleDayPageProps {
 export function ScheduleDayPage({
   day,
   blocks,
+  viewedDate,
   parity,
   collisions,
   onSelectBlock,
@@ -63,7 +66,8 @@ export function ScheduleDayPage({
     scheduleNextMinute();
     return () => clearTimeout(timer);
   }, []);
-  const currentParity = getTeachingWeekInfo(now).parityLabel;
+  const currentParity = getTeachingWeekInfo(viewedDate).parityLabel;
+  const isViewingCurrentWeek = getTeachingWeekInfo(now).startDate.getTime() === getTeachingWeekInfo(viewedDate).startDate.getTime();
   const effectiveParity = parity === 'CURRENT' ? currentParity : parity;
 
   const dayBlocks = useMemo(() => blocks
@@ -91,7 +95,7 @@ export function ScheduleDayPage({
           collisionInfo={collisions.get(item.id) || []}
           currentParity={currentParity}
           dimWhenNotCurrentWeek={parity === 'ALL'}
-          now={now}
+          now={isViewingCurrentWeek ? now : undefined}
         />
       )}
       ListEmptyComponent={

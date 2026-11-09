@@ -705,7 +705,7 @@ export default function SettingsScreen() {
       <AddCustomBlockModal
         isOpen={isAddCustomOpen}
         onClose={() => setIsAddCustomOpen(false)}
-        onAddBlock={addCustomBlock}
+        onSaveBlock={addCustomBlock}
         planType={config.planType}
       />
     </SafeAreaView>

@@ -1,5 +1,5 @@
 import type { Day, ScheduleBlock } from './types.ts'
-import { roomLabel, teacherDisplay } from './utils.ts'
+import { getTeachingWeekInfo, roomLabel, teacherDisplay } from './utils.ts'
 
 const DAY_OFFSETS: Record<Day, number> = {
   MON: 0,
@@ -29,6 +29,10 @@ function formatIcsDateTime(date: Date): string {
   return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}00Z`
 }
 
+function formatLocalDateTime(date: Date): string {
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}00`
+}
+
 /**
  * Returns next date matching day of week starting from a reference Monday.
  */
@@ -36,6 +40,22 @@ function getTargetDate(mondayRef: Date, day: Day): Date {
   const date = new Date(mondayRef)
   date.setDate(mondayRef.getDate() + DAY_OFFSETS[day])
   return date
+}
+
+function datedOccurrence(block: ScheduleBlock): Date | null {
+  const value = block.date || (Array.isArray(block.allowedDates) ? block.allowedDates[0] : null)
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null
+}
+
+function firstRecurringDate(monday: Date, block: ScheduleBlock): Date {
+  const first = getTargetDate(monday, block.day as Day)
+  if (block.teachingWeekParity != null && getTeachingWeekInfo(first).parity !== block.teachingWeekParity) {
+    first.setDate(first.getDate() + 7)
+  }
+  return first
 }
 
 /**
@@ -46,26 +66,21 @@ export function getGoogleCalendarUrl(
   referenceDate = new Date(),
 ): string {
   if (!block.day || block.start == null) return ''
+  const oneOff = datedOccurrence(block)
+  if ((block.dateViewOnly || block.frequency === 'jednorazowo') && !oneOff) return ''
 
   // Find Monday of current week
   const monday = new Date(referenceDate)
   const currentDayOfWeek = (monday.getDay() + 6) % 7 // Monday = 0
   monday.setDate(monday.getDate() - currentDayOfWeek)
 
-  const eventDate = getTargetDate(monday, block.day)
-  const startHour = Math.floor(block.start / 60)
-  const startMinute = block.start % 60
+  const eventDate = oneOff || firstRecurringDate(monday, block)
   const duration = block.duration || 90
-  const endMinutes = block.start + duration
-  const endHour = Math.floor(endMinutes / 60)
-  const endMinute = endMinutes % 60
-
-  const year = eventDate.getFullYear()
-  const month = pad(eventDate.getMonth() + 1)
-  const dayStr = pad(eventDate.getDate())
-
-  const startFormatted = `${year}${month}${dayStr}T${pad(startHour)}${pad(startMinute)}00`
-  const endFormatted = `${year}${month}${dayStr}T${pad(endHour)}${pad(endMinute)}00`
+  const startsAt = new Date(eventDate)
+  startsAt.setHours(Math.floor(block.start / 60), block.start % 60, 0, 0)
+  const endsAt = new Date(startsAt.getTime() + duration * 60_000)
+  const startFormatted = formatLocalDateTime(startsAt)
+  const endFormatted = formatLocalDateTime(endsAt)
 
   const title = encodeURIComponent(
     `${block.subject || 'Zajęcia'}${block.activity ? ` (${block.activity})` : ''}`,
@@ -77,7 +92,10 @@ export function getGoogleCalendarUrl(
     block.room ? `Sala ${roomLabel(block.room)} (${block.campus || ''})` : 'Zdalnie / brak sali',
   )
 
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startFormatted}/${endFormatted}&details=${details}&location=${location}&recur=RRULE:FREQ=WEEKLY;UNTIL=20260215T235959Z`
+  const until = new Date(monday)
+  until.setDate(until.getDate() + 15 * 7)
+  const recurrence = oneOff ? '' : `&recur=RRULE:FREQ=WEEKLY${block.frequency === 'co_2_tygodnie' || block.teachingWeekParity != null ? ';INTERVAL=2' : ''};UNTIL=${formatIcsDateTime(until)}`
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${startFormatted}/${endFormatted}&details=${details}&location=${location}&ctz=Europe%2FWarsaw${recurrence}`
 }
 
 export interface IcsExportOptions {
@@ -120,7 +138,9 @@ export function generateIcs(
   for (const block of blocks) {
     if (!block.day || block.start == null) continue
 
-    const eventDate = getTargetDate(monday, block.day)
+    const oneOff = datedOccurrence(block)
+    if ((block.dateViewOnly || block.frequency === 'jednorazowo') && !oneOff) continue
+    const eventDate = oneOff || firstRecurringDate(monday, block)
     const startHour = Math.floor(block.start / 60)
     const startMinute = block.start % 60
     const duration = block.duration || 90
@@ -167,7 +187,7 @@ export function generateIcs(
       `SUMMARY:${summary}`,
       location ? `LOCATION:${location}` : '',
       description ? `DESCRIPTION:${description}` : '',
-      rrule,
+      oneOff ? '' : rrule,
       'END:VEVENT',
     )
   }

@@ -101,8 +101,11 @@ export function updateConfigCustomBlock(
   blockId: string,
   updated: Partial<ScheduleBlock>,
 ): UserScheduleConfig {
+  const overrides = { ...(prev.overrides || {}) }
+  delete overrides[blockId]
   return {
     ...prev,
+    overrides,
     customBlocks: (prev.customBlocks || []).map(b => (b.id === blockId ? { ...b, ...updated } : b)),
   }
 }

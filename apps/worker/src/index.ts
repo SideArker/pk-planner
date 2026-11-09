@@ -7,6 +7,7 @@ export { NotificationStore };
 interface Env {
   UPSTREAM_URL: string;
   FCM_SERVICE_ACCOUNT_JSON?: string;
+  NOTIFICATION_ADMIN_TOKEN?: string;
   NOTIFICATIONS: DurableObjectNamespace;
 }
 
@@ -14,8 +15,8 @@ const mobileAppVersion = mobileAppConfig.expo.version;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "GET, PUT, DELETE, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
 };
 
 function json(data: unknown, status = 200): Response {
@@ -39,6 +40,24 @@ export default {
     const hostname = url.hostname.toLowerCase();
     const isApiHost = hostname.startsWith("api.");
     const pathname = url.pathname;
+    const broadcastPath = pathname === '/api/admin/notifications/broadcast' ||
+      (isApiHost && pathname === '/admin/notifications/broadcast');
+    if (broadcastPath) {
+      if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+      if (!env.NOTIFICATION_ADMIN_TOKEN || !env.FCM_SERVICE_ACCOUNT_JSON || !env.NOTIFICATIONS) {
+        return json({ error: 'Notification broadcast is not configured' }, 503);
+      }
+      if (request.headers.get('Authorization') !== `Bearer ${env.NOTIFICATION_ADMIN_TOKEN}`) {
+        return json({ error: 'Unauthorized' }, 401);
+      }
+      let payload: unknown;
+      try { payload = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+      const stub = env.NOTIFICATIONS.getByName('all-devices');
+      const response = await stub.fetch(new Request('https://notification-store/broadcast', {
+        method: 'POST', body: JSON.stringify(payload),
+      }));
+      return json(await response.json(), response.status);
+    }
     const notificationPath = pathname.match(/^\/(?:api\/)?notifications\/([0-9a-f-]{36})$/i);
     if (notificationPath && (pathname.startsWith('/api/') || isApiHost)) {
       if (!['PUT', 'DELETE'].includes(request.method)) {

@@ -108,6 +108,30 @@ export class NotificationStore {
       }
       return Response.json({ changed: true, sent });
     }
+    if (url.pathname === '/broadcast' && request.method === 'POST') {
+      if (!this.env.FCM_SERVICE_ACCOUNT_JSON) return new Response('FCM not configured', { status: 503 });
+      const payload = await request.json() as { title?: unknown; body?: unknown } | null;
+      const { title, body } = payload ?? {};
+      if (typeof title !== 'string' || !title.trim() || title.length > 100 ||
+        typeof body !== 'string' || !body.trim() || body.length > 500) {
+        return Response.json({ error: 'Invalid notification' }, { status: 400 });
+      }
+      const registrations = await this.state.storage.list<Registration>({ prefix: 'device:' });
+      let sent = 0;
+      let failed = 0;
+      for (const registration of registrations.values()) {
+        try {
+          await sendFcm(this.env.FCM_SERVICE_ACCOUNT_JSON, registration.token, {
+            title: title.trim(), body: body.trim(), tag: 'critical-update', channelId: 'updates', sticky: false,
+          });
+          sent += 1;
+        } catch (error) {
+          failed += 1;
+          console.error('Broadcast notification failed', error instanceof Error ? error.message : error);
+        }
+      }
+      return Response.json({ sent, failed, total: registrations.size });
+    }
     if (url.pathname === '/tick') {
       if (!this.env.FCM_SERVICE_ACCOUNT_JSON) return new Response('FCM not configured', { status: 503 });
       const now = new Date(Number(url.searchParams.get('at')) || Date.now());

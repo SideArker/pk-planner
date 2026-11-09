@@ -110,6 +110,16 @@ Aby uruchomić push na Androidzie:
 2. Wygeneruj JSON konta usługi z uprawnieniem do FCM HTTP v1. Pełną zawartość ustaw jako `FCM_SERVICE_ACCOUNT_JSON` w lokalnym `.env`, a we wdrożeniu jako sekret Cloudflare: `pnpm --filter worker exec wrangler secret put FCM_SERVICE_ACCOUNT_JSON`.
 3. Wdróż Workera i zbuduj aplikację Android. Konfiguracja tworzy Durable Object dla rejestracji urządzeń oraz uruchamia zadanie co minutę.
 
+### Awaryjny komunikat push
+
+Worker może wysłać jednorazowy komunikat do urządzeń Android zarejestrowanych do powiadomień. Ustaw dodatkowy, losowy sekret admina:
+
+```sh
+pnpm --filter worker exec wrangler secret put NOTIFICATION_ADMIN_TOKEN
+```
+
+Wysyłkę uruchamia `POST /api/admin/notifications/broadcast` z nagłówkiem `Authorization: Bearer <NOTIFICATION_ADMIN_TOKEN>` i JSON-em `{"title":"...","body":"..."}`. Odpowiedź podaje liczbę wysłanych i nieudanych dostarczeń. Endpoint wymaga także skonfigurowanego `FCM_SERVICE_ACCOUNT_JSON`. Token admina należy przechowywać poza repozytorium; nie umieszczaj go w aplikacji mobilnej ani publicznym skrypcie.
+
 Na Androidzie odliczanie aktualizuje jedno powiadomienie co 5 minut. System Android 14 i nowsze pozwalają usuwać większość powiadomień nawet przy opcji `sticky`.
 
 ---

@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { UpdateModal } from '@/components/UpdateModal';
 import { ThemeProvider, useAppTheme } from '@/context/ThemeContext';
+import { PublicAlertsProvider } from '@/context/PublicAlertsContext';
 import { UpdateProvider } from '@/context/UpdateContext';
 import { requestNotificationPermission } from '@/utils/notifications';
 
@@ -106,10 +107,12 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
-        <UpdateProvider>
-          <RootTabsLayout />
-          <UpdateModal />
-        </UpdateProvider>
+        <PublicAlertsProvider>
+          <UpdateProvider>
+            <RootTabsLayout />
+            <UpdateModal />
+          </UpdateProvider>
+        </PublicAlertsProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

@@ -2,6 +2,7 @@ import React from 'react';
 import {
   ActivityIndicator,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -315,10 +316,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     overflow: 'hidden',
     elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0px 6px 16px rgba(0, 0, 0, 0.25)' }
+      : {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.25,
+          shadowRadius: 16,
+        }),
   },
   header: {
     flexDirection: 'row',

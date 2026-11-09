@@ -9,7 +9,6 @@ import {
   AppState,
   Text,
   View,
-  useAnimatedValue,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +36,7 @@ import { ScheduleGrid } from '@/components/ScheduleGrid';
 import { WeekParityFilter, WeekParitySelector } from '@/components/WeekParitySelector';
 import { Spacing } from '@/constants/theme';
 import { useAppTheme } from '@/context/ThemeContext';
+import { usePublicAlerts } from '@/context/PublicAlertsContext';
 import { useScheduleData } from '@/hooks/useScheduleData';
 import { useUserSchedule } from '@/hooks/useUserSchedule';
 import { loadNotificationPreferences, syncNotifications } from '@/utils/notifications';
@@ -71,6 +71,7 @@ function springPullTo(value: Animated.Value, toValue: number, onComplete?: () =>
 
 export default function ScheduleScreen() {
   const { theme, resolvedTheme } = useAppTheme();
+  const { showPublicAlerts, isLoaded: arePublicAlertsLoaded } = usePublicAlerts();
   const isDark = resolvedTheme === 'dark';
 
   const { payload, state, isLoading, error, refresh } = useScheduleData();
@@ -95,8 +96,8 @@ export default function ScheduleScreen() {
   const scrollOffset = useRef(0);
   const isLoadingRef = useRef(isLoading);
   const refreshRef = useRef(refresh);
-  const pullOffset = useAnimatedValue(0);
-  const spinnerRotation = useAnimatedValue(0);
+  const [pullOffset] = useState(() => new Animated.Value(0));
+  const [spinnerRotation] = useState(() => new Animated.Value(0));
   const pullDistance = useRef(0);
   const pullRefreshing = useRef(false);
   const [isPullRefreshing, setIsPullRefreshing] = useState(false);
@@ -386,7 +387,7 @@ export default function ScheduleScreen() {
           )}
 
           {/* Timetable alerts */}
-          {getPublicAlerts(payload?.timetableNotices, config.cohort, config.planType).map(alert => (
+          {arePublicAlertsLoaded && showPublicAlerts && getPublicAlerts(payload?.timetableNotices, config.cohort, config.planType).map(alert => (
             <View key={`${alert.title}-${alert.date}`} style={[styles.collisionAlert, { backgroundColor: isDark ? '#27272a' : '#f8fafc', borderColor: theme.border }]}>
               <Ionicons name="information-circle-outline" size={18} color={theme.textSecondary} />
               <Text style={[styles.collisionAlertText, { color: theme.text, flex: 1 }]}>{alert.title}{alert.text ? ` · ${alert.text}` : ''}</Text>

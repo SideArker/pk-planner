@@ -23,6 +23,8 @@ interface SettingsModalProps {
   onReconfigureGroups: () => void
   theme: Theme
   onSetTheme: (theme: Theme) => void
+  showPublicAlerts: boolean
+  onShowPublicAlertsChange: (value: boolean) => void
   onReset: () => void
   userBlocks: ScheduleBlock[]
   customBlocksCount?: number
@@ -38,6 +40,8 @@ export function SettingsModal({
   onReconfigureGroups,
   theme,
   onSetTheme,
+  showPublicAlerts,
+  onShowPublicAlertsChange,
   onReset,
   userBlocks,
   customBlocksCount,
@@ -209,6 +213,26 @@ export function SettingsModal({
                 <span>System</span>
               </button>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="font-semibold text-zinc-800 dark:text-zinc-200">Wygląd planu</h3>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={showPublicAlerts}
+              aria-label="Pokazuj komunikaty nad planem"
+              onClick={() => onShowPublicAlertsChange(!showPublicAlerts)}
+              className="flex w-full cursor-pointer items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zinc-500 dark:border-zinc-800 dark:bg-zinc-950"
+            >
+              <span>
+                <span className="block font-medium text-zinc-900 dark:text-zinc-100">Pokazuj komunikaty nad planem</span>
+                <span className="block text-[11px] text-zinc-500 dark:text-zinc-400">Tygodniowe informacje z planu uczelni</span>
+              </span>
+              <span aria-hidden="true" className={`inline-flex h-6 w-10 shrink-0 items-center rounded-full p-1 transition-colors ${showPublicAlerts ? 'bg-zinc-900 dark:bg-zinc-100' : 'bg-zinc-300 dark:bg-zinc-700'}`}>
+                <span className={`h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${showPublicAlerts ? 'translate-x-4 dark:bg-zinc-900' : ''}`} />
+              </span>
+            </button>
           </div>
 
           {/* Section: Reset */}

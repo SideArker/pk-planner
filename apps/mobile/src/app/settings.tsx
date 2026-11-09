@@ -20,6 +20,7 @@ import { AddCustomBlockModal } from "@/components/AddCustomBlockModal";
 import { OnboardingModal } from "@/components/OnboardingModal";
 import { Spacing } from "@/constants/theme";
 import { ThemeMode, useAppTheme } from "@/context/ThemeContext";
+import { usePublicAlerts } from "@/context/PublicAlertsContext";
 import { useScheduleData } from "@/hooks/useScheduleData";
 import { useUserSchedule } from "@/hooks/useUserSchedule";
 import { useAppUpdate } from "@/context/UpdateContext";
@@ -35,6 +36,7 @@ export default function SettingsScreen() {
   const isWeb = Platform.OS === "web";
   const isExpoGo = Platform.OS === "android" && isRunningInExpoGo();
   const { theme, resolvedTheme, mode, setThemeMode } = useAppTheme();
+  const { showPublicAlerts, isLoaded: arePublicAlertsLoaded, setShowPublicAlerts } = usePublicAlerts();
   const isDark = resolvedTheme === "dark";
 
   const { state, refresh, isLoading, lastUpdated } = useScheduleData();
@@ -323,6 +325,23 @@ export default function SettingsScreen() {
                   </Pressable>
                 );
               })}
+            </View>
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <View style={styles.notificationRow}>
+              <View style={styles.notificationText}>
+                <Text style={[styles.cardHeading, { color: theme.text }]}>
+                  Pokazuj komunikaty nad planem
+                </Text>
+                <Text style={[styles.cardSubheading, { color: theme.textSecondary }]}>
+                  Tygodniowe informacje z planu uczelni
+                </Text>
+              </View>
+              <Switch
+                accessibilityLabel="Pokazuj komunikaty nad planem"
+                disabled={!arePublicAlertsLoaded}
+                value={showPublicAlerts}
+                onValueChange={setShowPublicAlerts}
+              />
             </View>
           </View>
         </View>

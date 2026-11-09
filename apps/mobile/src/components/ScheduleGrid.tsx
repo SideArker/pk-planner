@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Pressable, ScrollView, StyleSheet, Text, View, useAnimatedValue } from 'react-native';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   type Day,
   type PlanType,
@@ -174,7 +174,7 @@ export function ScheduleGrid({
   const nowDay = now.toDateString();
   const showNow = isViewingCurrentWeek && nowMinute >= layout.startMinute && nowMinute < layout.endMinute;
   const nowTop = (nowMinute - layout.startMinute) * HOUR_HEIGHT / 60;
-  const indicatorY = useAnimatedValue(nowTop);
+  const [indicatorY] = useState(() => new Animated.Value(nowTop));
   const previousPosition = useRef({
     day: nowDay,
     startMinute: layout.startMinute,
